@@ -1,0 +1,43 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Unit tests
+        run: dotnet test tests/KodizSignage.Tests/KodizSignage.Tests.csproj -c Release --logger "trx;LogFileName=tests.trx"
+
+      - name: Publish single-file exe
+        shell: pwsh
+        run: ./publish.ps1 -SkipTests
+
+      # Starts the real WPF app with generated media, plays, opens every settings tab and the
+      # preview, switches language and exits. Fails on unhandled exceptions (1), data-binding
+      # errors (2) or a hang (3) – the kind of problems unit tests cannot catch.
+      - name: UI smoke test
+        shell: pwsh
+        run: |
+          $env:KODIZ_SIGNAGE_DATA_DIR = Join-Path $env:RUNNER_TEMP "kodiz-smoke"
+          $p = Start-Process -FilePath publish/KodizSignage.exe -ArgumentList "--smoke-test" -PassThru -Wait
+          Get-ChildItem "$env:KODIZ_SIGNAGE_DATA_DIR/logs" -Filter *.log | Get-Content
+          if ($p.ExitCode -ne 0) { throw "Smoke test failed with exit code $($p.ExitCode)" }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: KodizSignage
+          path: |
+            publish/KodizSignage.exe
+            ${{ runner.temp }}/kodiz-smoke/logs/
