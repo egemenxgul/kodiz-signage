@@ -6,7 +6,7 @@ PDF sayfalarından oluşan bir oynatma listesini tam ekran ve sonsuz döngüde g
 
 - .NET 8 / WPF, MVVM (CommunityToolkit.Mvvm), tek dosya self-contained `.exe`
 - Türkçe / İngilizce arayüz (varsayılan: işletim sistemi dili, ayarlardan canlı değiştirilebilir)
-- Windows 10 (1809+) / 11, x64
+- Windows 10 (1809+) / 11, x64 – **Windows 7, 8 ve 8.1 desteklenmez** (bkz. [Sistem gereksinimleri](#sistem-gereksinimleri))
 
 ---
 
@@ -97,6 +97,25 @@ kendiliğinden devam eder. İstenirse **"Geçici olarak ana ekranda göster"** s
 - **Yedekle / geri yükle:** Ayarlar, liste ve tüm medya tek bir `.zip` dosyasına yazılır. Yeni PC'ye geçişte geri yüklenir; uygulama ardından kendini yeniden başlatır.
 
 ---
+
+## Sistem gereksinimleri
+
+| | |
+|---|---|
+| İşletim sistemi | **Windows 11** veya **Windows 10 sürüm 1809 ve üzeri**, 64 bit (x64) |
+| Desteklenmeyen | **Windows 7, Windows 8, Windows 8.1**, 32 bit Windows, ARM |
+| Donanım | 1080p video oynatabilen herhangi bir PC (4 GB RAM önerilir), HDMI çıkışı |
+| Ek kurulum | Gerekmez: .NET çalışma ortamı exe'nin içindedir. HEIC/WEBP için Microsoft Store'daki ücretsiz görüntü uzantıları gerekebilir |
+
+**Windows 7, 8 ve 8.1'de neden çalışmaz?** Uygulama .NET 8 ile yazılmıştır ve Microsoft .NET 8'i
+yalnızca Windows 10 ve üzerinde destekler. Bu sistemlerde uygulama açılırken hata verir. Ayrıca bazı
+özellikler (ekran başına DPI uyumu, HEIC, yerleşik PDF motoru) Windows 10'a özgüdür. Windows 7 ve 8.1
+yıllardır güvenlik güncellemesi almadığından internete bağlı bir kafe PC'sinde kullanılmaları zaten önerilmez.
+
+**Eski bir bilgisayar için öneri:** Windows 10 ve 11 eski donanımda da genelde rahat çalışır. Windows 10'un
+normal sürümünün desteği sona erdiğinden yeni kurulumlarda **Windows 11** tercih edin. Donanım Windows 11'i
+desteklemiyorsa, signage cihazları için tasarlanmış uzun süreli destekli **Windows 10 IoT Enterprise LTSC**
+sürümleri bir seçenektir (genelde kurumsal lisansla satılır).
 
 ## Derleme
 
