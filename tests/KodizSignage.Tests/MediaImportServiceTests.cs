@@ -24,6 +24,20 @@ public class MediaImportServiceTests
 
         public bool CanDecodeImage(string path) => Decodable;
 
+        public bool HasOfficeApp { get; set; } = true;
+
+        public Task<string> ConvertToPdfAsync(string path, string outputFolder, CancellationToken cancellationToken)
+        {
+            if (!HasOfficeApp)
+            {
+                throw new OfficeAppMissingException();
+            }
+
+            var pdf = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(path) + ".pdf");
+            System.IO.File.WriteAllText(pdf, "%PDF converted");
+            return Task.FromResult(pdf);
+        }
+
         /// <summary>File content → fingerprint, to simulate "visually identical" images.</summary>
         public Dictionary<string, ulong> Signatures { get; } = new();
 

@@ -27,6 +27,8 @@ public enum ImportFailureKind
     DiskFull,
     /// <summary>PDF could not be converted.</summary>
     Document,
+    /// <summary>A presentation needs PowerPoint or LibreOffice to be converted.</summary>
+    OfficeAppMissing,
 }
 
 public sealed record ImportWarning(string FileName, ImportWarningKind Kind);
@@ -129,6 +131,19 @@ public interface IMediaInspector
 
     /// <summary>Renders every page of a PDF to PNG files in <paramref name="outputFolder"/>. Returns the files in page order.</summary>
     Task<IReadOnlyList<string>> RenderPdfAsync(string pdfPath, string outputFolder, int width, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Converts a presentation (pptx/ppt/odp) to a PDF in <paramref name="outputFolder"/> using an installed
+    /// office application. Throws <see cref="OfficeAppMissingException"/> when none is available.
+    /// </summary>
+    Task<string> ConvertToPdfAsync(string path, string outputFolder, CancellationToken cancellationToken);
+}
+
+public sealed class OfficeAppMissingException : Exception
+{
+    public OfficeAppMissingException() : base("Neither PowerPoint nor LibreOffice is installed.")
+    {
+    }
 }
 
 public sealed class NullMediaInspector : IMediaInspector
@@ -139,6 +154,9 @@ public sealed class NullMediaInspector : IMediaInspector
 
     public Task<IReadOnlyList<string>> RenderPdfAsync(string pdfPath, string outputFolder, int width, CancellationToken cancellationToken) =>
         throw new NotSupportedException("PDF rendering is not available on this platform.");
+
+    public Task<string> ConvertToPdfAsync(string path, string outputFolder, CancellationToken cancellationToken) =>
+        throw new OfficeAppMissingException();
 }
 
 public interface IMediaImportService
@@ -328,6 +346,7 @@ public sealed class MediaImportService : IMediaImportService
             Type = type,
             ContentHash = hash,
             FileSize = length,
+            AddedAt = DateTime.Now,
             SyncFileName = options.SyncFileName,
             SyncStamp = options.SyncStamp,
         };
@@ -510,16 +529,79 @@ public sealed class MediaImportService : IMediaImportService
             }
         }
 
+        // A changed document with the same name (e.g. an updated menu) can replace the old pages.
+        IReadOnlyList<PlaylistItem>? replacePages = null;
+        if (options.SkipDuplicates)
+        {
+            var oldPages = index.Items
+                .Where(i => string.Equals(i.OriginalName, name, StringComparison.OrdinalIgnoreCase) && i.ContentHash?.Contains('#') == true)
+                .OrderBy(i => int.TryParse(i.ContentHash![(i.ContentHash!.IndexOf('#') + 1)..], out var n) ? n : 0)
+                .ToList();
+            if (oldPages.Count > 0)
+            {
+                var answer = options.DuplicateHandler is { } ask
+                    ? await ask(new DuplicateQuestion(name, source, new FileInfo(source).Length, oldPages[0], _playlist.GetFullPath(oldPages[0]), DuplicateKind.SameName)).ConfigureAwait(false)
+                    : DuplicateAnswer.AddCopy;
+                switch (answer)
+                {
+                    case DuplicateAnswer.Skip:
+                        outcome.Skipped.Add(name);
+                        return;
+                    case DuplicateAnswer.UseExisting:
+                        outcome.Duplicates.Add(name);
+                        outcome.DuplicateIds.AddRange(oldPages.Select(p => p.Id));
+                        if (options.AddToPlaylist)
+                        {
+                            _playlist.AddToScreensIfMissing(oldPages.Select(p => p.Id), options.TargetScreens);
+                        }
+
+                        return;
+                    case DuplicateAnswer.ReplaceExisting:
+                        replacePages = oldPages;
+                        break;
+                }
+            }
+        }
+
         IReadOnlyList<string> rendered;
+        string? temporaryPdf = null;
         try
         {
-            rendered = await _inspector.RenderPdfAsync(source, _paths.MediaFolder, PdfPageWidth, cancellationToken).ConfigureAwait(false);
+            var pdf = source;
+            if (MediaFormats.IsPresentation(source))
+            {
+                var tempFolder = Path.Combine(Path.GetTempPath(), "kodiz-convert-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(tempFolder);
+                temporaryPdf = pdf = await _inspector.ConvertToPdfAsync(source, tempFolder, cancellationToken).ConfigureAwait(false);
+            }
+
+            rendered = await _inspector.RenderPdfAsync(pdf, _paths.MediaFolder, PdfPageWidth, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OfficeAppMissingException ex)
+        {
+            _log.Warning("{Name}: no office application to convert it", name);
+            outcome.Failed.Add(new ImportFailure(name, ex.Message, ImportFailureKind.OfficeAppMissing));
+            return;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _log.Error(ex, "PDF {Name} could not be rendered", name);
+            _log.Error(ex, "Document {Name} could not be rendered", name);
             outcome.Failed.Add(new ImportFailure(name, ex.Message, ImportFailureKind.Document));
             return;
+        }
+        finally
+        {
+            if (temporaryPdf is not null)
+            {
+                try
+                {
+                    Directory.Delete(Path.GetDirectoryName(temporaryPdf)!, recursive: true);
+                }
+                catch (Exception)
+                {
+                    // Temp folder; Windows cleans it eventually.
+                }
+            }
         }
 
         report(1);
@@ -533,6 +615,7 @@ public sealed class MediaImportService : IMediaImportService
             Type = MediaType.Image,
             ContentHash = $"{hash}#{i + 1}",
             FileSize = new FileInfo(page).Length,
+            AddedAt = DateTime.Now,
             SyncFileName = options.SyncFileName,
             SyncStamp = options.SyncStamp,
         }).ToList();
@@ -545,10 +628,19 @@ public sealed class MediaImportService : IMediaImportService
         outcome.Imported.AddRange(items);
         if (options.AddToPlaylist)
         {
-            _playlist.Add(items, options.TargetScreens);
+            if (replacePages is not null)
+            {
+                // Page by page: screens keep their entries and overrides; extra pages are appended.
+                _playlist.Replace(replacePages.Select(p => p.Id).ToList(), items);
+                outcome.Replaced.Add(name);
+            }
+            else
+            {
+                _playlist.Add(items, options.TargetScreens);
+            }
         }
 
-        _log.Information("Imported PDF {Name} as {Pages} pages", name, items.Count);
+        _log.Information("Imported document {Name} as {Pages} pages", name, items.Count);
     }
 
     /// <summary>

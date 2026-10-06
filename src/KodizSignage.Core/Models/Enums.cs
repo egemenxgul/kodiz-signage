@@ -10,6 +10,28 @@ public enum TransitionType
 {
     None,
     Fade,
+    /// <summary>The new item slides in from the right, the old one out to the left.</summary>
+    Slide,
+    /// <summary>The new item fades in while zooming slightly out.</summary>
+    Zoom,
+    /// <summary>The new item pushes the old one up.</summary>
+    SlideUp,
+    /// <summary>The old item fades to the background color, then the new one fades in.</summary>
+    FadeThroughBackground,
+    /// <summary>The new item is revealed from left to right with a soft edge.</summary>
+    Wipe,
+    /// <summary>The new item is revealed by a growing circle from the center.</summary>
+    Circle,
+    /// <summary>The old item blurs away while the new one fades in.</summary>
+    Blur,
+}
+
+/// <summary>Movement applied to still images while they are shown.</summary>
+public enum ImageMotion
+{
+    None,
+    /// <summary>Slow zoom and pan ("Ken Burns" effect).</summary>
+    KenBurns,
 }
 
 public enum ScalingMode

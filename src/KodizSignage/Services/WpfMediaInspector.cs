@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using KodizSignage.Core.Media;
@@ -65,6 +67,111 @@ public sealed class WpfMediaInspector : IMediaInspector
             _log.Debug(ex, "No image signature for {Path}", path);
             return null;
         }
+    }
+
+    public async Task<string> ConvertToPdfAsync(string path, string outputFolder, CancellationToken cancellationToken)
+    {
+        var pdf = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(path) + ".pdf");
+        if (Type.GetTypeFromProgID("PowerPoint.Application") is { } powerPoint)
+        {
+            await RunOnStaThreadAsync(() => ConvertWithPowerPoint(powerPoint, Path.GetFullPath(path), pdf));
+            if (File.Exists(pdf))
+            {
+                return pdf;
+            }
+        }
+
+        if (FindLibreOffice() is { } soffice)
+        {
+            using var process = Process.Start(new ProcessStartInfo(soffice)
+            {
+                ArgumentList = { "--headless", "--norestore", "--convert-to", "pdf", "--outdir", outputFolder, Path.GetFullPath(path) },
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            })!;
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromMinutes(3));
+            await process.WaitForExitAsync(timeout.Token);
+            if (File.Exists(pdf))
+            {
+                return pdf;
+            }
+        }
+
+        throw new OfficeAppMissingException();
+    }
+
+    /// <summary>
+    /// Saves the presentation as PDF through PowerPoint automation (hidden, read-only). PowerPoint is
+    /// only closed if no other presentation is open – never close the user's work.
+    /// </summary>
+    private void ConvertWithPowerPoint(Type type, string path, string pdf)
+    {
+        dynamic? app = null;
+        dynamic? presentation = null;
+        try
+        {
+            app = Activator.CreateInstance(type)!;
+            const int msoTrue = -1, msoFalse = 0, ppSaveAsPDF = 32;
+            presentation = app.Presentations.Open(path, msoTrue, msoFalse, msoFalse);
+            presentation.SaveAs(pdf, ppSaveAsPDF);
+            presentation.Close();
+            if ((int)app.Presentations.Count == 0)
+            {
+                app.Quit();
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "PowerPoint could not convert {Path}", path);
+        }
+        finally
+        {
+            if (presentation is not null)
+            {
+                Marshal.FinalReleaseComObject(presentation);
+            }
+
+            if (app is not null)
+            {
+                Marshal.FinalReleaseComObject(app);
+            }
+        }
+    }
+
+    private static string? FindLibreOffice()
+    {
+        foreach (var root in new[] { Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) })
+        {
+            var candidate = Path.Combine(root, "LibreOffice", "program", "soffice.exe");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static Task RunOnStaThreadAsync(Action action)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                action();
+                tcs.SetResult();
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.IsBackground = true;
+        thread.Start();
+        return tcs.Task;
     }
 
     public async Task<IReadOnlyList<string>> RenderPdfAsync(string pdfPath, string outputFolder, int width, CancellationToken cancellationToken)

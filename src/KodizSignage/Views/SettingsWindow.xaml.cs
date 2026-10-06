@@ -208,7 +208,7 @@ public partial class SettingsWindow : Window
     {
         _dragStart = null;
         _dragItem = null;
-        if (e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: MediaItemViewModel item })
+        if (_vm.Media.CanReorder && e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: MediaItemViewModel item })
         {
             _dragStart = e.GetPosition(MediaList);
             _dragItem = item;
@@ -263,7 +263,7 @@ public partial class SettingsWindow : Window
             var index = target?.DataContext is MediaItemViewModel targetItem
                 ? targetItem.Position
                 : _vm.Media.Items.Count - 1;
-            if (index >= 0 && dragged.Position != index)
+            if (index >= 0 && dragged.Position != index && _vm.Media.CanReorder)
             {
                 _vm.Media.Move(dragged, index);
                 MediaList.SelectedItem = dragged;

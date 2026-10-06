@@ -29,6 +29,8 @@ public sealed record AppSettings
 
     public double TransitionDurationSeconds { get; init; } = 0.5;
 
+    public ImageMotion ImageMotion { get; init; } = ImageMotion.None;
+
     public ScalingMode Scaling { get; init; } = ScalingMode.Fit;
 
     /// <summary>Background (letterbox) color as #RRGGBB.</summary>
@@ -76,6 +78,19 @@ public sealed record AppSettings
 
     public DateTime? LastUpdateCheck { get; init; }
 
+    public const int DefaultWebPanelPort = 8787;
+
+    /// <summary>Phone control over the local network (needs <see cref="WebPanelPinHash"/>).</summary>
+    public bool WebPanelEnabled { get; init; }
+
+    public int WebPanelPort { get; init; } = DefaultWebPanelPort;
+
+    /// <summary>"salt:hash" of the phone panel PIN.</summary>
+    public string? WebPanelPinHash { get; init; }
+
+    /// <summary>The first-run wizard was completed or skipped.</summary>
+    public bool WizardDone { get; init; }
+
     /// <summary>Clamps out-of-range values (e.g. from a hand-edited file) to sane ones.</summary>
     public AppSettings Normalize() => this with
     {
@@ -90,12 +105,15 @@ public sealed record AppSettings
         VideoVolume = double.IsFinite(VideoVolume) ? Math.Clamp(VideoVolume, 0, 1) : 0.5,
         BackgroundColor = IsValidColor(BackgroundColor) ? BackgroundColor : "#000000",
         Transition = Enum.IsDefined(Transition) ? Transition : TransitionType.Fade,
+        ImageMotion = Enum.IsDefined(ImageMotion) ? ImageMotion : ImageMotion.None,
         Scaling = Enum.IsDefined(Scaling) ? Scaling : ScalingMode.Fit,
         Language = Enum.IsDefined(Language) ? Language : AppLanguage.Auto,
         Hotkeys = (Hotkeys ?? HotkeySettings.Defaults).Normalize(),
         DisplayFallback = Enum.IsDefined(DisplayFallback) ? DisplayFallback : DisplayFallback.Hide,
         OperatingHours = (OperatingHours ?? new OperatingHours()).Normalize(),
         WatchFolderPath = string.IsNullOrWhiteSpace(WatchFolderPath) ? null : WatchFolderPath.Trim(),
+        WebPanelPort = WebPanelPort is >= 1024 and <= 65535 ? WebPanelPort : DefaultWebPanelPort,
+        WebPanelEnabled = WebPanelEnabled && !string.IsNullOrEmpty(WebPanelPinHash),
     };
 
     /// <summary>

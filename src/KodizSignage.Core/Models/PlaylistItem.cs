@@ -59,6 +59,12 @@ public sealed record PlaylistItem
 
     public long? FileSize { get; init; }
 
+    /// <summary>Set for slides created in the app (template + texts), so they can be edited again.</summary>
+    public SlideDefinition? Slide { get; init; }
+
+    /// <summary>When the media was added to the library (null for items from older versions).</summary>
+    public DateTime? AddedAt { get; init; }
+
     public int? VideoWidth { get; init; }
 
     public int? VideoHeight { get; init; }

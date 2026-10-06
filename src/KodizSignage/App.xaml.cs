@@ -138,6 +138,7 @@ public partial class App : Application
         }));
 
         _services.GetRequiredService<IFolderSyncService>().Start();
+        _services.GetRequiredService<IWebPanelService>().Start();
         if (!isSmokeTest)
         {
             StartUpdates(args.Contains(InstallService.AfterUpdateArgument));
@@ -163,6 +164,7 @@ public partial class App : Application
             return;
         }
 
+        WizardWindow.ShowIfNeeded(_services, settings);
         if (!settings.Current.AutoPlayOnLaunch || settings.IsFirstRun || (!launchedByWindows && playlist.Items.Count == 0))
         {
             ShowSettings();
@@ -318,6 +320,10 @@ public partial class App : Application
         services.AddSingleton<TrayService>();
         services.AddSingleton<IDuplicateResolver, DuplicateResolver>();
         services.AddSingleton<IUpdateService, UpdateService>();
+        services.AddSingleton<ISlideService, SlideService>();
+        services.AddSingleton<WebPanelService>();
+        services.AddSingleton<IWebPanelService>(sp => sp.GetRequiredService<WebPanelService>());
+        services.AddSingleton<IPlayStatsService>(sp => new PlayStatsService(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<Serilog.ILogger>()));
 
         // UI
         services.AddSingleton<UndoBar>();
@@ -427,6 +433,8 @@ public partial class App : Application
         {
             _services.GetRequiredService<UndoBar>().Commit();
             await _services.GetRequiredService<IPlaybackManager>().ShutdownAsync();
+            await _services.GetRequiredService<IPlayStatsService>().FlushAsync();
+            _services.GetRequiredService<WebPanelService>().Dispose();
         }
         catch (Exception ex)
         {

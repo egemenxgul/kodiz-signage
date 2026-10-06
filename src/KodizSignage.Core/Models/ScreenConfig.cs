@@ -36,6 +36,8 @@ public sealed record ScreenConfig
 
     public double? TransitionDurationSeconds { get; init; }
 
+    public ImageMotion? ImageMotion { get; init; }
+
     /// <summary>Own opening hours; null = the general ones.</summary>
     public OperatingHours? OperatingHours { get; init; }
 
@@ -43,6 +45,9 @@ public sealed record ScreenConfig
     public int Rotation { get; init; }
 
     public bool IsPortrait => Rotation is 90 or 270;
+
+    /// <summary>Clock, ticker and logo drawn over this screen's content.</summary>
+    public ScreenOverlays Overlays { get; init; } = new();
 
     /// <summary>The general settings with this screen's overrides applied.</summary>
     public AppSettings Apply(AppSettings settings) => settings with
@@ -57,6 +62,7 @@ public sealed record ScreenConfig
         DefaultImageDurationSeconds = DefaultImageDurationSeconds ?? settings.DefaultImageDurationSeconds,
         Transition = Transition ?? settings.Transition,
         TransitionDurationSeconds = TransitionDurationSeconds ?? settings.TransitionDurationSeconds,
+        ImageMotion = ImageMotion ?? settings.ImageMotion,
         OperatingHours = OperatingHours ?? settings.OperatingHours,
     };
 
@@ -65,6 +71,7 @@ public sealed record ScreenConfig
         Name = string.IsNullOrWhiteSpace(Name) ? null : Name.Trim(),
         Scaling = Scaling is { } s && !Enum.IsDefined(s) ? null : Scaling,
         Transition = Transition is { } t && !Enum.IsDefined(t) ? null : Transition,
+        ImageMotion = ImageMotion is { } m && !Enum.IsDefined(m) ? null : ImageMotion,
         BackgroundColor = AppSettings.IsValidColor(BackgroundColor) ? BackgroundColor : null,
         VideoVolume = VideoVolume is { } v ? (double.IsFinite(v) ? Math.Clamp(v, 0, 1) : null) : null,
         DefaultImageDurationSeconds = DefaultImageDurationSeconds is { } d
@@ -75,5 +82,6 @@ public sealed record ScreenConfig
             : null,
         OperatingHours = OperatingHours?.Normalize(),
         Rotation = Rotation is 90 or 180 or 270 ? Rotation : 0,
+        Overlays = (Overlays ?? new ScreenOverlays()).Normalize(),
     };
 }

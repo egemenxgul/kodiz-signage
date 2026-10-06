@@ -27,6 +27,9 @@
                           Stretch="Uniform" IsMuted="True" Visibility="Collapsed" />
         </Grid>
 
+        <!-- Clock, ticker, logo (above content and the empty state, below "closed"). -->
+        <Grid x:Name="OverlayHost" Panel.ZIndex="15" IsHitTestVisible="False" />
+
         <!-- Outside opening hours: plain black. -->
         <Grid x:Name="ClosedState" Visibility="Collapsed" Opacity="0" Panel.ZIndex="20" Background="Black" />
 

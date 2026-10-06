@@ -192,3 +192,71 @@ public class DuplicateImportTests
         Assert.Null(MediaImportService.FindDuplicate(other, new[] { existing }));
     }
 }
+
+public class DocumentVersionTests
+{
+    [Fact]
+    public async Task Updated_pdf_with_same_name_replaces_pages_and_keeps_screen_settings()
+    {
+        using var dir = new TempDir();
+        var playlist = new PlaylistService(dir.Paths, TestLog.None) { DeleteRetryDelays = new[] { TimeSpan.FromMilliseconds(10) } };
+        playlist.Load();
+        playlist.EnsureScreens(new[] { 1 });
+        var inspector = new MediaImportServiceTests.FakeInspector { PdfPages = 2 };
+        var import = new MediaImportService(dir.Paths, playlist, new NullVideoMetadataProvider(), inspector, TestLog.None) { FreeSpace = () => long.MaxValue };
+        await import.ImportAsync(new[] { dir.File("v1/Menü.pdf", "%PDF v1") }, null, CancellationToken.None);
+        var first = playlist.GetScreenPlaylist(1)!.Entries[0];
+        playlist.UpdateEntries(1, new[] { first with { DurationSeconds = 12 } });
+        inspector.PdfPages = 3;
+        var asked = new List<DuplicateQuestion>();
+
+        var result = await import.ImportAsync(new[] { dir.File("v2/Menü.pdf", "%PDF v2") }, null, CancellationToken.None,
+            new ImportOptions { DuplicateHandler = q => { asked.Add(q); return Task.FromResult(DuplicateAnswer.ReplaceExisting); } });
+
+        Assert.Equal(DuplicateKind.SameName, Assert.Single(asked).Kind);
+        Assert.Equal(new[] { "Menü.pdf" }, result.Replaced);
+        Assert.Equal(3, playlist.Items.Count);                         // old pages gone, 3 new pages
+        Assert.Equal(3, playlist.GetScreenItems(1).Count);
+        Assert.Equal(12, playlist.GetScreenItems(1)[0].DurationSeconds); // override kept
+    }
+}
+
+public class PresentationImportTests
+{
+    private static (PlaylistService, MediaImportService, MediaImportServiceTests.FakeInspector, TempDir) Create()
+    {
+        var dir = new TempDir();
+        var playlist = new PlaylistService(dir.Paths, TestLog.None);
+        playlist.Load();
+        playlist.EnsureScreens(new[] { 1 });
+        var inspector = new MediaImportServiceTests.FakeInspector { PdfPages = 4 };
+        var import = new MediaImportService(dir.Paths, playlist, new NullVideoMetadataProvider(), inspector, TestLog.None) { FreeSpace = () => long.MaxValue };
+        return (playlist, import, inspector, dir);
+    }
+
+    [Fact]
+    public async Task Presentation_becomes_one_image_per_slide()
+    {
+        var (playlist, import, _, dir) = Create();
+        using var _d = dir;
+
+        var result = await import.ImportAsync(new[] { dir.File("src/Menü.pptx", "pptx") }, null, CancellationToken.None);
+
+        Assert.Equal(4, result.Imported.Count);
+        Assert.Equal(4, playlist.GetScreenItems(1).Count);
+        Assert.Equal("Menü · 1/4", playlist.Items[0].Title);
+    }
+
+    [Fact]
+    public async Task Presentation_without_office_app_reports_a_clear_failure()
+    {
+        var (playlist, import, inspector, dir) = Create();
+        using var _d = dir;
+        inspector.HasOfficeApp = false;
+
+        var result = await import.ImportAsync(new[] { dir.File("src/Menü.pptx", "pptx") }, null, CancellationToken.None);
+
+        Assert.Equal(ImportFailureKind.OfficeAppMissing, Assert.Single(result.Failed).Kind);
+        Assert.Empty(playlist.Items);
+    }
+}

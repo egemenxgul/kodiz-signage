@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -18,6 +19,7 @@ namespace KodizSignage.Views;
 public partial class PlayerWindow : Window
 {
     private readonly ILogger _log;
+    private readonly OverlayLayer _overlays;
     private DisplayInfo? _target;
     private int _rotation;
 
@@ -26,6 +28,9 @@ public partial class PlayerWindow : Window
         InitializeComponent();
         _log = log.ForContext<PlayerWindow>();
         IsPreview = preview;
+        ScreenNumber = screenNumber;
+        _overlays = new OverlayLayer(OverlayHost, _log);
+        Closed += (_, _) => _overlays.Stop();
 
         var layerA = new MediaLayer("A", LayerA, ImageA, VideoA, _log) { ForceMute = preview };
         var layerB = new MediaLayer("B", LayerB, ImageB, VideoB, _log) { ForceMute = preview };
@@ -54,6 +59,9 @@ public partial class PlayerWindow : Window
 
     public bool IsPreview { get; }
 
+    /// <summary>The screen this window plays; null for the "all media" preview.</summary>
+    public int? ScreenNumber { get; }
+
     /// <summary>Set by the app on shutdown; otherwise Alt+F4 etc. are ignored.</summary>
     public bool AllowClose { get; set; }
 
@@ -74,6 +82,10 @@ public partial class PlayerWindow : Window
             Background = Brushes.Black;
         }
     }
+
+    /// <summary>Clock / ticker / logo on top of the content.</summary>
+    public void ApplyOverlays(ScreenOverlays overlays, string? logoPath, CultureInfo culture) =>
+        _overlays.Apply(overlays, logoPath, culture);
 
     /// <summary>Rotates all content (0/90/180/270°) for TVs mounted in portrait or upside down.</summary>
     public void ApplyRotation(int degrees)

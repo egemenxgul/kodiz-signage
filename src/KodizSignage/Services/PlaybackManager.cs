@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Threading;
 using KodizSignage.Core.Displays;
@@ -51,6 +52,9 @@ public interface IPlaybackManager
     /// <summary>Skips to the next item on every screen.</summary>
     void Next();
 
+    /// <summary>Skips to the next item on one screen.</summary>
+    void Next(int screen);
+
     /// <summary>Plays a screen's lineup (null = all media) in an ordinary, muted window.</summary>
     void ShowPreview(int? screenNumber);
 
@@ -71,6 +75,8 @@ public sealed class PlaybackManager : IPlaybackManager
 
     private readonly ISettingsService _settings;
     private readonly IPlaylistService _playlist;
+    private readonly IPlayStatsService _stats;
+    private readonly Dictionary<int, Views.Player.NowPlaying?> _lastShown = new();
     private readonly IDisplayService _displays;
     private readonly IPowerService _power;
     private readonly ILogger _log;
@@ -87,8 +93,10 @@ public sealed class PlaybackManager : IPlaybackManager
         IPlaylistService playlist,
         IDisplayService displays,
         IPowerService power,
+        IPlayStatsService stats,
         ILogger log)
     {
+        _stats = stats;
         _settings = settings;
         _playlist = playlist;
         _displays = displays;
@@ -113,6 +121,7 @@ public sealed class PlaybackManager : IPlaybackManager
             foreach (var window in AllWindows())
             {
                 window.Engine.Invalidate();
+                ApplyOverlays(window); // The logo may have been replaced or removed.
             }
 
             AssignLeaders(); // Links / "synchronized" may have changed.
@@ -182,6 +191,14 @@ public sealed class PlaybackManager : IPlaybackManager
         }
     }
 
+    public void Next(int screen)
+    {
+        if (_players.TryGetValue(screen, out var player) && player.IsActive)
+        {
+            player.Window.Engine.RequestNext();
+        }
+    }
+
     public void ShowPreview(int? screenNumber)
     {
         var key = screenNumber ?? AllMediaPreviewKey;
@@ -196,6 +213,7 @@ public sealed class PlaybackManager : IPlaybackManager
         var title = (Application.Current.TryFindResource("Preview_Title") as string) ?? "Preview";
         preview.Title = screenNumber is { } n ? $"{title} · {ScreenName(n)}" : title;
         preview.ApplyBackground(preview.Engine.Settings.BackgroundColor);
+        ApplyOverlays(preview);
         var cts = new CancellationTokenSource();
         preview.Closed += (_, _) =>
         {
@@ -262,9 +280,14 @@ public sealed class PlaybackManager : IPlaybackManager
         {
             var window = new PlayerWindow(_playlist, _settings, _log, number);
             window.ApplyRotation(_settings.Current.GetScreen(number)?.Rotation ?? 0);
-            window.Engine.StateChanged += (_, _) => UpdateStatus();
+            window.Engine.StateChanged += (_, _) =>
+            {
+                TrackPlay(number, window.Engine.NowPlaying);
+                UpdateStatus();
+            };
             window.ApplyBackground(window.Engine.Settings.BackgroundColor);
             window.SetSettingsShortcut(HotkeyDisplay.Format(_settings.Current.Hotkeys.ShowSettings));
+            ApplyOverlays(window);
             _players[number] = new ScreenPlayer(number, window, _log);
         }
     }
@@ -408,13 +431,48 @@ public sealed class PlaybackManager : IPlaybackManager
         // The system stays awake to bring the show back; displays only while something is shown.
         if (IsRunning)
         {
-            var allowSleepWhenClosed = _settings.Current.OperatingHours.AllowDisplaySleep;
+            // Each screen's own opening hours decide whether its display may sleep while closed.
+            bool AllowSleep(int screen) =>
+                (_settings.Current.GetScreen(screen)?.Apply(_settings.Current) ?? _settings.Current).OperatingHours.AllowDisplaySleep;
             var displayMayRest = active.Count == 0 || active.All(s =>
-                s.Status == ScreenStatus.Waiting || (s.Status == ScreenStatus.Closed && allowSleepWhenClosed));
+                s.Status == ScreenStatus.Waiting || (s.Status == ScreenStatus.Closed && AllowSleep(s.Number)));
             _power.PreventSleep(keepDisplayOn: !displayMayRest);
         }
 
         StateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Counts the previous item of a screen once it is replaced (or playback stops).</summary>
+    private void TrackPlay(int screen, Views.Player.NowPlaying? current)
+    {
+        _lastShown.TryGetValue(screen, out var previous);
+        if (ReferenceEquals(previous, current))
+        {
+            return;
+        }
+
+        if (previous is not null)
+        {
+            _stats.Record(screen, previous.Item, previous.ShownFor.Elapsed);
+        }
+
+        _lastShown[screen] = current;
+    }
+
+    private void ApplyOverlays(PlayerWindow window)
+    {
+        var settings = _settings.Current;
+        var overlays = window.ScreenNumber is { } n ? settings.GetScreen(n)?.Overlays ?? new ScreenOverlays() : new ScreenOverlays();
+        var logo = overlays.LogoMediaId is { } id
+            ? _playlist.Items.FirstOrDefault(i => i.Id == id && i.Type == MediaType.Image)
+            : null;
+        var culture = settings.Language switch
+        {
+            AppLanguage.Turkish => CultureInfo.GetCultureInfo("tr-TR"),
+            AppLanguage.English => CultureInfo.GetCultureInfo("en-US"),
+            _ => CultureInfo.CurrentCulture,
+        };
+        window.ApplyOverlays(overlays, logo is null ? null : _playlist.GetFullPath(logo), culture);
     }
 
     private void OnSettingsChanged(SettingsChangedEventArgs e)
@@ -436,6 +494,7 @@ public sealed class PlaybackManager : IPlaybackManager
 
             window.Engine.ApplySettings(effective);
             window.Engine.Invalidate();
+            ApplyOverlays(window);
         }
 
         if (old.Screens != current.Screens || old.DisplayFallback != current.DisplayFallback)

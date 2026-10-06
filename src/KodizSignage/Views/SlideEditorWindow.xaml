@@ -1,0 +1,151 @@
+<Window x:Class="KodizSignage.Views.SlideEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:KodizSignage.ViewModels"
+        xmlns:conv="clr-namespace:KodizSignage.Converters"
+        xmlns:ctl="clr-namespace:KodizSignage.Controls"
+        Title="{DynamicResource Slide_WindowTitle}"
+        Width="1180" Height="760" MinWidth="860" MinHeight="560"
+        WindowStartupLocation="CenterOwner" Topmost="True" ShowInTaskbar="False"
+        Background="{StaticResource BgBrush}" Foreground="{StaticResource TextBrush}"
+        FontFamily="{StaticResource UiFont}" FontSize="13"
+        Icon="pack://application:,,,/Assets/app.ico">
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:ColorToBrushConverter x:Key="ColorToBrush" />
+        <conv:BoolToVisibilityConverter x:Key="InvBoolToVisLocal" Invert="True" />
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400" />
+            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,8,0">
+                <TextBlock Text="{DynamicResource Slide_Template}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                <ComboBox ItemsSource="{Binding Templates}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Template}" />
+
+                <TextBlock Text="{DynamicResource Slide_Title}" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{DynamicResource Slide_Subtitle}" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Subtitle, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="{DynamicResource Slide_Body}" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Body, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" VerticalContentAlignment="Top" />
+
+                <!-- Price rows -->
+                <StackPanel Visibility="{Binding IsPriceList, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{DynamicResource Slide_Rows}" Style="{StaticResource FieldLabel}" />
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:PriceRowViewModel}">
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource Slide_RowName}" />
+                                    <TextBox Grid.Column="1" Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Margin="6,0,0,0" ToolTip="{DynamicResource Slide_RowPrice}" />
+                                    <Button Grid.Column="2" Grid.RowSpan="2" Style="{StaticResource DangerIconButton}" Content="&#xE711;"
+                                            Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                    <TextBox Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" FontSize="12"
+                                             ToolTip="{DynamicResource Slide_RowNote}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Style="{StaticResource SmallButton}" Command="{Binding AddRowCommand}" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" FontSize="12" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource Slide_AddRow}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- QR -->
+                <StackPanel Visibility="{Binding IsQr, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{DynamicResource Slide_QrContent}" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{Binding QrKinds}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding QrKind}" />
+                    <TextBox Text="{Binding QrText, UpdateSourceTrigger=PropertyChanged}" Margin="0,6,0,0" ToolTip="{DynamicResource Slide_QrTextHint}"
+                             Visibility="{Binding IsWifi, Converter={StaticResource InvBoolToVisLocal}}" />
+                    <StackPanel Visibility="{Binding IsWifi, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{DynamicResource Slide_WifiName}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding WifiSsid, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Text="{DynamicResource Slide_WifiPassword}" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding WifiPassword, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Look -->
+                <TextBlock Text="{DynamicResource Slide_Theme}" Style="{StaticResource FieldLabel}" />
+                <ItemsControl ItemsSource="{Binding Themes}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ThemeOption}">
+                            <Button Width="44" Height="32" MinHeight="0" Padding="0" Margin="0,0,6,6" Background="{Binding Swatch}" ToolTip="{Binding Label}"
+                                    Command="{Binding DataContext.ApplyThemeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid Margin="0,6,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="{DynamicResource Slide_Background}" VerticalAlignment="Center" />
+                    <ctl:ColorPicker Grid.Column="1" Color="{Binding BackgroundColor}" Margin="0,0,0,6" />
+                    <CheckBox Grid.Row="1" Content="{DynamicResource Slide_Gradient}" IsChecked="{Binding UseGradient}" VerticalAlignment="Center" />
+                    <ctl:ColorPicker Grid.Row="1" Grid.Column="1" Color="{Binding BackgroundColor2}" IsEnabled="{Binding UseGradient}" Margin="0,0,0,6" />
+                    <TextBlock Grid.Row="2" Text="{DynamicResource Slide_TextColor}" VerticalAlignment="Center" />
+                    <ctl:ColorPicker Grid.Row="2" Grid.Column="1" Color="{Binding TextColor}" Margin="0,0,0,6" />
+                    <TextBlock Grid.Row="3" Text="{DynamicResource Slide_AccentColor}" VerticalAlignment="Center" />
+                    <ctl:ColorPicker Grid.Row="3" Grid.Column="1" Color="{Binding AccentColor}" Margin="0,0,0,6" />
+                </Grid>
+                <CheckBox Content="{DynamicResource Slide_Portrait}" IsChecked="{Binding Portrait}" Margin="0,12,0,0" />
+                <TextBlock Text="{DynamicResource Slide_TextSize}" Style="{StaticResource FieldLabel}" />
+                <Slider Minimum="0.6" Maximum="1.6" TickFrequency="0.1" IsSnapToTickEnabled="True" Value="{Binding TextScale}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Preview -->
+        <Border Grid.Column="2" Style="{StaticResource Card}" Padding="12">
+            <Grid>
+                <TextBlock Text="{DynamicResource Media_Preview}" Style="{StaticResource H2}" VerticalAlignment="Top" />
+                <Border Margin="0,34,0,0" Background="#0B0D12" CornerRadius="6">
+                    <Image Source="{Binding Preview}" Stretch="Uniform" Margin="8" RenderOptions.BitmapScalingMode="HighQuality" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <TextBlock Text="{DynamicResource Slide_SaveHint}" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,16,0" />
+            <Button Content="{DynamicResource Common_Cancel}" IsCancel="True" MinWidth="100" Margin="0,0,8,0" />
+            <Button Style="{StaticResource AccentButton}" MinWidth="160" Click="Save_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" Margin="0,0,8,0" />
+                    <TextBlock x:Name="SaveText" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

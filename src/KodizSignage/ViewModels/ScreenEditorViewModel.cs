@@ -25,6 +25,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
     private readonly IMediaImportService _import;
     private readonly UndoBar _undo;
     private readonly IDuplicateResolver _duplicates;
+    private readonly ISlideService _slides;
     private bool _syncing;
 
     public ScreenEditorViewModel(
@@ -36,9 +37,11 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         IDialogService dialogs,
         IMediaImportService import,
         IDuplicateResolver duplicates,
+        ISlideService slides,
         UndoBar undo)
     {
         _duplicates = duplicates;
+        _slides = slides;
         _playlist = playlist;
         _settings = settings;
         _loc = loc;
@@ -52,10 +55,14 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         OptionItem<int> O(int value, string key) => new(value, key, loc);
         ScalingChoices = new[] { O(0, "ScreenOverride_General"), O(1, "Scaling_Fit"), O(2, "Scaling_Fill"), O(3, "Scaling_Stretch") };
         SoundChoices = new[] { O(0, "ScreenOverride_General"), O(1, "ScreenOverride_SoundOn"), O(2, "ScreenOverride_SoundOff") };
-        TransitionChoices = new[] { O(0, "ScreenOverride_General"), O(1, "Transition_None"), O(2, "Transition_Fade") };
-        EntryTransitionChoices = new[] { O(0, "Entry_TransitionScreen"), O(1, "Transition_None"), O(2, "Transition_Fade") };
+        IReadOnlyList<OptionItem<int>> Transitions(string inheritKey) =>
+            new[] { O(0, inheritKey) }.Concat(Enum.GetValues<TransitionType>().Select(t => O(TransitionToChoice(t), "Transition_" + t))).ToList();
+        TransitionChoices = Transitions("ScreenOverride_General");
+        EntryTransitionChoices = Transitions("Entry_TransitionScreen");
+        MotionChoices = new[] { O(0, "ScreenOverride_General"), O(1, "Motion_None"), O(2, "Motion_KenBurns") };
         RotationChoices = new[] { O(0, "Rotation_0"), O(1, "Rotation_90"), O(2, "Rotation_180"), O(3, "Rotation_270") };
         BulkSchedule = new ScheduleEditor(loc, autoCommit: false);
+        Overlays = new OverlayEditorViewModel(loc, change => UpdateConfig(c => c with { Overlays = change(c.Overlays) }));
 
         _playlist.Changed += (_, _) => Application.Current.Dispatcher.BeginInvoke(SyncEntries);
         _settings.Changed += (_, e) => Application.Current.Dispatcher.BeginInvoke(() =>
@@ -68,7 +75,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         });
         _loc.LanguageChanged += (_, _) =>
         {
-            foreach (var option in ScalingChoices.Concat(SoundChoices).Concat(TransitionChoices).Concat(EntryTransitionChoices).Concat(RotationChoices))
+            foreach (var option in ScalingChoices.Concat(SoundChoices).Concat(TransitionChoices).Concat(EntryTransitionChoices).Concat(RotationChoices).Concat(MotionChoices))
             {
                 option.Refresh(_loc);
             }
@@ -91,11 +98,19 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
 
     public ScreenScheduleHost Hours { get; }
 
+    public OverlayEditorViewModel Overlays { get; }
+
     public IReadOnlyList<OptionItem<int>> ScalingChoices { get; }
     public IReadOnlyList<OptionItem<int>> SoundChoices { get; }
     public IReadOnlyList<OptionItem<int>> TransitionChoices { get; }
     public IReadOnlyList<OptionItem<int>> EntryTransitionChoices { get; }
     public IReadOnlyList<OptionItem<int>> RotationChoices { get; }
+    public IReadOnlyList<OptionItem<int>> MotionChoices { get; }
+
+    [ObservableProperty] private int _motionChoice;
+
+    partial void OnMotionChoiceChanged(int value) =>
+        UpdateConfig(c => c with { ImageMotion = value switch { 1 => Core.Models.ImageMotion.None, 2 => Core.Models.ImageMotion.KenBurns, _ => null } });
 
     /// <summary>Choosing a screen here copies its playlist (then resets to 0).</summary>
     [ObservableProperty] private int? _copySourceChoice = 0;
@@ -227,7 +242,8 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
             BackgroundColor = config.BackgroundColor ?? settings.BackgroundColor;
             HasOwnDuration = config.DefaultImageDurationSeconds is not null;
             DefaultDuration = config.DefaultImageDurationSeconds ?? settings.DefaultImageDurationSeconds;
-            TransitionChoice = config.Transition switch { TransitionType.None => 1, TransitionType.Fade => 2, _ => 0 };
+            TransitionChoice = TransitionToChoice(config.Transition);
+            MotionChoice = config.ImageMotion switch { Core.Models.ImageMotion.None => 1, Core.Models.ImageMotion.KenBurns => 2, _ => 0 };
             HasOwnTransitionDuration = config.TransitionDurationSeconds is not null;
             TransitionDuration = config.TransitionDurationSeconds ?? settings.TransitionDurationSeconds;
             HasOwnHours = config.OperatingHours is not null;
@@ -235,6 +251,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
             HoursEnabled = hours.Enabled;
             HoursAllowDisplaySleep = hours.AllowDisplaySleep;
             Hours.Editor.Load(hours.Days, hours.Open, hours.Close);
+            Overlays.Load(config.Overlays, _playlist.Items);
             GeneralDurationText = _loc.Format("Editor_GeneralValue", $"{settings.DefaultImageDurationSeconds:0.#} {_loc.Get("Unit_Seconds")}");
             AudioNote = settings.AudioScreen is { } audio && audio != Number
                 ? _loc.Format("Editor_AudioOtherScreen", audio)
@@ -267,6 +284,11 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
 
     private void SyncEntries()
     {
+        if (Config is { } overlayConfig)
+        {
+            Overlays.Load(overlayConfig.Overlays, _playlist.Items); // Logo choices follow the library.
+        }
+
         if (Number == 0)
         {
             Entries.Clear();
@@ -389,6 +411,15 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         {
             var at = SelectedEntry is { } selected ? selected.Position + 1 : (int?)null;
             _playlist.AddEntries(TargetScreen, picked, at);
+        }
+    }
+
+    [RelayCommand]
+    private void CreateSlide()
+    {
+        if (SlideEditorWindow.Edit(null, _loc) is { } slide)
+        {
+            _slides.Create(slide, new[] { TargetScreen });
         }
     }
 
@@ -643,8 +674,12 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         }
     }
 
-    partial void OnTransitionChoiceChanged(int value) =>
-        UpdateConfig(c => c with { Transition = value switch { 1 => TransitionType.None, 2 => TransitionType.Fade, _ => null } });
+    partial void OnTransitionChoiceChanged(int value) => UpdateConfig(c => c with { Transition = ChoiceToTransition(value) });
+
+    /// <summary>0 = inherit, otherwise the transition's enum value + 1.</summary>
+    internal static int TransitionToChoice(TransitionType? transition) => transition is { } t ? (int)t + 1 : 0;
+
+    internal static TransitionType? ChoiceToTransition(int choice) => choice >= 1 && Enum.IsDefined((TransitionType)(choice - 1)) ? (TransitionType)(choice - 1) : null;
 
     partial void OnHasOwnTransitionDurationChanged(bool value) =>
         UpdateConfig(c => c with { TransitionDurationSeconds = value ? TransitionDuration : null });

@@ -7,7 +7,7 @@ kendi medyasını oynatabilir. İnternet gerektirmez.
 
 - .NET 8 / WPF, MVVM (CommunityToolkit.Mvvm), tek dosya self-contained `.exe`
 - Türkçe / İngilizce arayüz (varsayılan: işletim sistemi dili, ayarlardan canlı değiştirilebilir)
-- Windows 10 (1809+) / 11, x64 – **Windows 7, 8 ve 8.1 desteklenmez** (bkz. [Sistem gereksinimleri](#sistem-gereksinimleri))
+- Windows 10 (1809+) / 11, x64; Windows 11 on ARM da çalışır – **Windows 7, 8 ve 8.1 desteklenmez** (bkz. [Sistem gereksinimleri](#sistem-gereksinimleri))
 
 ---
 
@@ -15,16 +15,20 @@ kendi medyasını oynatabilir. İnternet gerektirmez.
 
 | Alan | Ayrıntı |
 |---|---|
-| Oynatıcı | Kenarlıksız, en üstte duran tam ekran pencere; imleç gizli; A/B katmanlı ön yükleme ve fade ile siyah karesiz geçiş; animasyonlu GIF |
-| Formatlar | **Resim:** JPG, JPEG, PNG, BMP, GIF, WEBP, HEIC · **Video:** MP4, MOV, M4V (H.264 + AAC tam destekli; WMV, AVI, MKV, WEBM uyarıyla) · **PDF:** her sayfa bir görsel olur |
-| Kütüphane | Her dosya diskte **bir kez** saklanır, ekranlar paylaşır; arama, görünen ad, varsayılan süre/plan, 10 sn içinde geri alınabilir silme |
+| Oynatıcı | Kenarlıksız, en üstte duran tam ekran pencere; imleç gizli; A/B katmanlı ön yükleme ile siyah karesiz geçiş; **9 geçiş efekti** (fade, kaydırma, yukarı kaydırma, yakınlaşma, arka plana karartma, silme, daire, bulanıklaşma); resimlerde **Ken Burns** hareketi; animasyonlu GIF ve WEBP |
+| Formatlar | **Resim:** JPG, JPEG, JFIF, PNG, BMP, GIF, TIFF, WEBP, HEIC, AVIF · **Video:** MP4, MOV, M4V (H.264 + AAC tam destekli; WMV, AVI, MKV, WEBM, 3GP, MPG, TS/M2TS uyarıyla) · **PDF:** her sayfa bir görsel olur · **Sunum:** PPTX, PPT, ODP (PowerPoint veya LibreOffice ile PDF'e çevrilir) |
+| Slayt oluşturucu | Dosya olmadan **duyuru, fiyat listesi/menü ve QR kod** (bağlantı, metin, Wi-Fi) slaytları; hazır temalar, renk seçici, dikey ekran, canlı önizleme; sonradan düzenlenebilir |
+| Ekran üstü | Ekran başına **saat/tarih**, **kayan yazı** ve **logo** (konum, boyut, saydamlık, renk) |
+| Kütüphane | Her dosya diskte **bir kez** saklanır, ekranlar paylaşır; arama, **filtre** (resim/video/slayt/hiçbir ekranda olmayan/uyarılı/şu an oynamayan), **sıralama** (ad, en yeni, en büyük), görünen ad, varsayılan süre/plan, 10 sn içinde geri alınabilir silme |
+| İstatistik | Hangi medyanın hangi ekranda kaç kez ve ne kadar gösterildiği (90 gün); **CSV** (Excel) dışa aktarma |
+| Telefondan yönetim | Aynı Wi-Fi'daki telefondan PIN ile giriş: gösterimi başlat/durdur, ekranları aç/kapat, sonraki öğe, medya yükle, aktif/pasif, ekran ataması, silme. QR kodla açılır; internet gerekmez |
 | Ekran listeleri | Her ekranın **kendi oynatma listesi**: bağımsız sıra, süre, aktif/pasif, geçiş, tarih ve gün/saat planı; aynı medya bir listede birden çok kez; başka ekrandan kopyala, listeyi bağla, **senkron oynat** |
 | Kopya kontrolü | Birebir aynı dosya (SHA-256), görsel olarak aynı resim (algısal parmak izi), muhtemelen aynı video ve aynı ad/yeni sürüm tespit edilir; ne yapılacağı sorulur |
 | Planlama | Öğe başına tarih aralığı + gün + saat (gece yarısını geçebilir); genel **çalışma saatleri** (dışında siyah ekran) |
 | İçe aktarma | İlerleme göstergesi, kopya dosya tespiti, disk alanı kontrolü, codec/çözünürlük/HEIC uyarıları, **izlenen klasör** (USB / OneDrive / ağ klasörü) |
 | Çoklu ekran | Bağlı tüm ekranları algılar; her ekran açılıp kapatılabilir, isim ve renk alır. Ekrana özel döndürme (dikey TV), ölçekleme, arka plan, ses/ses seviyesi, varsayılan süre, geçiş ve çalışma saatleri; sesin tek ekrandan çıkması |
 | Ekran | "Ekranları Tanımla", ekran kaybolursa **gizle ve bekle** (veya ana ekranda göster) + 5 sn'de bir yeniden deneme |
-| Sistem | Kurulum, **GitHub'dan otomatik güncelleme** (doğrulanmış indirme, sessiz saatte kurulum, sorunlu sürümde otomatik geri dönüş), Başlat menüsü kısayolu, Windows ile otomatik başlama, tek örnek, tray ikonu, değiştirilebilir global kısayollar, uyku engelleme, ayarlar için PIN, yedekle / geri yükle |
+| Sistem | İlk açılış sihirbazı, kurulum, **GitHub'dan otomatik güncelleme** (doğrulanmış indirme, sessiz saatte kurulum, sorunlu sürümde otomatik geri dönüş), Başlat menüsü kısayolu, Windows ile otomatik başlama, tek örnek, tray ikonu (ekran başına aç/kapat, sonraki, önizleme), değiştirilebilir global kısayollar, uyku engelleme, ayarlar için PIN, yedekle / geri yükle |
 | Dayanıklılık | Atomik JSON yazımı, bozuk dosyada yedekten veya varsayılandan devam, global hata yakalama, çökmede kendini yeniden başlatma, art arda çökmede **güvenli mod** |
 
 ### Kısayollar
@@ -67,8 +71,54 @@ bunu anlatan bir Windows bildirimi gösterilir.
   belirlemediyse bu değerler kullanılır.
 - Kütüphaneden silinen medya tüm ekranlardan da kalkar. 10 saniye boyunca **Geri al** butonu görünür;
   ardından dosya diskten silinir.
-- **PDF:** Her sayfa ayrı bir görsel olur. **Video:** H.264 MP4/MOV önerilir. HEVC, 4K ve eksik
-  HEIC/WEBP codec'i için uyarı verilir.
+- **PDF:** Her sayfa ayrı bir görsel olur. **Sunum (PPTX/PPT/ODP):** Bilgisayarda PowerPoint veya
+  LibreOffice varsa otomatik PDF'e çevrilip sayfa sayfa eklenir; yoksa sunumu PDF olarak kaydedip ekleyin.
+  **Video:** H.264 MP4/MOV önerilir. HEVC, 4K ve eksik HEIC/WEBP/AVIF codec'i için uyarı verilir.
+
+### Slayt oluşturucu
+
+**Slayt oluştur** butonu (Kütüphane ve ekran listeleri) dosya gerektirmeyen slaytlar hazırlar:
+
+- **Duyuru:** Üst başlık, büyük başlık ve metin.
+- **Fiyat listesi / menü:** Ürün, fiyat ve isteğe bağlı açıklama satırları; 7'den fazla satırda iki sütun.
+- **QR kod:** Bağlantı (menü, Instagram, Google yorum), serbest metin veya **Wi-Fi ağı** (misafir telefonu
+  okutunca şifresiz bağlanır).
+
+Hazır temalar ve renk seçici (palet + detaylı seçim + HEX), dikey ekran (1080 × 1920) ve yazı boyutu
+ayarlanabilir. Slayt 1920 × 1080 PNG olarak kaydedilir; **Slaytı düzenle** ile değiştirildiğinde ekranlardaki
+yeri ve ayarları korunur.
+
+### Ekran üstü öğeler (Ekranlar › Ekran üstü)
+
+Her ekran için ayrı ayrı, tüm içeriklerin üstünde sürekli görünen:
+
+- **Saat ve tarih** (4 köşeden biri, saniye isteğe bağlı, uygulama dilinde).
+- **Kayan yazı** (üstte/altta, hız, şerit ve yazı rengi).
+- **Logo** (kütüphanedeki bir resim; köşe, genişlik ve saydamlık). Şeffaf PNG en iyi sonucu verir.
+
+Çalışma saatleri dışındaki siyah ekranda gösterilmezler.
+
+### Telefondan yönetim (Genel sekmesi)
+
+1. **Telefon PIN'i** belirleyin (4–12 rakam) ve **Telefondan yönetimi aç**'ı işaretleyin.
+2. Ayarlarda gösterilen adresi (ör. `http://192.168.1.20:8787`) telefonda açın veya QR kodu okutun.
+3. PIN ile giriş yapın.
+
+Telefondan gösterimi başlatıp durdurabilir, ekranları açıp kapatabilir, ekran başına sonraki öğeye
+geçebilir, medya yükleyebilir (yüklenen medya "otomatik ekle" açık ekranlara gelir), medyayı aktif/pasif
+yapabilir, ekranlara atayabilir ve silebilirsiniz.
+
+- Yalnızca yerel ağda çalışır; internet veya bulut hesabı gerekmez.
+- İlk açılışta Windows Güvenlik Duvarı izin isteyebilir: **Özel ağlar** için izin verin.
+- 5 yanlış PIN'den sonra o cihaz 1 dakika (sonra artan sürelerle) bekletilir. PIN değişince tüm
+  telefonların oturumu kapanır. Herkese açık ağlarda (kafe misafir Wi-Fi'ı dahil) açmamanız önerilir;
+  personel ağını kullanın.
+
+### Gösterim istatistikleri (Genel sekmesi)
+
+Her medyanın ekran ve gün bazında gösterim sayısı ve süresi kaydedilir (son 90 gün). Kütüphanede seçili
+medyanın bugün / 7 gün / 30 gün özeti görünür. **CSV olarak dışa aktar** Excel'de doğrudan açılan bir
+dosya üretir (reklam/kampanya raporu için).
 
 ### Kopya kontrolü
 
@@ -170,7 +220,8 @@ göster"** seçilebilir; ana ekran başka bir ekrana atanmamışsa kullanılır.
 | | |
 |---|---|
 | İşletim sistemi | **Windows 11** veya **Windows 10 sürüm 1809 ve üzeri**, 64 bit (x64) |
-| Desteklenmeyen | **Windows 7, Windows 8, Windows 8.1**, 32 bit Windows, ARM |
+| ARM | **Windows 11 on ARM** (Snapdragon PC'ler, Mac'te Parallels): Windows'un yerleşik x64 emülasyonuyla çalışır ve test edilmiştir |
+| Desteklenmeyen | **Windows 7, Windows 8, Windows 8.1**, 32 bit Windows, Windows 10 on ARM (x64 emülasyonu yok) |
 | Donanım | 1080p video oynatabilen herhangi bir PC (4 GB RAM önerilir), HDMI çıkışı |
 | Ek kurulum | Gerekmez: .NET çalışma ortamı exe'nin içindedir. HEIC/WEBP için Microsoft Store'daki ücretsiz görüntü uzantıları gerekebilir |
 

@@ -19,6 +19,8 @@ public interface IDialogService
     string? PickSaveBackup(string defaultName);
 
     string? PickBackupToRestore();
+
+    string? PickSaveCsv(string defaultName);
 }
 
 /// <summary>
@@ -69,6 +71,18 @@ public sealed class DialogService : IDialogService
             DefaultExt = ".zip",
             Filter = $"{_loc.Get("Backup_FileType")}|*.zip",
             Title = _loc.Get("Backup_Create"),
+        };
+        return WithOwner(owner => dialog.ShowDialog(owner) == true ? dialog.FileName : null);
+    }
+
+    public string? PickSaveCsv(string defaultName)
+    {
+        var dialog = new SaveFileDialog
+        {
+            FileName = defaultName,
+            DefaultExt = ".csv",
+            Filter = $"{_loc.Get("Stats_FileType")}|*.csv",
+            Title = _loc.Get("Stats_Export"),
         };
         return WithOwner(owner => dialog.ShowDialog(owner) == true ? dialog.FileName : null);
     }

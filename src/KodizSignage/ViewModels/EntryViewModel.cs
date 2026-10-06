@@ -90,7 +90,7 @@ public sealed partial class EntryViewModel : ObservableObject
             _screenDefaultDuration = screenDefaultDuration;
             DurationOverride = entry.DurationSeconds;
             IsActive = resolved.IsActive;
-            TransitionChoice = entry.Transition switch { TransitionType.None => 1, TransitionType.Fade => 2, _ => 0 };
+            TransitionChoice = ScreenEditorViewModel.TransitionToChoice(entry.Transition);
             OverrideDates = entry.OverrideDates;
             StartDate = resolved.StartDate;
             EndDate = resolved.EndDate;
@@ -133,8 +133,7 @@ public sealed partial class EntryViewModel : ObservableObject
     // Storing an override only when it differs from the library keeps "default" visible.
     partial void OnIsActiveChanged(bool value) => Commit(Entry with { IsActive = value == Media.IsActive ? null : value });
 
-    partial void OnTransitionChoiceChanged(int value) =>
-        Commit(Entry with { Transition = value switch { 1 => TransitionType.None, 2 => TransitionType.Fade, _ => null } });
+    partial void OnTransitionChoiceChanged(int value) => Commit(Entry with { Transition = ScreenEditorViewModel.ChoiceToTransition(value) });
 
     partial void OnOverrideDatesChanged(bool value) =>
         Commit(Entry with { OverrideDates = value, StartDate = value ? Media.StartDate : null, EndDate = value ? Media.EndDate : null });

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,6 +26,8 @@ public sealed partial class GeneralViewModel : ObservableObject
     private readonly IDialogService _dialogs;
     private readonly IAppLifetime _lifetime;
     private readonly IUpdateService _updates;
+    private readonly IPlayStatsService _stats;
+    private readonly IWebPanelService _web;
     private readonly ILogger _log;
     private bool _syncing;
 
@@ -41,8 +44,13 @@ public sealed partial class GeneralViewModel : ObservableObject
         IDialogService dialogs,
         IAppLifetime lifetime,
         IUpdateService updates,
+        IPlayStatsService stats,
+        IWebPanelService web,
         ILogger log)
     {
+        _web = web;
+        _web.StateChanged += (_, _) => SyncWebState();
+        _stats = stats;
         _updates = updates;
         _updates.StateChanged += (_, _) => Application.Current.Dispatcher.BeginInvoke(SyncUpdateState);
         _settings = settings;
@@ -79,6 +87,18 @@ public sealed partial class GeneralViewModel : ObservableObject
         {
             new OptionItem<TransitionType>(TransitionType.None, "Transition_None", loc),
             new OptionItem<TransitionType>(TransitionType.Fade, "Transition_Fade", loc),
+            new OptionItem<TransitionType>(TransitionType.Slide, "Transition_Slide", loc),
+            new OptionItem<TransitionType>(TransitionType.Zoom, "Transition_Zoom", loc),
+            new OptionItem<TransitionType>(TransitionType.SlideUp, "Transition_SlideUp", loc),
+            new OptionItem<TransitionType>(TransitionType.FadeThroughBackground, "Transition_FadeThroughBackground", loc),
+            new OptionItem<TransitionType>(TransitionType.Wipe, "Transition_Wipe", loc),
+            new OptionItem<TransitionType>(TransitionType.Circle, "Transition_Circle", loc),
+            new OptionItem<TransitionType>(TransitionType.Blur, "Transition_Blur", loc),
+        };
+        Motions = new[]
+        {
+            new OptionItem<ImageMotion>(ImageMotion.None, "Motion_None", loc),
+            new OptionItem<ImageMotion>(ImageMotion.KenBurns, "Motion_KenBurns", loc),
         };
         ScalingModes = new[]
         {
@@ -91,6 +111,7 @@ public sealed partial class GeneralViewModel : ObservableObject
         {
             foreach (var o in Languages) o.Refresh(_loc);
             foreach (var o in Transitions) o.Refresh(_loc);
+            foreach (var o in Motions) o.Refresh(_loc);
             foreach (var o in ScalingModes) o.Refresh(_loc);
             OnPropertyChanged(nameof(VersionText));
             OnPropertyChanged(nameof(LicenseText));
@@ -103,6 +124,11 @@ public sealed partial class GeneralViewModel : ObservableObject
 
     public IReadOnlyList<OptionItem<AppLanguage>> Languages { get; }
     public IReadOnlyList<OptionItem<TransitionType>> Transitions { get; }
+    public IReadOnlyList<OptionItem<ImageMotion>> Motions { get; }
+
+    [ObservableProperty] private ImageMotion _imageMotion;
+
+    partial void OnImageMotionChanged(ImageMotion value) => Save(s => s with { ImageMotion = value });
     public IReadOnlyList<OptionItem<ScalingMode>> ScalingModes { get; }
 
     public IReadOnlyList<string> ColorPresets { get; } = new[] { "#000000", "#FFFFFF", "#1E1E1E", "#0F172A", "#7F1D1D", "#14532D" };
@@ -157,7 +183,7 @@ public sealed partial class GeneralViewModel : ObservableObject
     [ObservableProperty] private bool _videoSoundEnabled;
     [ObservableProperty] private double _volumePercent;
 
-    public bool IsFade => Transition == TransitionType.Fade;
+    public bool IsFade => Transition != TransitionType.None;
 
     private void SyncFromSettings()
     {
@@ -170,6 +196,7 @@ public sealed partial class GeneralViewModel : ObservableObject
             AutoPlayOnLaunch = s.AutoPlayOnLaunch;
             DefaultImageDuration = s.DefaultImageDurationSeconds;
             Transition = s.Transition;
+            ImageMotion = s.ImageMotion;
             TransitionDuration = s.TransitionDurationSeconds;
             Scaling = s.Scaling;
             if (IsBackgroundColorValid)
@@ -187,6 +214,9 @@ public sealed partial class GeneralViewModel : ObservableObject
             OnPropertyChanged(nameof(HasPin));
             CheckForUpdates = s.CheckForUpdates;
             AutoInstallUpdates = s.AutoInstallUpdates;
+            WebPanelEnabled = s.WebPanelEnabled;
+            WebPanelPort = s.WebPanelPort;
+            SyncWebState();
             RefreshSystemInfo();
             SyncUpdateState();
         }
@@ -398,6 +428,125 @@ public sealed partial class GeneralViewModel : ObservableObject
         if (await RunBusyAsync("Backup_Creating", progress => _backup.CreateAsync(path, progress, CancellationToken.None)))
         {
             _dialogs.Info(_loc.Format("Backup_Created", path));
+        }
+    }
+
+    // ---- Phone panel ---------------------------------------------------------------------------
+
+    [ObservableProperty] private bool _webPanelEnabled;
+    [ObservableProperty] private double _webPanelPort;
+    [ObservableProperty] private string _newWebPin = string.Empty;
+    [ObservableProperty] private string _webStatusText = string.Empty;
+    [ObservableProperty] private bool _webIsRunning;
+    [ObservableProperty] private IReadOnlyList<string> _webUrls = Array.Empty<string>();
+    [ObservableProperty] private FrameworkElement? _webQr;
+
+    public bool HasWebPin => !string.IsNullOrEmpty(_settings.Current.WebPanelPinHash);
+
+    private void SyncWebState()
+    {
+        OnPropertyChanged(nameof(HasWebPin));
+        WebIsRunning = _web.IsRunning;
+        WebUrls = _web.Urls;
+        WebStatusText = _web.Error is { } error ? error
+            : _web.IsRunning ? (WebUrls.Count > 0 ? _loc.Get("Web_Running") : _loc.Get("Web_NoNetwork"))
+            : !HasWebPin ? _loc.Get("Web_NeedPin")
+            : _loc.Get("Web_Off");
+        WebQr = WebUrls.Count > 0 ? SlideRenderer.QrElement(WebUrls[0]) : null;
+    }
+
+    partial void OnWebPanelEnabledChanged(bool value)
+    {
+        if (_syncing)
+        {
+            return;
+        }
+
+        if (value && !HasWebPin)
+        {
+            _dialogs.Warning(_loc.Get("Web_NeedPin"));
+            Application.Current.Dispatcher.BeginInvoke(() => WebPanelEnabled = false);
+            return;
+        }
+
+        Save(s => s with { WebPanelEnabled = value });
+    }
+
+    partial void OnWebPanelPortChanged(double value)
+    {
+        if (double.IsFinite(value) && value is >= 1024 and <= 65535)
+        {
+            Save(s => s with { WebPanelPort = (int)value });
+        }
+    }
+
+    [RelayCommand]
+    private void SaveWebPin()
+    {
+        var pin = NewWebPin.Trim();
+        if (!PinHasher.IsValidPin(pin))
+        {
+            _dialogs.Warning(_loc.Get("Pin_Invalid"));
+            return;
+        }
+
+        if (!_pin.Unlock())
+        {
+            return;
+        }
+
+        _settings.Update(s => s with { WebPanelPinHash = PinHasher.Hash(pin) });
+        _web.SignOutAll();
+        NewWebPin = string.Empty;
+        _dialogs.Info(_loc.Get("Web_PinSaved"));
+        SyncWebState();
+    }
+
+    [RelayCommand]
+    private void CopyWebUrl()
+    {
+        if (WebUrls.Count > 0)
+        {
+            try
+            {
+                Clipboard.SetText(WebUrls[0]);
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+            }
+        }
+    }
+
+    [RelayCommand]
+    private void ExportStats()
+    {
+        var path = _dialogs.PickSaveCsv($"kodiz-signage-istatistik-{DateTime.Now:yyyy-MM-dd}.csv");
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var headers = new[] { "Stats_ColDate", "Stats_ColScreen", "Stats_ColMedia", "Stats_ColPlays", "Stats_ColSeconds", "Stats_ColTime" }.Select(_loc.Get).ToList();
+            string ScreenName(int n) => _settings.Current.GetScreen(n)?.Name is { } name ? $"{n} · {name}" : _loc.Format("Screen_Default", n);
+            // UTF-8 with BOM so Excel shows Turkish characters correctly.
+            File.WriteAllText(path, _stats.ExportCsv(headers, ScreenName), new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            _dialogs.Info(_loc.Format("Stats_Exported", path));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.Warning(ex, "Statistics export failed");
+            _dialogs.Warning(_loc.Format("Stats_ExportFailed", ex.Message));
+        }
+    }
+
+    [RelayCommand]
+    private void ResetStats()
+    {
+        if (_pin.Unlock() && _dialogs.Confirm(_loc.Get("Stats_ResetConfirm")))
+        {
+            _stats.Reset();
         }
     }
 

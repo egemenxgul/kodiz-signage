@@ -19,6 +19,7 @@ public sealed class AppPaths
     public string LogFolder => Path.Combine(Root, "logs");
     public string SettingsFile => Path.Combine(Root, "settings.json");
     public string PlaylistFile => Path.Combine(Root, "playlist.json");
+    public string StatsFile => Path.Combine(Root, "stats.json");
 
     public void EnsureCreated()
     {

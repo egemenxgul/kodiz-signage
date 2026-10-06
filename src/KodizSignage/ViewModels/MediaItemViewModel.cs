@@ -127,6 +127,11 @@ public sealed partial class MediaItemViewModel : ObservableObject
     public bool IsVideo => Item.Type == MediaType.Video;
     public bool HasWarning => Item.HasCompatibilityWarning;
     public bool IsSynced => Item.SyncFileName is not null;
+    public bool IsSlide => Item.Slide is not null;
+
+    // Sort keys of the library list.
+    public DateTime AddedAt => Item.AddedAt ?? DateTime.MinValue;
+    public long FileSize => Item.FileSize ?? 0;
     public bool HasCustomSchedule => Item.HasSchedule || Item.StartDate is not null || Item.EndDate is not null;
 
     public string VideoLength => Item.VideoDurationSeconds is { } s ? FormatLength(TimeSpan.FromSeconds(s)) : "–";
@@ -153,6 +158,7 @@ public sealed partial class MediaItemViewModel : ObservableObject
             OnPropertyChanged(nameof(VideoSize));
             OnPropertyChanged(nameof(HasWarning));
             OnPropertyChanged(nameof(IsSynced));
+            OnPropertyChanged(nameof(IsSlide));
             OnPropertyChanged(nameof(HasCustomSchedule));
         }
         finally

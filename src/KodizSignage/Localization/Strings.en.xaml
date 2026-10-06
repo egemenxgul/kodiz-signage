@@ -34,7 +34,7 @@
     <sys:String x:Key="Media_AddFiles" xml:space="preserve">Add Files</sys:String>
     <sys:String x:Key="Media_DropHint" xml:space="preserve">You can drag &amp; drop files or folders onto this window</sys:String>
     <sys:String x:Key="Media_EmptyTitle" xml:space="preserve">No media yet</sys:String>
-    <sys:String x:Key="Media_EmptyHint" xml:space="preserve">Add images (JPG, PNG, GIF, WEBP, HEIC), videos (MP4, MOV) and PDFs</sys:String>
+    <sys:String x:Key="Media_EmptyHint" xml:space="preserve">Add images (JPG, PNG, GIF, WEBP, HEIC, AVIF, TIFF), videos (MP4, MOV, MKV…), PDFs and presentations (PPTX, ODP) – or create your own slide</sys:String>
     <sys:String x:Key="Media_Count" xml:space="preserve">{0} items · {1} playable now</sys:String>
     <sys:String x:Key="Media_Col_Name" xml:space="preserve">Name</sys:String>
     <sys:String x:Key="Media_Col_Type" xml:space="preserve">Type</sys:String>
@@ -411,4 +411,173 @@
     <sys:String x:Key="License_Notices" xml:space="preserve">Third-party notices</sys:String>
     <sys:String x:Key="License_Source" xml:space="preserve">Source code</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Invalid color. Use #RRGGBB.</sys:String>
+    <sys:String x:Key="Media_OfficeMissing" xml:space="preserve">Presentations could not be converted (PowerPoint or LibreOffice is not installed). Save them as PDF and add the PDF instead:&#10;{0}</sys:String>
+    <sys:String x:Key="Transition_Slide" xml:space="preserve">Slide</sys:String>
+    <sys:String x:Key="Transition_Zoom" xml:space="preserve">Zoom</sys:String>
+    <sys:String x:Key="Motion_Title" xml:space="preserve">Image motion</sys:String>
+    <sys:String x:Key="Motion_None" xml:space="preserve">Still</sys:String>
+    <sys:String x:Key="Motion_KenBurns" xml:space="preserve">Ken Burns (slow zoom and pan)</sys:String>
+    <sys:String x:Key="Motion_Hint" xml:space="preserve">Images slowly zoom and pan while shown, bringing still screens to life.</sys:String>
+    <sys:String x:Key="Slide_WindowTitle" xml:space="preserve">Slide</sys:String>
+    <sys:String x:Key="Slide_CreateButton" xml:space="preserve">Create slide</sys:String>
+    <sys:String x:Key="Slide_CreateHint" xml:space="preserve">Make an announcement, price list or QR code slide – no file needed</sys:String>
+    <sys:String x:Key="Slide_EditButton" xml:space="preserve">Edit slide</sys:String>
+    <sys:String x:Key="Slide_Create" xml:space="preserve">Add to library</sys:String>
+    <sys:String x:Key="Slide_Update" xml:space="preserve">Save changes</sys:String>
+    <sys:String x:Key="Slide_SaveHint" xml:space="preserve">The slide is saved as an image and plays like any other media.</sys:String>
+    <sys:String x:Key="Slide_Template" xml:space="preserve">Template</sys:String>
+    <sys:String x:Key="Slide_TemplateAnnouncement" xml:space="preserve">Announcement</sys:String>
+    <sys:String x:Key="Slide_TemplatePriceList" xml:space="preserve">Price list / menu</sys:String>
+    <sys:String x:Key="Slide_TemplateQr" xml:space="preserve">QR code</sys:String>
+    <sys:String x:Key="Slide_Title" xml:space="preserve">Title</sys:String>
+    <sys:String x:Key="Slide_Subtitle" xml:space="preserve">Subtitle / label</sys:String>
+    <sys:String x:Key="Slide_Body" xml:space="preserve">Text</sys:String>
+    <sys:String x:Key="Slide_Rows" xml:space="preserve">Rows</sys:String>
+    <sys:String x:Key="Slide_RowName" xml:space="preserve">Item</sys:String>
+    <sys:String x:Key="Slide_RowPrice" xml:space="preserve">Price</sys:String>
+    <sys:String x:Key="Slide_RowNote" xml:space="preserve">Description (optional)</sys:String>
+    <sys:String x:Key="Slide_AddRow" xml:space="preserve">Add row</sys:String>
+    <sys:String x:Key="Slide_QrContent" xml:space="preserve">QR content</sys:String>
+    <sys:String x:Key="Slide_QrLink" xml:space="preserve">Link (website, menu, Instagram…)</sys:String>
+    <sys:String x:Key="Slide_QrText" xml:space="preserve">Plain text</sys:String>
+    <sys:String x:Key="Slide_QrWifi" xml:space="preserve">Wi-Fi network</sys:String>
+    <sys:String x:Key="Slide_QrTextHint" xml:space="preserve">e.g. https://example.com</sys:String>
+    <sys:String x:Key="Slide_WifiName" xml:space="preserve">Network name (SSID)</sys:String>
+    <sys:String x:Key="Slide_WifiPassword" xml:space="preserve">Password</sys:String>
+    <sys:String x:Key="Slide_Theme" xml:space="preserve">Theme</sys:String>
+    <sys:String x:Key="Slide_Background" xml:space="preserve">Background</sys:String>
+    <sys:String x:Key="Slide_Gradient" xml:space="preserve">Gradient (2nd color)</sys:String>
+    <sys:String x:Key="Slide_TextColor" xml:space="preserve">Text color</sys:String>
+    <sys:String x:Key="Slide_AccentColor" xml:space="preserve">Accent color</sys:String>
+    <sys:String x:Key="Slide_Portrait" xml:space="preserve">For portrait screens (1080 × 1920)</sys:String>
+    <sys:String x:Key="Slide_TextSize" xml:space="preserve">Text size</sys:String>
+    <sys:String x:Key="Slide_DefaultTitle" xml:space="preserve">Welcome</sys:String>
+    <sys:String x:Key="Slide_DefaultBody" xml:space="preserve">20% off all hot drinks today</sys:String>
+    <sys:String x:Key="Slide_DefaultRow1" xml:space="preserve">Tea</sys:String>
+    <sys:String x:Key="Slide_DefaultRow2" xml:space="preserve">Turkish coffee</sys:String>
+    <sys:String x:Key="Theme_Night" xml:space="preserve">Night</sys:String>
+    <sys:String x:Key="Theme_Coffee" xml:space="preserve">Coffee</sys:String>
+    <sys:String x:Key="Theme_Fresh" xml:space="preserve">Fresh</sys:String>
+    <sys:String x:Key="Theme_Berry" xml:space="preserve">Berry</sys:String>
+    <sys:String x:Key="Theme_Ocean" xml:space="preserve">Ocean</sys:String>
+    <sys:String x:Key="Theme_Paper" xml:space="preserve">Paper</sys:String>
+    <sys:String x:Key="Theme_Black" xml:space="preserve">Black</sys:String>
+    <sys:String x:Key="Overlay_Tab" xml:space="preserve">On screen</sys:String>
+    <sys:String x:Key="Overlay_Info" xml:space="preserve">The clock, ticker and logo stay on top of all content on this screen.</sys:String>
+    <sys:String x:Key="Overlay_Clock" xml:space="preserve">Clock and date</sys:String>
+    <sys:String x:Key="Overlay_ClockEnabled" xml:space="preserve">Show the clock</sys:String>
+    <sys:String x:Key="Overlay_ClockDate" xml:space="preserve">Also show the date</sys:String>
+    <sys:String x:Key="Overlay_ClockSeconds" xml:space="preserve">Show seconds</sys:String>
+    <sys:String x:Key="Overlay_Position" xml:space="preserve">Position</sys:String>
+    <sys:String x:Key="Overlay_TopLeft" xml:space="preserve">Top left</sys:String>
+    <sys:String x:Key="Overlay_TopRight" xml:space="preserve">Top right</sys:String>
+    <sys:String x:Key="Overlay_BottomLeft" xml:space="preserve">Bottom left</sys:String>
+    <sys:String x:Key="Overlay_BottomRight" xml:space="preserve">Bottom right</sys:String>
+    <sys:String x:Key="Overlay_Bottom" xml:space="preserve">Bottom</sys:String>
+    <sys:String x:Key="Overlay_Top" xml:space="preserve">Top</sys:String>
+    <sys:String x:Key="Overlay_Ticker" xml:space="preserve">Ticker</sys:String>
+    <sys:String x:Key="Overlay_TickerEnabled" xml:space="preserve">Show the ticker</sys:String>
+    <sys:String x:Key="Overlay_TickerText" xml:space="preserve">Text</sys:String>
+    <sys:String x:Key="Overlay_TickerSpeed" xml:space="preserve">Speed</sys:String>
+    <sys:String x:Key="Overlay_TickerBackground" xml:space="preserve">Bar color</sys:String>
+    <sys:String x:Key="Overlay_TickerTextColor" xml:space="preserve">Text color</sys:String>
+    <sys:String x:Key="Overlay_Logo" xml:space="preserve">Logo</sys:String>
+    <sys:String x:Key="Overlay_LogoHint" xml:space="preserve">Pick an image from the library (a transparent PNG looks best).</sys:String>
+    <sys:String x:Key="Overlay_NoLogo" xml:space="preserve">No logo</sys:String>
+    <sys:String x:Key="Overlay_LogoMissing" xml:space="preserve">(deleted media)</sys:String>
+    <sys:String x:Key="Overlay_LogoSize" xml:space="preserve">Width (of the screen)</sys:String>
+    <sys:String x:Key="Overlay_LogoOpacity" xml:space="preserve">Opacity</sys:String>
+    <sys:String x:Key="Tray_Screens" xml:space="preserve">Screens</sys:String>
+    <sys:String x:Key="Tray_ScreenEnabled" xml:space="preserve">Show on this screen</sys:String>
+    <sys:String x:Key="Tray_ScreenPreview" xml:space="preserve">Preview window</sys:String>
+    <sys:String x:Key="Tray_ScreenOff" xml:space="preserve">Off</sys:String>
+    <sys:String x:Key="Tray_ScreenFallback" xml:space="preserve">Display missing – on the primary display</sys:String>
+    <sys:String x:Key="Transition_SlideUp" xml:space="preserve">Slide up</sys:String>
+    <sys:String x:Key="Transition_FadeThroughBackground" xml:space="preserve">Fade through background</sys:String>
+    <sys:String x:Key="Transition_Wipe" xml:space="preserve">Wipe (left to right)</sys:String>
+    <sys:String x:Key="Transition_Circle" xml:space="preserve">Circle (opens from the center)</sys:String>
+    <sys:String x:Key="Transition_Blur" xml:space="preserve">Blur</sys:String>
+    <sys:String x:Key="Library_FilterAll" xml:space="preserve">All media</sys:String>
+    <sys:String x:Key="Library_FilterImages" xml:space="preserve">Images</sys:String>
+    <sys:String x:Key="Library_FilterVideos" xml:space="preserve">Videos</sys:String>
+    <sys:String x:Key="Library_FilterSlides" xml:space="preserve">Slides</sys:String>
+    <sys:String x:Key="Library_FilterUnused" xml:space="preserve">On no screen</sys:String>
+    <sys:String x:Key="Library_FilterWarnings" xml:space="preserve">With warnings</sys:String>
+    <sys:String x:Key="Library_FilterNotPlaying" xml:space="preserve">Not playing now</sys:String>
+    <sys:String x:Key="Library_FilterTooltip" xml:space="preserve">Narrow the list</sys:String>
+    <sys:String x:Key="Library_SortOrder" xml:space="preserve">Library order</sys:String>
+    <sys:String x:Key="Library_SortName" xml:space="preserve">By name</sys:String>
+    <sys:String x:Key="Library_SortNewest" xml:space="preserve">Newest first</sys:String>
+    <sys:String x:Key="Library_SortLargest" xml:space="preserve">Largest file</sys:String>
+    <sys:String x:Key="Library_SortTooltip" xml:space="preserve">Sort (drag to reorder only in library order)</sys:String>
+    <sys:String x:Key="Stats_Section" xml:space="preserve">Play statistics</sys:String>
+    <sys:String x:Key="Stats_Description" xml:space="preserve">How often and how long each media was shown on each screen is recorded per day (last 90 days). Export it as CSV for ad and campaign reports.</sys:String>
+    <sys:String x:Key="Stats_Export" xml:space="preserve">Export as CSV</sys:String>
+    <sys:String x:Key="Stats_Reset" xml:space="preserve">Reset statistics</sys:String>
+    <sys:String x:Key="Stats_ResetConfirm" xml:space="preserve">Delete all play statistics?</sys:String>
+    <sys:String x:Key="Stats_Exported" xml:space="preserve">Statistics saved:&#10;{0}</sys:String>
+    <sys:String x:Key="Stats_ExportFailed" xml:space="preserve">Statistics could not be saved: {0}</sys:String>
+    <sys:String x:Key="Stats_FileType" xml:space="preserve">CSV file (Excel)</sys:String>
+    <sys:String x:Key="Stats_ColDate" xml:space="preserve">Date</sys:String>
+    <sys:String x:Key="Stats_ColScreen" xml:space="preserve">Screen</sys:String>
+    <sys:String x:Key="Stats_ColMedia" xml:space="preserve">Media</sys:String>
+    <sys:String x:Key="Stats_ColPlays" xml:space="preserve">Plays</sys:String>
+    <sys:String x:Key="Stats_ColSeconds" xml:space="preserve">Total seconds</sys:String>
+    <sys:String x:Key="Stats_ColTime" xml:space="preserve">Total time</sys:String>
+    <sys:String x:Key="Stats_None" xml:space="preserve">Not shown in the last 30 days</sys:String>
+    <sys:String x:Key="Stats_Summary" xml:space="preserve">Today {0} · 7 days: {1} plays ({2}) · 30 days: {3} ({4})</sys:String>
+    <sys:String x:Key="Stats_Hours" xml:space="preserve">{0} h {1} min</sys:String>
+    <sys:String x:Key="Stats_Minutes" xml:space="preserve">{0} min</sys:String>
+    <sys:String x:Key="Stats_Seconds" xml:space="preserve">{0} s</sys:String>
+    <sys:String x:Key="Stats_DetailsTooltip" xml:space="preserve">Plays on all screens (details: General › Play statistics › CSV)</sys:String>
+    <sys:String x:Key="Color_Open" xml:space="preserve">Palette and color picker</sys:String>
+    <sys:String x:Key="Color_HexHint" xml:space="preserve">HEX color code, e.g. #1E1B4B (the leading # is optional)</sys:String>
+    <sys:String x:Key="Color_Palette" xml:space="preserve">Palette</sys:String>
+    <sys:String x:Key="Color_Custom" xml:space="preserve">Custom color</sys:String>
+    <sys:String x:Key="Color_Hue" xml:space="preserve">Hue</sys:String>
+    <sys:String x:Key="Color_Revert" xml:space="preserve">Back to the previous color</sys:String>
+    <sys:String x:Key="Color_Done" xml:space="preserve">Done</sys:String>
+    <sys:String x:Key="Web_Section" xml:space="preserve">Phone control</sys:String>
+    <sys:String x:Key="Web_Description" xml:space="preserve">Start or stop playback, switch screens and upload media from a phone or tablet on the same Wi-Fi. No internet needed; works only on the local network.</sys:String>
+    <sys:String x:Key="Web_Pin" xml:space="preserve">Phone PIN (4–12 digits)</sys:String>
+    <sys:String x:Key="Web_SavePin" xml:space="preserve">Save PIN</sys:String>
+    <sys:String x:Key="Web_PinSet" xml:space="preserve">PIN set. Changing it signs every phone out.</sys:String>
+    <sys:String x:Key="Web_PinNotSet" xml:space="preserve">Set a PIN first.</sys:String>
+    <sys:String x:Key="Web_PinSaved" xml:space="preserve">Phone PIN saved.</sys:String>
+    <sys:String x:Key="Web_Enabled" xml:space="preserve">Enable phone control</sys:String>
+    <sys:String x:Key="Web_Port" xml:space="preserve">Port</sys:String>
+    <sys:String x:Key="Web_Running" xml:space="preserve">On – open one of these addresses on the phone or scan the QR code:</sys:String>
+    <sys:String x:Key="Web_NoNetwork" xml:space="preserve">On, but this PC is not connected to a network.</sys:String>
+    <sys:String x:Key="Web_NeedPin" xml:space="preserve">Set a phone PIN before enabling phone control.</sys:String>
+    <sys:String x:Key="Web_Off" xml:space="preserve">Off</sys:String>
+    <sys:String x:Key="Web_PortInUse" xml:space="preserve">Port {0} is used by another app. Enter a different port.</sys:String>
+    <sys:String x:Key="Web_CopyUrl" xml:space="preserve">Copy address</sys:String>
+    <sys:String x:Key="Web_QrHint" xml:space="preserve">Scan with the phone camera</sys:String>
+    <sys:String x:Key="Web_FirewallNote" xml:space="preserve">On first use Windows Firewall may ask for permission: allow &quot;Private networks&quot;. Don't enable it on public networks (cafés, hotels).</sys:String>
+    <sys:String x:Key="Web_TypeImage" xml:space="preserve">Image</sys:String>
+    <sys:String x:Key="Web_TypeVideo" xml:space="preserve">Video</sys:String>
+    <sys:String x:Key="Web_TypeSlide" xml:space="preserve">Slide</sys:String>
+    <sys:String x:Key="Web_Uploaded" xml:space="preserve">Added: {0}</sys:String>
+    <sys:String x:Key="Web_AlreadyInLibrary" xml:space="preserve">Already in the library: {0}</sys:String>
+    <sys:String x:Key="Web_Unsupported" xml:space="preserve">Unsupported file: {0}</sys:String>
+    <sys:String x:Key="Web_UploadFailed" xml:space="preserve">Could not add: {0}</sys:String>
+    <sys:String x:Key="Wizard_Welcome" xml:space="preserve">Welcome to Kodiz Signage</sys:String>
+    <sys:String x:Key="Wizard_WelcomeText" xml:space="preserve">Let's set up your screens in a few steps. You can change everything later in Settings.</sys:String>
+    <sys:String x:Key="Wizard_Language" xml:space="preserve">Dil / Language</sys:String>
+    <sys:String x:Key="Wizard_ScreensTitle" xml:space="preserve">Screens</sys:String>
+    <sys:String x:Key="Wizard_ScreensOne" xml:space="preserve">One display found. The show plays full screen on it.</sys:String>
+    <sys:String x:Key="Wizard_ScreensMany" xml:space="preserve">{0} displays found. Which ones should show content?</sys:String>
+    <sys:String x:Key="Wizard_Primary" xml:space="preserve">primary</sys:String>
+    <sys:String x:Key="Wizard_SameContent" xml:space="preserve">Same content on all screens (separate lists per screen can be set later)</sys:String>
+    <sys:String x:Key="Wizard_ScreensLater" xml:space="preserve">If you connect another TV later, add it under Settings › Screens.</sys:String>
+    <sys:String x:Key="Wizard_ContentTitle" xml:space="preserve">Content and startup</sys:String>
+    <sys:String x:Key="Wizard_ContentText" xml:space="preserve">Add images, videos, PDFs or presentations, or create a slide from a template.</sys:String>
+    <sys:String x:Key="Wizard_MediaCount" xml:space="preserve">{0} media in the library.</sys:String>
+    <sys:String x:Key="Wizard_Autostart" xml:space="preserve">Start automatically with Windows</sys:String>
+    <sys:String x:Key="Wizard_Autoplay" xml:space="preserve">Start playback right away when opened</sys:String>
+    <sys:String x:Key="Wizard_Shortcut" xml:space="preserve">During playback, double-click the tray icon or use the shortcut to open the settings.</sys:String>
+    <sys:String x:Key="Wizard_Skip" xml:space="preserve">Skip</sys:String>
+    <sys:String x:Key="Wizard_Back" xml:space="preserve">Back</sys:String>
+    <sys:String x:Key="Wizard_Next" xml:space="preserve">Next</sys:String>
+    <sys:String x:Key="Wizard_Finish" xml:space="preserve">Finish</sys:String>
 </ResourceDictionary>

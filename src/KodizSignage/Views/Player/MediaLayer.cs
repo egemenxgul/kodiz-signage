@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using KodizSignage.Core.Media;
 using KodizSignage.Core.Models;
 using KodizSignage.Services;
@@ -32,6 +33,12 @@ internal sealed class MediaLayer
         _video = video;
         _log = log;
 
+        // Layer transforms (slide / zoom transitions) and image transforms (Ken Burns).
+        _root.RenderTransformOrigin = new Point(0.5, 0.5);
+        _root.RenderTransform = new TransformGroup { Children = { LayerScale, LayerTranslate } };
+        _image.RenderTransformOrigin = new Point(0.5, 0.5);
+        _image.RenderTransform = new TransformGroup { Children = { _motionScale, _motionTranslate } };
+
         _video.MediaOpened += (_, _) => _openTcs?.TrySetResult(true);
         _video.MediaFailed += OnMediaFailed;
         _video.MediaEnded += (_, _) =>
@@ -43,6 +50,14 @@ internal sealed class MediaLayer
             }
         };
     }
+
+    private readonly ScaleTransform _motionScale = new(1, 1);
+    private readonly TranslateTransform _motionTranslate = new();
+    private static readonly Random MotionRandom = new();
+
+    public ScaleTransform LayerScale { get; } = new(1, 1);
+
+    public TranslateTransform LayerTranslate { get; } = new();
 
     public string Name { get; }
 
@@ -160,6 +175,50 @@ internal sealed class MediaLayer
         }
     }
 
+    /// <summary>Slow zoom and pan over <paramref name="duration"/> ("Ken Burns"); direction varies per item.</summary>
+    public void StartMotion(TimeSpan duration)
+    {
+        StopMotion();
+        if (IsVideo || duration <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        var zoomIn = MotionRandom.Next(2) == 0;
+        var (from, to) = zoomIn ? (1.0, 1.12) : (1.12, 1.0);
+        var panX = (MotionRandom.NextDouble() - 0.5) * 0.06 * Math.Max(1, _root.ActualWidth);
+        var panY = (MotionRandom.NextDouble() - 0.5) * 0.06 * Math.Max(1, _root.ActualHeight);
+        var ease = new SineEase { EasingMode = EasingMode.EaseInOut };
+
+        _motionScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(from, to, duration) { EasingFunction = ease });
+        _motionScale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(from, to, duration) { EasingFunction = ease });
+        _motionTranslate.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(zoomIn ? 0 : panX, zoomIn ? panX : 0, duration) { EasingFunction = ease });
+        _motionTranslate.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(zoomIn ? 0 : panY, zoomIn ? panY : 0, duration) { EasingFunction = ease });
+    }
+
+    public void StopMotion()
+    {
+        _motionScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        _motionScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        _motionTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+        _motionTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        _motionScale.ScaleX = _motionScale.ScaleY = 1;
+        _motionTranslate.X = _motionTranslate.Y = 0;
+    }
+
+    /// <summary>Clears slide/zoom transition transforms.</summary>
+    public void ResetLayerTransform()
+    {
+        LayerScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        LayerScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        LayerTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+        LayerTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+        LayerScale.ScaleX = LayerScale.ScaleY = 1;
+        LayerTranslate.X = LayerTranslate.Y = 0;
+        _root.OpacityMask = null;
+        _root.Effect = null;
+    }
+
     /// <summary>Starts a loaded video with the configured audio.</summary>
     public void Start(AppSettings settings)
     {
@@ -198,6 +257,7 @@ internal sealed class MediaLayer
         HasFailed = false;
 
         GifAnimation.Stop(_image);
+        StopMotion();
         _image.Source = null;
         _image.Visibility = Visibility.Collapsed;
 

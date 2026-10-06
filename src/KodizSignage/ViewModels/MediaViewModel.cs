@@ -12,6 +12,7 @@ using KodizSignage.Core.Models;
 using KodizSignage.Core.Playback;
 using KodizSignage.Core.Services;
 using KodizSignage.Services;
+using KodizSignage.Views;
 using Serilog;
 
 namespace KodizSignage.ViewModels;
@@ -33,6 +34,8 @@ public sealed partial class MediaViewModel : ObservableObject
     private readonly IPlaybackManager _playback;
     private readonly IFolderSyncService _folderSync;
     private readonly IDuplicateResolver _duplicates;
+    private readonly ISlideService _slides;
+    private readonly IPlayStatsService _stats;
     private readonly AppPaths _paths;
     private readonly UndoBar _undo;
     private readonly ILogger _log;
@@ -50,6 +53,8 @@ public sealed partial class MediaViewModel : ObservableObject
         IPlaybackManager playback,
         IFolderSyncService folderSync,
         IDuplicateResolver duplicates,
+        ISlideService slides,
+        IPlayStatsService stats,
         AppPaths paths,
         UndoBar undo,
         ILogger log)
@@ -63,16 +68,33 @@ public sealed partial class MediaViewModel : ObservableObject
         _playback = playback;
         _folderSync = folderSync;
         _duplicates = duplicates;
+        _slides = slides;
+        _stats = stats;
         _paths = paths;
         _undo = undo;
         _log = log.ForContext<MediaViewModel>();
 
         Bulk = new BulkEditViewModel(this, loc);
+        OptionItem<int> O(int value, string key) => new(value, key, loc);
+        FilterChoices = new[]
+        {
+            O(0, "Library_FilterAll"), O(1, "Library_FilterImages"), O(2, "Library_FilterVideos"), O(3, "Library_FilterSlides"),
+            O(4, "Library_FilterUnused"), O(5, "Library_FilterWarnings"), O(6, "Library_FilterNotPlaying"),
+        };
+        SortChoices = new[] { O(0, "Library_SortOrder"), O(1, "Library_SortName"), O(2, "Library_SortNewest"), O(3, "Library_SortLargest") };
         ItemsView = CollectionViewSource.GetDefaultView(Items);
         ItemsView.Filter = o => o is MediaItemViewModel vm && Matches(vm);
 
         _playlist.Changed += (_, _) => Application.Current.Dispatcher.BeginInvoke(Sync);
-        _loc.LanguageChanged += (_, _) => RefreshTexts();
+        _loc.LanguageChanged += (_, _) =>
+        {
+            foreach (var option in FilterChoices.Concat(SortChoices))
+            {
+                option.Refresh(_loc);
+            }
+
+            RefreshTexts();
+        };
         _settings.Changed += (_, e) => Application.Current.Dispatcher.BeginInvoke(() =>
         {
             OnPropertyChanged(nameof(DefaultDurationHint));
@@ -135,10 +157,74 @@ public sealed partial class MediaViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value) => ItemsView.Refresh();
 
-    private bool Matches(MediaItemViewModel vm) =>
-        string.IsNullOrWhiteSpace(SearchText) ||
-        vm.Name.Contains(SearchText.Trim(), StringComparison.CurrentCultureIgnoreCase) ||
-        vm.OriginalName.Contains(SearchText.Trim(), StringComparison.CurrentCultureIgnoreCase);
+    // ---- Filter & sort -----------------------------------------------------------------------
+
+    private HashSet<Guid> _usedIds = new();
+
+    public IReadOnlyList<OptionItem<int>> FilterChoices { get; }
+    public IReadOnlyList<OptionItem<int>> SortChoices { get; }
+
+    [ObservableProperty] private int _filter;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanReorder))]
+    private int _sort;
+
+    /// <summary>Drag and up/down only make sense while the list shows the library order.</summary>
+    public bool CanReorder => Sort == 0;
+
+    partial void OnFilterChanged(int value) => ItemsView.Refresh();
+
+    partial void OnSortChanged(int value)
+    {
+        using (ItemsView.DeferRefresh())
+        {
+            ItemsView.SortDescriptions.Clear();
+            switch (value)
+            {
+                case 1:
+                    ItemsView.SortDescriptions.Add(new SortDescription(nameof(MediaItemViewModel.Name), ListSortDirection.Ascending));
+                    break;
+                case 2:
+                    ItemsView.SortDescriptions.Add(new SortDescription(nameof(MediaItemViewModel.AddedAt), ListSortDirection.Descending));
+                    break;
+                case 3:
+                    ItemsView.SortDescriptions.Add(new SortDescription(nameof(MediaItemViewModel.FileSize), ListSortDirection.Descending));
+                    break;
+            }
+        }
+    }
+
+    /// <summary>Re-applies filter/sort after the rows changed (only needed when one is active).</summary>
+    private void RefreshView()
+    {
+        if (Filter != 0 || Sort != 0)
+        {
+            ItemsView.Refresh();
+        }
+    }
+
+    private bool Matches(MediaItemViewModel vm)
+    {
+        var search = SearchText.Trim();
+        if (search.Length > 0 &&
+            !vm.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase) &&
+            !vm.OriginalName.Contains(search, StringComparison.CurrentCultureIgnoreCase))
+        {
+            return false;
+        }
+
+        return Filter switch
+        {
+            1 => vm.IsImage && !vm.IsSlide,
+            2 => vm.IsVideo,
+            3 => vm.IsSlide,
+            4 => !_usedIds.Contains(vm.Id),
+            5 => vm.HasWarning,
+            6 => !vm.IsPlayableNow,
+            _ => true,
+        };
+    }
 
     // ---- Screens -----------------------------------------------------------------------------
 
@@ -157,6 +243,8 @@ public sealed partial class MediaViewModel : ObservableObject
         {
             vm.UpdateScreens(screens, ScreenLabel, n => membership.TryGetValue(n, out var set) && set.Contains(vm.Id), IsLinked);
         }
+
+        _usedIds = membership.Where(m => screens.Any(s => s.Number == m.Key)).SelectMany(m => m.Value).ToHashSet();
 
         // Auto-add toggles.
         if (!AutoAddChips.Select(c => c.Number).SequenceEqual(screens.Select(s => s.Number)))
@@ -235,6 +323,32 @@ public sealed partial class MediaViewModel : ObservableObject
     private bool CanAddFiles() => !IsImporting;
 
     [RelayCommand]
+    private void CreateSlide()
+    {
+        if (SlideEditorWindow.Edit(null, _loc) is { } slide)
+        {
+            var item = _slides.Create(slide);
+            SelectedItem = Items.FirstOrDefault(i => i.Id == item.Id) ?? SelectedItem;
+        }
+    }
+
+    [RelayCommand]
+    private void EditSlide()
+    {
+        if (SelectedItem?.Item is not { Slide: { } current } existing)
+        {
+            return;
+        }
+
+        if (SlideEditorWindow.Edit(current, _loc) is { } slide)
+        {
+            var item = _slides.Update(existing, slide);
+            Sync();
+            SelectedItem = Items.FirstOrDefault(i => i.Id == item.Id) ?? SelectedItem;
+        }
+    }
+
+    [RelayCommand]
     private void CancelImport() => _importCts?.Cancel();
 
     [RelayCommand]
@@ -310,7 +424,8 @@ public sealed partial class MediaViewModel : ObservableObject
         Add(result.WarningsOf(ImportWarningKind.ImageCodecMissing), "Media_ImageCodecWarning");
         Add(result.Unsupported, "Media_Unsupported");
         Add(result.Failed.Where(f => f.Kind == ImportFailureKind.DiskFull).Select(f => f.FileName).ToList(), "Media_DiskFull");
-        Add(result.Failed.Where(f => f.Kind != ImportFailureKind.DiskFull).Select(f => $"{f.FileName} ({f.Reason})").ToList(), "Media_ImportFailed");
+        Add(result.Failed.Where(f => f.Kind == ImportFailureKind.OfficeAppMissing).Select(f => f.FileName).ToList(), "Media_OfficeMissing");
+        Add(result.Failed.Where(f => f.Kind is ImportFailureKind.Error or ImportFailureKind.Document).Select(f => $"{f.FileName} ({f.Reason})").ToList(), "Media_ImportFailed");
 
         if (messages.Count > 0)
         {
@@ -323,7 +438,7 @@ public sealed partial class MediaViewModel : ObservableObject
     [RelayCommand]
     private void MoveUp(MediaItemViewModel? item)
     {
-        if (item is not null && item.Position > 0)
+        if (CanReorder && item is not null && item.Position > 0)
         {
             _playlist.Move(item.Id, item.Position - 1);
         }
@@ -332,7 +447,7 @@ public sealed partial class MediaViewModel : ObservableObject
     [RelayCommand]
     private void MoveDown(MediaItemViewModel? item)
     {
-        if (item is not null && item.Position < Items.Count - 1)
+        if (CanReorder && item is not null && item.Position < Items.Count - 1)
         {
             _playlist.Move(item.Id, item.Position + 1);
         }
@@ -425,7 +540,34 @@ public sealed partial class MediaViewModel : ObservableObject
 
     // ---- Preview / selection -------------------------------------------------------------------
 
-    partial void OnSelectedItemChanged(MediaItemViewModel? value) => _ = LoadPreviewAsync(value);
+    partial void OnSelectedItemChanged(MediaItemViewModel? value)
+    {
+        UpdateStatsText();
+        _ = LoadPreviewAsync(value);
+    }
+
+    [ObservableProperty] private string _statsText = string.Empty;
+
+    private void UpdateStatsText()
+    {
+        if (SelectedItem is not { } item)
+        {
+            StatsText = string.Empty;
+            return;
+        }
+
+        var today = _stats.GetTotals(item.Id, 1);
+        var week = _stats.GetTotals(item.Id, 7);
+        var month = _stats.GetTotals(item.Id, 30);
+        StatsText = week.Plays == 0 && month.Plays == 0
+            ? _loc.Get("Stats_None")
+            : _loc.Format("Stats_Summary", today.Plays, week.Plays, FormatTime(week.Time), month.Plays, FormatTime(month.Time));
+    }
+
+    private string FormatTime(TimeSpan time) =>
+        time.TotalHours >= 1 ? _loc.Format("Stats_Hours", (int)time.TotalHours, time.Minutes)
+        : time.TotalMinutes >= 1 ? _loc.Format("Stats_Minutes", (int)time.TotalMinutes)
+        : _loc.Format("Stats_Seconds", (int)time.TotalSeconds);
 
     partial void OnSelectedItemsChanged(IReadOnlyList<MediaItemViewModel> value) => Bulk.OnSelectionChanged(value.Count);
 
@@ -464,6 +606,7 @@ public sealed partial class MediaViewModel : ObservableObject
 
     public void Tick()
     {
+        UpdateStatsText();
         var playing = _playback.Screens.Where(s => s.NowPlaying is not null).ToList();
         var onAir = playing.GroupBy(s => s.NowPlaying!.Item.LibraryId).ToDictionary(g => g.Key, g => g.Select(s => s.Number).Order().ToList());
         var multi = _settings.Current.Screens.Count(s => s.Enabled) > 1;
@@ -555,6 +698,7 @@ public sealed partial class MediaViewModel : ObservableObject
 
         SelectedItems = SelectedItems.Where(Items.Contains).ToList();
         UpdateScreens();
+        RefreshView();
         OnPropertyChanged(nameof(IsEmpty));
         UpdateSummary();
         UpdateDiskUsage();

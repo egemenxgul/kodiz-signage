@@ -125,6 +125,12 @@ public class MediaFormatsTests
     [InlineData("a.gif", MediaType.Image)]
     [InlineData("a.heic", MediaType.Image)]
     [InlineData("a.pdf", null)]
+    [InlineData("download.jfif", MediaType.Image)]
+    [InlineData("scan.TIFF", MediaType.Image)]
+    [InlineData("photo.avif", MediaType.Image)]
+    [InlineData("old.3gp", MediaType.Video)]
+    [InlineData("tv.ts", MediaType.Video)]
+    [InlineData("menu.pptx", null)]
     [InlineData("a.txt", null)]
     [InlineData("noext", null)]
     public void Classify(string file, MediaType? expected) => Assert.Equal(expected, MediaFormats.Classify(file));

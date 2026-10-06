@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:KodizSignage.ViewModels"
         xmlns:conv="clr-namespace:KodizSignage.Converters"
+        xmlns:ctl="clr-namespace:KodizSignage.Controls"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
         Title="{DynamicResource Settings_Title}"
@@ -211,7 +212,17 @@
                                     <TextBlock Text="{DynamicResource Media_AddFiles}" />
                                 </StackPanel>
                             </Button>
-                            <Grid Width="200">
+                            <Button Command="{Binding CreateSlideCommand}" Margin="0,0,8,0" ToolTip="{DynamicResource Slide_CreateHint}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8A5;" Margin="0,0,8,0" />
+                                    <TextBlock Text="{DynamicResource Slide_CreateButton}" />
+                                </StackPanel>
+                            </Button>
+                            <ComboBox ItemsSource="{Binding FilterChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Filter}"
+                                      Width="150" Margin="0,0,8,0" ToolTip="{DynamicResource Library_FilterTooltip}" />
+                            <ComboBox ItemsSource="{Binding SortChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Sort}"
+                                      Width="150" Margin="0,0,8,0" ToolTip="{DynamicResource Library_SortTooltip}" />
+                            <Grid Width="180">
                                 <TextBox x:Name="LibrarySearch" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Text="{DynamicResource Library_Search}" IsHitTestVisible="False" Margin="10,0" VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}">
                                     <TextBlock.Style>
@@ -315,7 +326,8 @@
                                             <ColumnDefinition Width="96" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Tag="DragHandle" Style="{StaticResource Icon}" Text="&#xE76F;" Foreground="{StaticResource TextMutedBrush}"
-                                                   Cursor="SizeAll" ToolTip="{DynamicResource Media_DragToReorder}" />
+                                                   Cursor="SizeAll" ToolTip="{DynamicResource Media_DragToReorder}"
+                                                   Visibility="{Binding DataContext.CanReorder, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource BoolToVis}}" />
                                         <Border Grid.Column="1" Width="96" Height="54" CornerRadius="4" Background="#0B0D12" ClipToBounds="True">
                                             <Grid>
                                                 <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
@@ -358,8 +370,10 @@
                                         <CheckBox Grid.Column="4" IsChecked="{Binding IsActive}" VerticalAlignment="Center" ToolTip="{DynamicResource Library_ActiveTooltip}" Margin="0,0,8,0" />
                                         <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                             <Button Style="{StaticResource IconButton}" Content="&#xE70E;" ToolTip="{DynamicResource Media_MoveUp}"
+                                                    IsEnabled="{Binding DataContext.CanReorder, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                     Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" />
                                             <Button Style="{StaticResource IconButton}" Content="&#xE70D;" ToolTip="{DynamicResource Media_MoveDown}"
+                                                    IsEnabled="{Binding DataContext.CanReorder, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                     Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" />
                                             <Button Style="{StaticResource DangerIconButton}" Content="&#xE74D;" ToolTip="{DynamicResource Library_Delete}"
                                                     Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" />
@@ -402,10 +416,21 @@
                                         <TextBlock Text="{DynamicResource Library_DefaultsInfo}" TextWrapping="Wrap" FontSize="12" />
                                     </Border>
 
+                                    <Button Command="{Binding EditSlideCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"
+                                            Visibility="{Binding SelectedItem.IsSlide, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE70F;" Margin="0,0,8,0" />
+                                            <TextBlock Text="{DynamicResource Slide_EditButton}" />
+                                        </StackPanel>
+                                    </Button>
+
                                     <TextBlock Text="{DynamicResource Media_Details_Name}" Style="{StaticResource FieldLabel}" />
                                     <TextBox Text="{Binding SelectedItem.DisplayName, UpdateSourceTrigger=PropertyChanged, Delay=700}" />
                                     <TextBlock FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis">
                                         <Run Text="{DynamicResource Media_Details_Original}" /><Run Text=": " /><Run Text="{Binding SelectedItem.OriginalName, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0" TextWrapping="Wrap" ToolTip="{DynamicResource Stats_DetailsTooltip}">
+                                        <Run Text="&#xE9D2;" FontFamily="{StaticResource IconFont}" /><Run Text=" " /><Run Text="{Binding StatsText, Mode=OneWay}" />
                                     </TextBlock>
                                     <TextBlock FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"
                                                Visibility="{Binding SelectedItem.IsVideo, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
@@ -744,6 +769,12 @@
                                                     <TextBlock Text="{DynamicResource Editor_AddFiles}" />
                                                 </StackPanel>
                                             </Button>
+                                            <Button Command="{Binding CreateSlideCommand}" Margin="0,0,8,6" ToolTip="{DynamicResource Slide_CreateHint}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE8A5;" Margin="0,0,8,0" />
+                                                    <TextBlock Text="{DynamicResource Slide_CreateButton}" />
+                                                </StackPanel>
+                                            </Button>
                                             <ComboBox ItemsSource="{Binding CopySources}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding CopySourceChoice}"
                                                       MinWidth="200" Margin="0,0,8,6" />
                                             <TextBlock Text="{Binding Summary}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" Margin="4,0,0,6" />
@@ -1022,9 +1053,7 @@
                                                           SelectedValue="{Binding ScalingChoice}" Margin="0,0,0,10" />
                                                 <CheckBox Grid.Row="3" Content="{DynamicResource Screen_OwnBackground}" IsChecked="{Binding HasOwnBackground}" VerticalAlignment="Center" />
                                                 <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" IsEnabled="{Binding HasOwnBackground}">
-                                                    <Border Width="30" Height="30" CornerRadius="6" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,8,0"
-                                                            Background="{Binding BackgroundColor, Converter={StaticResource ColorToBrush}}" />
-                                                    <TextBox Width="110" Text="{Binding BackgroundColor, UpdateSourceTrigger=PropertyChanged, Delay=500}" />
+                                                    <ctl:ColorPicker Color="{Binding BackgroundColor}" />
                                                 </StackPanel>
                                             </Grid>
                                         </Border>
@@ -1041,6 +1070,7 @@
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
                                                     <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
                                                 </Grid.RowDefinitions>
                                                 <TextBlock Grid.ColumnSpan="2" Text="{DynamicResource General_SectionPlayback}" Style="{StaticResource H2}" />
                                                 <StackPanel Grid.Row="1" Margin="0,0,0,10">
@@ -1052,6 +1082,9 @@
                                                 <TextBlock Grid.Row="2" Text="{DynamicResource General_Transition}" VerticalAlignment="Center" Margin="0,0,0,10" />
                                                 <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding TransitionChoices}" DisplayMemberPath="Label" SelectedValuePath="Value"
                                                           SelectedValue="{Binding TransitionChoice}" Margin="0,0,0,10" />
+                                                <TextBlock Grid.Row="4" Text="{DynamicResource Motion_Title}" VerticalAlignment="Center" Margin="0,10,0,0" />
+                                                <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding MotionChoices}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                          SelectedValue="{Binding MotionChoice}" Margin="0,10,0,0" />
                                                 <CheckBox Grid.Row="3" Content="{DynamicResource Editor_OwnTransitionDuration}" IsChecked="{Binding HasOwnTransitionDuration}" VerticalAlignment="Center" />
                                                 <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" IsEnabled="{Binding HasOwnTransitionDuration}">
                                                     <Slider Width="190" Minimum="0.1" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True" Value="{Binding TransitionDuration}" VerticalAlignment="Center" />
@@ -1104,6 +1137,98 @@
                                     </StackPanel>
                                 </ScrollViewer>
                             </TabItem>
+
+                            <!-- Clock / ticker / logo of this screen -->
+                            <TabItem Header="{DynamicResource Overlay_Tab}" DataContext="{Binding Overlays}">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="24,12,8,8" MaxWidth="720" HorizontalAlignment="Left">
+                                        <TextBlock Text="{DynamicResource Overlay_Info}" Style="{StaticResource Secondary}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                                        <!-- Clock -->
+                                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource Overlay_Clock}" Style="{StaticResource H2}" />
+                                                <CheckBox Content="{DynamicResource Overlay_ClockEnabled}" IsChecked="{Binding ClockEnabled}" Margin="0,0,0,10" />
+                                                <StackPanel IsEnabled="{Binding ClockEnabled}">
+                                                    <TextBlock Text="{DynamicResource Overlay_Position}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                                    <ComboBox ItemsSource="{Binding Corners}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ClockCorner}"
+                                                              Width="260" HorizontalAlignment="Left" />
+                                                    <CheckBox Content="{DynamicResource Overlay_ClockDate}" IsChecked="{Binding ClockShowDate}" Margin="0,10,0,0" />
+                                                    <CheckBox Content="{DynamicResource Overlay_ClockSeconds}" IsChecked="{Binding ClockShowSeconds}" Margin="0,6,0,0" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Ticker -->
+                                        <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource Overlay_Ticker}" Style="{StaticResource H2}" />
+                                                <CheckBox Content="{DynamicResource Overlay_TickerEnabled}" IsChecked="{Binding TickerEnabled}" Margin="0,0,0,10" />
+                                                <StackPanel IsEnabled="{Binding TickerEnabled}">
+                                                    <TextBlock Text="{DynamicResource Overlay_TickerText}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                                    <TextBox Text="{Binding TickerText, UpdateSourceTrigger=PropertyChanged, Delay=700}" />
+                                                    <Grid Margin="0,10,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="200" />
+                                                            <ColumnDefinition Width="20" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <TextBlock Text="{DynamicResource Overlay_Position}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                                            <ComboBox ItemsSource="{Binding TickerPositions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding TickerPosition}" />
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2">
+                                                            <TextBlock Style="{StaticResource FieldLabel}" Margin="0,0,0,4">
+                                                                <Run Text="{DynamicResource Overlay_TickerSpeed}" /><Run Text=": " /><Run Text="{Binding TickerSpeed, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                            <Slider Minimum="30" Maximum="400" SmallChange="10" LargeChange="40" TickFrequency="10" IsSnapToTickEnabled="True"
+                                                                    Value="{Binding TickerSpeed, Delay=300}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <Grid Margin="0,10,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="24" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{DynamicResource Overlay_TickerBackground}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                        <ctl:ColorPicker Grid.Column="1" Grid.ColumnSpan="2" Color="{Binding TickerBackground}" />
+                                                        <TextBlock Grid.Column="4" Text="{DynamicResource Overlay_TickerTextColor}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                        <ctl:ColorPicker Grid.Column="5" Grid.ColumnSpan="2" Color="{Binding TickerTextColor}" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Logo -->
+                                        <Border Style="{StaticResource Card}">
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource Overlay_Logo}" Style="{StaticResource H2}" />
+                                                <TextBlock Text="{DynamicResource Overlay_LogoHint}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                                                <ComboBox ItemsSource="{Binding LogoChoices}" DisplayMemberPath="Label" SelectedValuePath="Id" SelectedValue="{Binding LogoId}"
+                                                          Width="360" HorizontalAlignment="Left" />
+                                                <StackPanel IsEnabled="{Binding HasLogo}" Margin="0,10,0,0">
+                                                    <TextBlock Text="{DynamicResource Overlay_Position}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                                    <ComboBox ItemsSource="{Binding Corners}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding LogoCorner}"
+                                                              Width="260" HorizontalAlignment="Left" />
+                                                    <TextBlock Style="{StaticResource FieldLabel}">
+                                                        <Run Text="{DynamicResource Overlay_LogoSize}" /><Run Text=": %" /><Run Text="{Binding LogoSize, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <Slider Minimum="4" Maximum="40" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding LogoSize, Delay=300}" MaxWidth="360" HorizontalAlignment="Stretch" />
+                                                    <TextBlock Style="{StaticResource FieldLabel}">
+                                                        <Run Text="{DynamicResource Overlay_LogoOpacity}" /><Run Text=": %" /><Run Text="{Binding LogoOpacityPercent, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                    <Slider Minimum="10" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding LogoOpacityPercent, Delay=300}" MaxWidth="360" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </TabItem>
                         </TabControl>
                     </Grid>
                 </Grid>
@@ -1147,6 +1272,18 @@
                                             Value="{Binding TransitionDuration}" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="2" Text="{Binding TransitionDuration, StringFormat={}{0:0.0} s}"
                                                HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" />
+                                </Grid>
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="260" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{DynamicResource Motion_Title}" />
+                                        <TextBlock Text="{DynamicResource Motion_Hint}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <ComboBox Grid.Column="1" ItemsSource="{Binding Motions}" DisplayMemberPath="Label"
+                                              SelectedValuePath="Value" SelectedValue="{Binding ImageMotion}" VerticalAlignment="Top" />
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -1203,9 +1340,7 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <Border Width="34" Height="34" CornerRadius="6" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="6,0,8,0"
-                                                Background="{Binding BackgroundColor, Converter={StaticResource ColorToBrush}}" />
-                                        <TextBox Width="100" Text="{Binding BackgroundColor, UpdateSourceTrigger=PropertyChanged}" />
+                                        <ctl:ColorPicker Color="{Binding BackgroundColor}" Margin="6,0,0,0" />
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -1334,6 +1469,27 @@
                         <!-- Backup -->
                         <Border Style="{StaticResource Card}" Margin="0,0,0,14">
                             <StackPanel>
+                                <TextBlock Text="{DynamicResource Stats_Section}" Style="{StaticResource H2}" />
+                                <TextBlock Text="{DynamicResource Stats_Description}" Style="{StaticResource Secondary}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Command="{Binding ExportStatsCommand}" Margin="0,0,8,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE9F9;" Margin="0,0,8,0" />
+                                            <TextBlock Text="{DynamicResource Stats_Export}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding ResetStatsCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" Foreground="{StaticResource DangerBrush}" Margin="0,0,8,0" />
+                                            <TextBlock Text="{DynamicResource Stats_Reset}" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                            <StackPanel>
                                 <TextBlock Text="{DynamicResource Backup_Section}" Style="{StaticResource H2}" />
                                 <TextBlock Text="{DynamicResource Backup_Description}" Style="{StaticResource Secondary}" Margin="0,0,0,12" />
                                 <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsBusy, Converter={StaticResource InvBool}}">
@@ -1354,6 +1510,59 @@
                                     <TextBlock Text="{Binding BusyText}" Margin="0,0,0,6" />
                                     <ProgressBar Value="{Binding BusyProgress}" Maximum="100" />
                                 </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Phone panel -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Web_Section}" Style="{StaticResource H2}" />
+                                <TextBlock Text="{DynamicResource Web_Description}" Style="{StaticResource Secondary}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{DynamicResource Web_Pin}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBox Width="120" Text="{Binding NewWebPin, UpdateSourceTrigger=PropertyChanged}" MaxLength="12" Margin="0,0,8,0" />
+                                            <Button Command="{Binding SaveWebPinCommand}" Content="{DynamicResource Web_SavePin}" />
+                                        </StackPanel>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{DynamicResource Web_PinNotSet}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasWebPin}" Value="True">
+                                                            <Setter Property="Text" Value="{DynamicResource Web_PinSet}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <CheckBox Content="{DynamicResource Web_Enabled}" IsChecked="{Binding WebPanelEnabled}" Margin="0,12,0,0" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                            <TextBlock Text="{DynamicResource Web_Port}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBox Width="80" Text="{Binding WebPanelPort, UpdateSourceTrigger=PropertyChanged, Delay=800}" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding WebStatusText}" FontWeight="SemiBold" Margin="0,12,0,4" TextWrapping="Wrap" />
+                                        <ItemsControl ItemsSource="{Binding WebUrls}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBox Text="{Binding Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas, Segoe UI" FontSize="14" Margin="0,0,0,4" HorizontalAlignment="Left" MinWidth="220" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Button Style="{StaticResource SmallButton}" Command="{Binding CopyWebUrlCommand}" HorizontalAlignment="Left" Content="{DynamicResource Web_CopyUrl}"
+                                                Visibility="{Binding WebIsRunning, Converter={StaticResource BoolToVis}}" />
+                                        <TextBlock Text="{DynamicResource Web_FirewallNote}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="150" Height="150" Background="White" CornerRadius="8" Padding="10" Margin="16,0,0,0" VerticalAlignment="Top"
+                                            Visibility="{Binding WebQr, Converter={StaticResource NullToVis}}" ToolTip="{DynamicResource Web_QrHint}">
+                                        <ContentControl Content="{Binding WebQr}" />
+                                    </Border>
+                                </Grid>
                             </StackPanel>
                         </Border>
 

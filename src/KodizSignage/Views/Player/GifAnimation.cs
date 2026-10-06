@@ -31,6 +31,11 @@ internal sealed class GifAnimation
         try
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            if (!string.Equals(Path.GetExtension(path), ".gif", StringComparison.OrdinalIgnoreCase))
+            {
+                return TryLoadGeneric(stream);
+            }
+
             var decoder = new GifBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
             if (decoder.Frames.Count < 2)
             {
@@ -90,6 +95,36 @@ internal sealed class GifAnimation
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Animated WebP and other multi-frame images: Windows' codec delivers full frames; the frame
+    /// delay is read from metadata when available, otherwise 100 ms.
+    /// </summary>
+    private static GifAnimation? TryLoadGeneric(Stream stream)
+    {
+        var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+        if (decoder.Frames.Count < 2)
+        {
+            return null;
+        }
+
+        var frames = new List<(BitmapSource, TimeSpan)>();
+        var budget = MaxTotalBytes;
+        foreach (var frame in decoder.Frames)
+        {
+            budget -= (long)frame.PixelWidth * frame.PixelHeight * 4;
+            if (budget < 0)
+            {
+                break;
+            }
+
+            var delayMs = ReadUShort(frame.Metadata, "/ANMF/FrameDuration") ?? 100;
+            frame.Freeze();
+            frames.Add((frame, TimeSpan.FromMilliseconds(Math.Max(20, delayMs))));
+        }
+
+        return frames.Count > 1 ? new GifAnimation(frames) : null;
     }
 
     /// <summary>Starts the endless animation on <paramref name="image"/>.</summary>

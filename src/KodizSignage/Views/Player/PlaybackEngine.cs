@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using KodizSignage.Core.Models;
 using KodizSignage.Core.Playback;
 using KodizSignage.Core.Services;
@@ -436,23 +437,95 @@ internal sealed class PlaybackEngine
         var incoming = _back;
         var outgoing = _front;
 
+        var transition = item.Transition ?? settings.Transition;
+        var duration = transition == TransitionType.None
+            ? TimeSpan.Zero
+            : TimeSpan.FromSeconds(settings.TransitionDurationSeconds);
+
+        incoming.ResetLayerTransform();
         incoming.Opacity = 0;
         incoming.ZIndex = 1;
         outgoing.ZIndex = 0;
         incoming.Start(settings);
+        if (item.Type == MediaType.Image && settings.ImageMotion == ImageMotion.KenBurns)
+        {
+            incoming.StartMotion(PlaylistScheduler.GetImageDuration(item, settings) + duration);
+        }
 
-        var duration = (item.Transition ?? settings.Transition) == TransitionType.Fade
-            ? TimeSpan.FromSeconds(settings.TransitionDurationSeconds)
-            : TimeSpan.Zero;
+        var animations = new List<Task> { HideEmptyAsync(duration) };
+        switch (transition)
+        {
+            case TransitionType.Slide when duration > TimeSpan.Zero:
+                var width = Math.Max(1, ((FrameworkElement)incoming.Element).ActualWidth);
+                incoming.Opacity = 1;
+                animations.Add(AnimateAsync(incoming.LayerTranslate, TranslateTransform.XProperty, width, 0, duration));
+                animations.Add(AnimateAsync(outgoing.LayerTranslate, TranslateTransform.XProperty, 0, -width, duration));
+                break;
+            case TransitionType.Zoom when duration > TimeSpan.Zero:
+                animations.Add(FadeAsync(incoming.Element, 1, duration));
+                animations.Add(AnimateAsync(incoming.LayerScale, ScaleTransform.ScaleXProperty, 1.08, 1, duration));
+                animations.Add(AnimateAsync(incoming.LayerScale, ScaleTransform.ScaleYProperty, 1.08, 1, duration));
+                break;
+            case TransitionType.SlideUp when duration > TimeSpan.Zero:
+                var height = Math.Max(1, ((FrameworkElement)incoming.Element).ActualHeight);
+                incoming.Opacity = 1;
+                animations.Add(AnimateAsync(incoming.LayerTranslate, TranslateTransform.YProperty, height, 0, duration));
+                animations.Add(AnimateAsync(outgoing.LayerTranslate, TranslateTransform.YProperty, 0, -height, duration));
+                break;
+            case TransitionType.FadeThroughBackground when duration > TimeSpan.Zero:
+                animations.Add(FadeThroughAsync(outgoing.Element, incoming.Element, duration));
+                break;
+            case TransitionType.Wipe when duration > TimeSpan.Zero:
+            {
+                var edge = new GradientStop(Colors.Black, 0);
+                var soft = new GradientStop(Colors.Transparent, 0.08);
+                incoming.Element.OpacityMask = new LinearGradientBrush(new GradientStopCollection { edge, soft }, new Point(0, 0.5), new Point(1, 0.5));
+                incoming.Opacity = 1;
+                animations.Add(AnimateAsync(edge, GradientStop.OffsetProperty, -0.08, 1, duration));
+                animations.Add(AnimateAsync(soft, GradientStop.OffsetProperty, 0, 1.08, duration));
+                break;
+            }
+            case TransitionType.Circle when duration > TimeSpan.Zero:
+            {
+                // Radius 0.75 of the box reaches past the corners at offset 1.
+                var edge = new GradientStop(Colors.Black, 0);
+                var soft = new GradientStop(Colors.Transparent, 0.04);
+                incoming.Element.OpacityMask = new RadialGradientBrush(new GradientStopCollection { edge, soft })
+                {
+                    Center = new Point(0.5, 0.5), GradientOrigin = new Point(0.5, 0.5), RadiusX = 0.75, RadiusY = 0.75,
+                };
+                incoming.Opacity = 1;
+                animations.Add(AnimateAsync(edge, GradientStop.OffsetProperty, 0, 1, duration));
+                animations.Add(AnimateAsync(soft, GradientStop.OffsetProperty, 0.04, 1.04, duration));
+                break;
+            }
+            case TransitionType.Blur when duration > TimeSpan.Zero:
+            {
+                var blur = new BlurEffect { Radius = 0, KernelType = KernelType.Gaussian, RenderingBias = RenderingBias.Performance };
+                outgoing.Element.Effect = blur;
+                animations.Add(AnimateAsync(blur, BlurEffect.RadiusProperty, 0, 40, duration));
+                animations.Add(FadeAsync(incoming.Element, 1, duration));
+                break;
+            }
+            default:
+                animations.Add(FadeAsync(incoming.Element, 1, duration));
+                break;
+        }
 
-        await Task.WhenAll(
-            FadeAsync(incoming.Element, 1, duration),
-            HideEmptyAsync(duration));
-        stop.ThrowIfCancellationRequested();
+        await Task.WhenAll(animations);
+        if (stop.IsCancellationRequested)
+        {
+            // No masks or blur may survive an interrupted transition.
+            outgoing.ResetLayerTransform();
+            incoming.ResetLayerTransform();
+            stop.ThrowIfCancellationRequested();
+        }
 
         // The incoming layer now fully covers the old one; release the old media.
         outgoing.Unload();
         outgoing.Opacity = 0;
+        outgoing.ResetLayerTransform();
+        incoming.ResetLayerTransform();
 
         _front = incoming;
         _back = outgoing;
@@ -599,6 +672,29 @@ internal sealed class PlaybackEngine
         _emptyVisible = false;
         await FadeAsync(_emptyState, 0, duration);
         _emptyState.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>Old item out to the background, then the new one in (half the time each).</summary>
+    private static async Task FadeThroughAsync(UIElement outgoing, UIElement incoming, TimeSpan duration)
+    {
+        var half = TimeSpan.FromTicks(duration.Ticks / 2);
+        await FadeAsync(outgoing, 0, half);
+        await FadeAsync(incoming, 1, half);
+    }
+
+    /// <summary>Animates a transform property and keeps the end value (base value set first: no flicker).</summary>
+    private static Task AnimateAsync(Animatable target, DependencyProperty property, double from, double to, TimeSpan duration)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var animation = new DoubleAnimation(from, to, new Duration(duration))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+            FillBehavior = FillBehavior.Stop,
+        };
+        animation.Completed += (_, _) => tcs.TrySetResult();
+        target.SetValue(property, to);
+        target.BeginAnimation(property, animation);
+        return Task.WhenAny(tcs.Task, Task.Delay(duration + TimeSpan.FromSeconds(1)));
     }
 
     private static Task FadeAsync(UIElement element, double to, TimeSpan duration)

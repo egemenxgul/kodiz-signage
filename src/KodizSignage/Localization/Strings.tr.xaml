@@ -34,7 +34,7 @@
     <sys:String x:Key="Media_AddFiles" xml:space="preserve">Dosya Ekle</sys:String>
     <sys:String x:Key="Media_DropHint" xml:space="preserve">Dosyaları veya klasörleri bu pencereye sürükleyip bırakabilirsiniz</sys:String>
     <sys:String x:Key="Media_EmptyTitle" xml:space="preserve">Henüz medya yok</sys:String>
-    <sys:String x:Key="Media_EmptyHint" xml:space="preserve">Resim (JPG, PNG, GIF, WEBP, HEIC), video (MP4, MOV) ve PDF ekleyin</sys:String>
+    <sys:String x:Key="Media_EmptyHint" xml:space="preserve">Resim (JPG, PNG, GIF, WEBP, HEIC, AVIF, TIFF), video (MP4, MOV, MKV…), PDF ve sunum (PPTX, ODP) ekleyin – ya da kendi slaytınızı oluşturun</sys:String>
     <sys:String x:Key="Media_Count" xml:space="preserve">{0} öğe · {1} şu an oynatılabilir</sys:String>
     <sys:String x:Key="Media_Col_Name" xml:space="preserve">Ad</sys:String>
     <sys:String x:Key="Media_Col_Type" xml:space="preserve">Tür</sys:String>
@@ -411,4 +411,173 @@
     <sys:String x:Key="License_Notices" xml:space="preserve">Üçüncü taraf bildirimleri</sys:String>
     <sys:String x:Key="License_Source" xml:space="preserve">Kaynak kodu</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Geçersiz renk. #RRGGBB biçiminde girin.</sys:String>
+    <sys:String x:Key="Media_OfficeMissing" xml:space="preserve">Sunumlar dönüştürülemedi (PowerPoint veya LibreOffice kurulu değil). Sunumu PDF olarak kaydedip ekleyebilirsiniz:&#10;{0}</sys:String>
+    <sys:String x:Key="Transition_Slide" xml:space="preserve">Kaydırma</sys:String>
+    <sys:String x:Key="Transition_Zoom" xml:space="preserve">Yakınlaşma</sys:String>
+    <sys:String x:Key="Motion_Title" xml:space="preserve">Resim hareketi</sys:String>
+    <sys:String x:Key="Motion_None" xml:space="preserve">Sabit</sys:String>
+    <sys:String x:Key="Motion_KenBurns" xml:space="preserve">Ken Burns (yavaş yakınlaşma ve kaydırma)</sys:String>
+    <sys:String x:Key="Motion_Hint" xml:space="preserve">Resimler gösterilirken hafifçe yakınlaşır ve kayar; sabit ekranlarda canlılık katar.</sys:String>
+    <sys:String x:Key="Slide_WindowTitle" xml:space="preserve">Slayt</sys:String>
+    <sys:String x:Key="Slide_CreateButton" xml:space="preserve">Slayt oluştur</sys:String>
+    <sys:String x:Key="Slide_CreateHint" xml:space="preserve">Duyuru, fiyat listesi veya QR kod slaytı hazırlayın – dosya gerekmez</sys:String>
+    <sys:String x:Key="Slide_EditButton" xml:space="preserve">Slaytı düzenle</sys:String>
+    <sys:String x:Key="Slide_Create" xml:space="preserve">Kütüphaneye ekle</sys:String>
+    <sys:String x:Key="Slide_Update" xml:space="preserve">Değişiklikleri kaydet</sys:String>
+    <sys:String x:Key="Slide_SaveHint" xml:space="preserve">Slayt bir resim olarak kaydedilir; ekranlarda diğer medya gibi oynatılır.</sys:String>
+    <sys:String x:Key="Slide_Template" xml:space="preserve">Şablon</sys:String>
+    <sys:String x:Key="Slide_TemplateAnnouncement" xml:space="preserve">Duyuru</sys:String>
+    <sys:String x:Key="Slide_TemplatePriceList" xml:space="preserve">Fiyat listesi / menü</sys:String>
+    <sys:String x:Key="Slide_TemplateQr" xml:space="preserve">QR kod</sys:String>
+    <sys:String x:Key="Slide_Title" xml:space="preserve">Başlık</sys:String>
+    <sys:String x:Key="Slide_Subtitle" xml:space="preserve">Üst başlık / etiket</sys:String>
+    <sys:String x:Key="Slide_Body" xml:space="preserve">Metin</sys:String>
+    <sys:String x:Key="Slide_Rows" xml:space="preserve">Satırlar</sys:String>
+    <sys:String x:Key="Slide_RowName" xml:space="preserve">Ürün</sys:String>
+    <sys:String x:Key="Slide_RowPrice" xml:space="preserve">Fiyat</sys:String>
+    <sys:String x:Key="Slide_RowNote" xml:space="preserve">Açıklama (isteğe bağlı)</sys:String>
+    <sys:String x:Key="Slide_AddRow" xml:space="preserve">Satır ekle</sys:String>
+    <sys:String x:Key="Slide_QrContent" xml:space="preserve">QR içeriği</sys:String>
+    <sys:String x:Key="Slide_QrLink" xml:space="preserve">Bağlantı (web sitesi, menü, Instagram…)</sys:String>
+    <sys:String x:Key="Slide_QrText" xml:space="preserve">Serbest metin</sys:String>
+    <sys:String x:Key="Slide_QrWifi" xml:space="preserve">Wi-Fi ağı</sys:String>
+    <sys:String x:Key="Slide_QrTextHint" xml:space="preserve">Ör. https://ornek.com</sys:String>
+    <sys:String x:Key="Slide_WifiName" xml:space="preserve">Ağ adı (SSID)</sys:String>
+    <sys:String x:Key="Slide_WifiPassword" xml:space="preserve">Şifre</sys:String>
+    <sys:String x:Key="Slide_Theme" xml:space="preserve">Tema</sys:String>
+    <sys:String x:Key="Slide_Background" xml:space="preserve">Arka plan</sys:String>
+    <sys:String x:Key="Slide_Gradient" xml:space="preserve">Geçişli (2. renk)</sys:String>
+    <sys:String x:Key="Slide_TextColor" xml:space="preserve">Yazı rengi</sys:String>
+    <sys:String x:Key="Slide_AccentColor" xml:space="preserve">Vurgu rengi</sys:String>
+    <sys:String x:Key="Slide_Portrait" xml:space="preserve">Dikey ekran için (1080 × 1920)</sys:String>
+    <sys:String x:Key="Slide_TextSize" xml:space="preserve">Yazı boyutu</sys:String>
+    <sys:String x:Key="Slide_DefaultTitle" xml:space="preserve">Hoş geldiniz</sys:String>
+    <sys:String x:Key="Slide_DefaultBody" xml:space="preserve">Bugün tüm sıcak içeceklerde %20 indirim</sys:String>
+    <sys:String x:Key="Slide_DefaultRow1" xml:space="preserve">Çay</sys:String>
+    <sys:String x:Key="Slide_DefaultRow2" xml:space="preserve">Türk kahvesi</sys:String>
+    <sys:String x:Key="Theme_Night" xml:space="preserve">Gece</sys:String>
+    <sys:String x:Key="Theme_Coffee" xml:space="preserve">Kahve</sys:String>
+    <sys:String x:Key="Theme_Fresh" xml:space="preserve">Taze</sys:String>
+    <sys:String x:Key="Theme_Berry" xml:space="preserve">Böğürtlen</sys:String>
+    <sys:String x:Key="Theme_Ocean" xml:space="preserve">Okyanus</sys:String>
+    <sys:String x:Key="Theme_Paper" xml:space="preserve">Kağıt</sys:String>
+    <sys:String x:Key="Theme_Black" xml:space="preserve">Siyah</sys:String>
+    <sys:String x:Key="Overlay_Tab" xml:space="preserve">Ekran üstü</sys:String>
+    <sys:String x:Key="Overlay_Info" xml:space="preserve">Saat, kayan yazı ve logo bu ekranda tüm içeriklerin üzerinde sürekli görünür.</sys:String>
+    <sys:String x:Key="Overlay_Clock" xml:space="preserve">Saat ve tarih</sys:String>
+    <sys:String x:Key="Overlay_ClockEnabled" xml:space="preserve">Saati göster</sys:String>
+    <sys:String x:Key="Overlay_ClockDate" xml:space="preserve">Tarihi de göster</sys:String>
+    <sys:String x:Key="Overlay_ClockSeconds" xml:space="preserve">Saniyeleri göster</sys:String>
+    <sys:String x:Key="Overlay_Position" xml:space="preserve">Konum</sys:String>
+    <sys:String x:Key="Overlay_TopLeft" xml:space="preserve">Sol üst</sys:String>
+    <sys:String x:Key="Overlay_TopRight" xml:space="preserve">Sağ üst</sys:String>
+    <sys:String x:Key="Overlay_BottomLeft" xml:space="preserve">Sol alt</sys:String>
+    <sys:String x:Key="Overlay_BottomRight" xml:space="preserve">Sağ alt</sys:String>
+    <sys:String x:Key="Overlay_Bottom" xml:space="preserve">Altta</sys:String>
+    <sys:String x:Key="Overlay_Top" xml:space="preserve">Üstte</sys:String>
+    <sys:String x:Key="Overlay_Ticker" xml:space="preserve">Kayan yazı</sys:String>
+    <sys:String x:Key="Overlay_TickerEnabled" xml:space="preserve">Kayan yazıyı göster</sys:String>
+    <sys:String x:Key="Overlay_TickerText" xml:space="preserve">Metin</sys:String>
+    <sys:String x:Key="Overlay_TickerSpeed" xml:space="preserve">Hız</sys:String>
+    <sys:String x:Key="Overlay_TickerBackground" xml:space="preserve">Şerit rengi</sys:String>
+    <sys:String x:Key="Overlay_TickerTextColor" xml:space="preserve">Yazı rengi</sys:String>
+    <sys:String x:Key="Overlay_Logo" xml:space="preserve">Logo</sys:String>
+    <sys:String x:Key="Overlay_LogoHint" xml:space="preserve">Kütüphanedeki bir resmi seçin (şeffaf PNG en iyi sonucu verir).</sys:String>
+    <sys:String x:Key="Overlay_NoLogo" xml:space="preserve">Logo yok</sys:String>
+    <sys:String x:Key="Overlay_LogoMissing" xml:space="preserve">(silinmiş medya)</sys:String>
+    <sys:String x:Key="Overlay_LogoSize" xml:space="preserve">Genişlik (ekranın)</sys:String>
+    <sys:String x:Key="Overlay_LogoOpacity" xml:space="preserve">Görünürlük</sys:String>
+    <sys:String x:Key="Tray_Screens" xml:space="preserve">Ekranlar</sys:String>
+    <sys:String x:Key="Tray_ScreenEnabled" xml:space="preserve">Bu ekranda göster</sys:String>
+    <sys:String x:Key="Tray_ScreenPreview" xml:space="preserve">Önizleme penceresi</sys:String>
+    <sys:String x:Key="Tray_ScreenOff" xml:space="preserve">Kapalı</sys:String>
+    <sys:String x:Key="Tray_ScreenFallback" xml:space="preserve">Ekranı bulunamadı – ana ekranda</sys:String>
+    <sys:String x:Key="Transition_SlideUp" xml:space="preserve">Yukarı kaydırma</sys:String>
+    <sys:String x:Key="Transition_FadeThroughBackground" xml:space="preserve">Arka plana karartarak</sys:String>
+    <sys:String x:Key="Transition_Wipe" xml:space="preserve">Silme (soldan sağa)</sys:String>
+    <sys:String x:Key="Transition_Circle" xml:space="preserve">Daire (ortadan açılma)</sys:String>
+    <sys:String x:Key="Transition_Blur" xml:space="preserve">Bulanıklaşarak</sys:String>
+    <sys:String x:Key="Library_FilterAll" xml:space="preserve">Tüm medya</sys:String>
+    <sys:String x:Key="Library_FilterImages" xml:space="preserve">Resimler</sys:String>
+    <sys:String x:Key="Library_FilterVideos" xml:space="preserve">Videolar</sys:String>
+    <sys:String x:Key="Library_FilterSlides" xml:space="preserve">Slaytlar</sys:String>
+    <sys:String x:Key="Library_FilterUnused" xml:space="preserve">Hiçbir ekranda yok</sys:String>
+    <sys:String x:Key="Library_FilterWarnings" xml:space="preserve">Uyarısı olanlar</sys:String>
+    <sys:String x:Key="Library_FilterNotPlaying" xml:space="preserve">Şu an oynamayanlar</sys:String>
+    <sys:String x:Key="Library_FilterTooltip" xml:space="preserve">Listeyi daralt</sys:String>
+    <sys:String x:Key="Library_SortOrder" xml:space="preserve">Kütüphane sırası</sys:String>
+    <sys:String x:Key="Library_SortName" xml:space="preserve">Ada göre</sys:String>
+    <sys:String x:Key="Library_SortNewest" xml:space="preserve">En yeni eklenen</sys:String>
+    <sys:String x:Key="Library_SortLargest" xml:space="preserve">En büyük dosya</sys:String>
+    <sys:String x:Key="Library_SortTooltip" xml:space="preserve">Sıralama (sürükleyerek sıralama yalnızca kütüphane sırasında)</sys:String>
+    <sys:String x:Key="Stats_Section" xml:space="preserve">Gösterim istatistikleri</sys:String>
+    <sys:String x:Key="Stats_Description" xml:space="preserve">Her medyanın hangi ekranda kaç kez ve ne kadar süre gösterildiği günlük olarak kaydedilir (son 90 gün). Reklam ve kampanya raporları için CSV olarak dışa aktarabilirsiniz.</sys:String>
+    <sys:String x:Key="Stats_Export" xml:space="preserve">CSV olarak dışa aktar</sys:String>
+    <sys:String x:Key="Stats_Reset" xml:space="preserve">İstatistikleri sıfırla</sys:String>
+    <sys:String x:Key="Stats_ResetConfirm" xml:space="preserve">Tüm gösterim istatistikleri silinsin mi?</sys:String>
+    <sys:String x:Key="Stats_Exported" xml:space="preserve">İstatistikler kaydedildi:&#10;{0}</sys:String>
+    <sys:String x:Key="Stats_ExportFailed" xml:space="preserve">İstatistikler kaydedilemedi: {0}</sys:String>
+    <sys:String x:Key="Stats_FileType" xml:space="preserve">CSV dosyası (Excel)</sys:String>
+    <sys:String x:Key="Stats_ColDate" xml:space="preserve">Tarih</sys:String>
+    <sys:String x:Key="Stats_ColScreen" xml:space="preserve">Ekran</sys:String>
+    <sys:String x:Key="Stats_ColMedia" xml:space="preserve">Medya</sys:String>
+    <sys:String x:Key="Stats_ColPlays" xml:space="preserve">Gösterim sayısı</sys:String>
+    <sys:String x:Key="Stats_ColSeconds" xml:space="preserve">Toplam saniye</sys:String>
+    <sys:String x:Key="Stats_ColTime" xml:space="preserve">Toplam süre</sys:String>
+    <sys:String x:Key="Stats_None" xml:space="preserve">Son 30 günde gösterilmedi</sys:String>
+    <sys:String x:Key="Stats_Summary" xml:space="preserve">Bugün {0} · 7 gün: {1} gösterim ({2}) · 30 gün: {3} ({4})</sys:String>
+    <sys:String x:Key="Stats_Hours" xml:space="preserve">{0} sa {1} dk</sys:String>
+    <sys:String x:Key="Stats_Minutes" xml:space="preserve">{0} dk</sys:String>
+    <sys:String x:Key="Stats_Seconds" xml:space="preserve">{0} sn</sys:String>
+    <sys:String x:Key="Stats_DetailsTooltip" xml:space="preserve">Tüm ekranlardaki gösterimler (ayrıntı için Genel › Gösterim istatistikleri › CSV)</sys:String>
+    <sys:String x:Key="Color_Open" xml:space="preserve">Palet ve renk seçici</sys:String>
+    <sys:String x:Key="Color_HexHint" xml:space="preserve">HEX renk kodu, ör. #1E1B4B (başındaki # olmadan da yazılabilir)</sys:String>
+    <sys:String x:Key="Color_Palette" xml:space="preserve">Palet</sys:String>
+    <sys:String x:Key="Color_Custom" xml:space="preserve">Özel renk</sys:String>
+    <sys:String x:Key="Color_Hue" xml:space="preserve">Renk tonu</sys:String>
+    <sys:String x:Key="Color_Revert" xml:space="preserve">Önceki renge dön</sys:String>
+    <sys:String x:Key="Color_Done" xml:space="preserve">Tamam</sys:String>
+    <sys:String x:Key="Web_Section" xml:space="preserve">Telefondan yönetim</sys:String>
+    <sys:String x:Key="Web_Description" xml:space="preserve">Aynı Wi-Fi ağındaki telefon veya tabletten gösterimi başlatıp durdurun, ekranları açıp kapatın, medya yükleyin. İnternet gerekmez; yalnızca yerel ağda çalışır.</sys:String>
+    <sys:String x:Key="Web_Pin" xml:space="preserve">Telefon PIN'i (4–12 rakam)</sys:String>
+    <sys:String x:Key="Web_SavePin" xml:space="preserve">PIN'i kaydet</sys:String>
+    <sys:String x:Key="Web_PinSet" xml:space="preserve">PIN ayarlı. Değiştirince tüm telefonların oturumu kapanır.</sys:String>
+    <sys:String x:Key="Web_PinNotSet" xml:space="preserve">Önce bir PIN belirleyin.</sys:String>
+    <sys:String x:Key="Web_PinSaved" xml:space="preserve">Telefon PIN'i kaydedildi.</sys:String>
+    <sys:String x:Key="Web_Enabled" xml:space="preserve">Telefondan yönetimi aç</sys:String>
+    <sys:String x:Key="Web_Port" xml:space="preserve">Port</sys:String>
+    <sys:String x:Key="Web_Running" xml:space="preserve">Açık – telefonda bu adreslerden birini açın veya QR kodu okutun:</sys:String>
+    <sys:String x:Key="Web_NoNetwork" xml:space="preserve">Açık, ancak bilgisayar bir ağa bağlı değil.</sys:String>
+    <sys:String x:Key="Web_NeedPin" xml:space="preserve">Telefondan yönetimi açmak için önce bir telefon PIN'i belirleyin.</sys:String>
+    <sys:String x:Key="Web_Off" xml:space="preserve">Kapalı</sys:String>
+    <sys:String x:Key="Web_PortInUse" xml:space="preserve">Port {0} başka bir uygulama tarafından kullanılıyor. Farklı bir port girin.</sys:String>
+    <sys:String x:Key="Web_CopyUrl" xml:space="preserve">Adresi kopyala</sys:String>
+    <sys:String x:Key="Web_QrHint" xml:space="preserve">Telefon kamerasıyla okutun</sys:String>
+    <sys:String x:Key="Web_FirewallNote" xml:space="preserve">İlk açılışta Windows Güvenlik Duvarı izin isteyebilir: &quot;Özel ağlar&quot; için izin verin. Herkese açık ağlarda (kafe, otel) açmayın.</sys:String>
+    <sys:String x:Key="Web_TypeImage" xml:space="preserve">Resim</sys:String>
+    <sys:String x:Key="Web_TypeVideo" xml:space="preserve">Video</sys:String>
+    <sys:String x:Key="Web_TypeSlide" xml:space="preserve">Slayt</sys:String>
+    <sys:String x:Key="Web_Uploaded" xml:space="preserve">Eklendi: {0}</sys:String>
+    <sys:String x:Key="Web_AlreadyInLibrary" xml:space="preserve">Zaten kütüphanede: {0}</sys:String>
+    <sys:String x:Key="Web_Unsupported" xml:space="preserve">Desteklenmeyen dosya: {0}</sys:String>
+    <sys:String x:Key="Web_UploadFailed" xml:space="preserve">Eklenemedi: {0}</sys:String>
+    <sys:String x:Key="Wizard_Welcome" xml:space="preserve">Kodiz Signage'a hoş geldiniz</sys:String>
+    <sys:String x:Key="Wizard_WelcomeText" xml:space="preserve">Birkaç adımda ekranlarınızı hazırlayalım. Her şeyi daha sonra Ayarlar'dan değiştirebilirsiniz.</sys:String>
+    <sys:String x:Key="Wizard_Language" xml:space="preserve">Dil / Language</sys:String>
+    <sys:String x:Key="Wizard_ScreensTitle" xml:space="preserve">Ekranlar</sys:String>
+    <sys:String x:Key="Wizard_ScreensOne" xml:space="preserve">Bir ekran bulundu. Gösterim bu ekranda tam ekran oynatılacak.</sys:String>
+    <sys:String x:Key="Wizard_ScreensMany" xml:space="preserve">{0} ekran bulundu. Hangilerinde gösterim yapılsın?</sys:String>
+    <sys:String x:Key="Wizard_Primary" xml:space="preserve">ana ekran</sys:String>
+    <sys:String x:Key="Wizard_SameContent" xml:space="preserve">Tüm ekranlarda aynı içerik (her ekran için ayrı liste daha sonra ayarlanabilir)</sys:String>
+    <sys:String x:Key="Wizard_ScreensLater" xml:space="preserve">Yeni bir TV takarsanız Ayarlar › Ekranlar bölümünden ekleyebilirsiniz.</sys:String>
+    <sys:String x:Key="Wizard_ContentTitle" xml:space="preserve">İçerik ve başlangıç</sys:String>
+    <sys:String x:Key="Wizard_ContentText" xml:space="preserve">Resim, video, PDF veya sunum ekleyin ya da hazır şablonlarla bir slayt oluşturun.</sys:String>
+    <sys:String x:Key="Wizard_MediaCount" xml:space="preserve">Kütüphanede {0} medya var.</sys:String>
+    <sys:String x:Key="Wizard_Autostart" xml:space="preserve">Windows açılınca otomatik başlat</sys:String>
+    <sys:String x:Key="Wizard_Autoplay" xml:space="preserve">Açılınca gösterimi hemen başlat</sys:String>
+    <sys:String x:Key="Wizard_Shortcut" xml:space="preserve">Gösterim sırasında ayarları açmak için sistem tepsisindeki simgeye çift tıklayın veya kısayolu kullanın.</sys:String>
+    <sys:String x:Key="Wizard_Skip" xml:space="preserve">Atla</sys:String>
+    <sys:String x:Key="Wizard_Back" xml:space="preserve">Geri</sys:String>
+    <sys:String x:Key="Wizard_Next" xml:space="preserve">İleri</sys:String>
+    <sys:String x:Key="Wizard_Finish" xml:space="preserve">Bitir</sys:String>
 </ResourceDictionary>
