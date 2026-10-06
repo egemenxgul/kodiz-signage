@@ -217,6 +217,7 @@ public sealed class FolderSyncService : IFolderSyncService, IDisposable
                 Days = template.Days,
                 StartTime = template.StartTime,
                 EndTime = template.EndTime,
+                Screens = template.Screens,
                 DisplayName = result.Imported.Count == 1 ? template.DisplayName : n.DisplayName,
             }).ToList();
             _playlist.Replace(existing.Select(i => i.Id).ToList(), replacements);

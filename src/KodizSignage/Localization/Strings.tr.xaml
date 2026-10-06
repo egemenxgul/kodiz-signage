@@ -28,7 +28,7 @@
     <sys:String x:Key="Action_Next" xml:space="preserve">Sonraki</sys:String>
     <sys:String x:Key="Settings_AutoSaved" xml:space="preserve">Değişiklikler otomatik kaydedilir ve gösterime anında uygulanır.</sys:String>
     <sys:String x:Key="Tab_Media" xml:space="preserve">Medya</sys:String>
-    <sys:String x:Key="Tab_Display" xml:space="preserve">Ekran</sys:String>
+    <sys:String x:Key="Tab_Display" xml:space="preserve">Ekranlar</sys:String>
     <sys:String x:Key="Tab_General" xml:space="preserve">Genel</sys:String>
     <sys:String x:Key="Tab_Shortcuts" xml:space="preserve">Kısayollar</sys:String>
     <sys:String x:Key="Media_AddFiles" xml:space="preserve">Dosya Ekle</sys:String>
@@ -238,5 +238,44 @@
     <sys:String x:Key="TrayHint_Title" xml:space="preserve">Kodiz Signage çalışmaya devam ediyor</sys:String>
     <sys:String x:Key="TrayHint_Text" xml:space="preserve">Ayarlar penceresi kapatıldı, gösterim sürüyor. Tekrar açmak için {0} veya Başlat menüsündeki Kodiz Signage.</sys:String>
     <sys:String x:Key="SafeMode_Text" xml:space="preserve">Uygulama kısa sürede birkaç kez beklenmedik şekilde kapandı. Gösterim {0} dakika sonra otomatik başlayacak. Ayrıntılar için log klasörüne bakın.</sys:String>
+    <sys:String x:Key="Screens_Title" xml:space="preserve">Ekranlar</sys:String>
+    <sys:String x:Key="Screens_Description" xml:space="preserve">Bilgisayara bağlı her ekran ayrı bir gösterim yapabilir. Gösterim istemediğiniz ekranı kapatın; açık her ekran kendisine atanan medyayı kendi başına oynatır. Hangi medyanın hangi ekranda gösterileceğini Medya sekmesinde satırlardaki ekran düğmeleriyle veya &quot;Medyayı düzenle&quot; ile seçersiniz.</sys:String>
+    <sys:String x:Key="Screens_Summary" xml:space="preserve">{0} ekran algılandı · {1} ekranda gösterim açık</sys:String>
+    <sys:String x:Key="Screens_NoneEnabled" xml:space="preserve">Hiçbir ekranda gösterim açık değil. Ekranlar sekmesinden en az bir ekranı açın.</sys:String>
+    <sys:String x:Key="Screen_Default" xml:space="preserve">Ekran {0}</sys:String>
+    <sys:String x:Key="Screen_ShowHere" xml:space="preserve">Bu ekranda gösterim</sys:String>
+    <sys:String x:Key="Screen_NotConnected" xml:space="preserve">Bağlı değil</sys:String>
+    <sys:String x:Key="Screen_NotUsed" xml:space="preserve">Kullanılmıyor – açmak için sağdaki anahtarı kullanın</sys:String>
+    <sys:String x:Key="Screen_Off" xml:space="preserve">kapalı</sys:String>
+    <sys:String x:Key="Screen_Playing" xml:space="preserve">Oynuyor: {0}</sys:String>
+    <sys:String x:Key="Screen_PlayingFallback" xml:space="preserve">Ana ekranda oynuyor (kendi ekranı yok): {0}</sys:String>
+    <sys:String x:Key="Screen_Empty" xml:space="preserve">Bu ekran için şu an gösterilecek medya yok</sys:String>
+    <sys:String x:Key="Screen_Waiting" xml:space="preserve">Ekran bekleniyor – bağlanınca kendiliğinden başlar</sys:String>
+    <sys:String x:Key="Screen_Missing" xml:space="preserve">Kayıtlı ekran: {0}, {1} × {2} – şu an bağlı değil</sys:String>
+    <sys:String x:Key="Screen_MissingPrimary" xml:space="preserve">Ana ekranı kullanır – şu an başka bir ekran ona atanmış</sys:String>
+    <sys:String x:Key="Screen_MediaCount" xml:space="preserve">{0} medya atanmış · {1} şu an oynatılabilir</sys:String>
+    <sys:String x:Key="Screen_NameHint" xml:space="preserve">Ekrana bir isim verin (ör. Bar üstü, Kasa, Vitrin)</sys:String>
+    <sys:String x:Key="Screen_EditMedia" xml:space="preserve">Medyayı düzenle</sys:String>
+    <sys:String x:Key="Screen_Appearance" xml:space="preserve">Görünüm</sys:String>
+    <sys:String x:Key="Screen_Forget" xml:space="preserve">Unut</sys:String>
+    <sys:String x:Key="Screen_ForgetConfirm" xml:space="preserve">&quot;{0}&quot; unutulsun mu? Ekranın ayarları silinir; medyalar silinmez.</sys:String>
+    <sys:String x:Key="Screen_OwnBackground" xml:space="preserve">Farklı arka plan rengi</sys:String>
+    <sys:String x:Key="ScreenOverride_General" xml:space="preserve">Genel ayarı kullan</sys:String>
+    <sys:String x:Key="ScreenOverride_SoundOn" xml:space="preserve">Ses açık</sys:String>
+    <sys:String x:Key="ScreenOverride_SoundOff" xml:space="preserve">Ses kapalı</sys:String>
+    <sys:String x:Key="Filter_Label" xml:space="preserve">Gösterilen:</sys:String>
+    <sys:String x:Key="Filter_AllMedia" xml:space="preserve">Tüm medya</sys:String>
+    <sys:String x:Key="Media_CountScreen" xml:space="preserve">{0}: {1} öğe · {2} şu an oynatılabilir</sys:String>
+    <sys:String x:Key="Media_Screens" xml:space="preserve">Gösterileceği ekranlar</sys:String>
+    <sys:String x:Key="Media_AllScreens" xml:space="preserve">Tüm ekranlar (sonradan eklenenler dahil)</sys:String>
+    <sys:String x:Key="Media_OnNoScreen" xml:space="preserve">hiçbir ekranda değil</sys:String>
+    <sys:String x:Key="Media_OnNoScreenHint" xml:space="preserve">Bu öğe açık olan hiçbir ekranda gösterilmiyor.</sys:String>
+    <sys:String x:Key="Bulk_SetScreens" xml:space="preserve">Yalnızca işaretli ekranlar</sys:String>
+    <sys:String x:Key="Bulk_AddScreens" xml:space="preserve">İşaretlileri ekle</sys:String>
+    <sys:String x:Key="Bulk_RemoveScreens" xml:space="preserve">İşaretlileri çıkar</sys:String>
+    <sys:String x:Key="NowPlaying_Screens" xml:space="preserve">{0}/{1} ekranda yayın var</sys:String>
+    <sys:String x:Key="Status_NoScreens" xml:space="preserve">Açık ekran yok</sys:String>
+    <sys:String x:Key="Status_OnScreens" xml:space="preserve">{0} ekranda gösterim</sys:String>
+    <sys:String x:Key="Status_PartiallyWaiting" xml:space="preserve">{0}/{1} ekran oynuyor · bekleyen ekran: {2}</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Geçersiz renk. #RRGGBB biçiminde girin.</sys:String>
 </ResourceDictionary>

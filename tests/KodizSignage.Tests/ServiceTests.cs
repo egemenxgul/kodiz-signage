@@ -39,17 +39,17 @@ public class SettingsServiceTests
         service.Changed += (_, e) => raised = e;
 
         var display = new SavedDisplay(@"\\.\DISPLAY2", 1920, 1080, 1920, 0);
-        service.Update(s => s with { SelectedDisplay = display, VideoSoundEnabled = true });
+        service.Update(s => s.WithScreen(s.Screens[0] with { Display = display }) with { VideoSoundEnabled = true });
         await service.FlushAsync();
 
         Assert.NotNull(raised);
-        Assert.Null(raised!.OldSettings.SelectedDisplay);
-        Assert.Equal(display, raised.NewSettings.SelectedDisplay);
+        Assert.Null(raised!.OldSettings.Screens[0].Display);
+        Assert.Equal(display, raised.NewSettings.Screens[0].Display);
 
         var reloaded = new SettingsService(dir.Paths, TestLog.None);
         reloaded.Load();
         Assert.False(reloaded.IsFirstRun);
-        Assert.Equal(display, reloaded.Current.SelectedDisplay);
+        Assert.Equal(display, reloaded.Current.Screens[0].Display);
         Assert.True(reloaded.Current.VideoSoundEnabled);
     }
 

@@ -64,6 +64,7 @@ internal sealed class PlaybackEngine
         UIElement closedState,
         IPlaylistService playlist,
         ISettingsService settings,
+        int? screenNumber,
         Func<int> decodeWidth,
         ILogger log)
     {
@@ -73,6 +74,7 @@ internal sealed class PlaybackEngine
         _closedState = closedState;
         _playlist = playlist;
         _settings = settings;
+        ScreenNumber = screenNumber;
         _decodeWidth = decodeWidth;
         _log = log.ForContext<PlaybackEngine>();
 
@@ -81,6 +83,17 @@ internal sealed class PlaybackEngine
     }
 
     public PlaylistItem? CurrentItem => _current;
+
+    /// <summary>The screen this engine plays for; null = all media (preview of the whole library).</summary>
+    public int? ScreenNumber { get; }
+
+    /// <summary>The items of this screen, in playlist order.</summary>
+    private IReadOnlyList<PlaylistItem> Items =>
+        ScreenNumber is { } n ? PlaylistScheduler.ForScreen(_playlist.Items, n) : _playlist.Items;
+
+    /// <summary>General settings with this screen's overrides (scaling, background, sound).</summary>
+    public AppSettings Settings =>
+        ScreenNumber is { } n && _settings.Current.GetScreen(n) is { } screen ? screen.Apply(_settings.Current) : _settings.Current;
 
     public EngineState State { get; private set; } = EngineState.Idle;
 
@@ -130,7 +143,7 @@ internal sealed class PlaybackEngine
     public async Task RunAsync(CancellationToken stop)
     {
         _log.Information("Playback loop started");
-        ApplySettings(_settings.Current);
+        ApplySettings(Settings);
         try
         {
             while (!stop.IsCancellationRequested)
@@ -174,14 +187,14 @@ internal sealed class PlaybackEngine
         {
             _skipRequested = false;
 
-            if (!_settings.Current.OperatingHours.IsOpen(DateTime.Now))
+            if (!Settings.OperatingHours.IsOpen(DateTime.Now))
             {
                 await ShowClosedAsync(stop);
                 continue;
             }
 
             HideClosed();
-            var items = _playlist.Items;
+            var items = Items;
             var next = PlaylistScheduler.GetNext(items, _current, DateTime.Now, _failed);
 
             if (next is null)
@@ -254,7 +267,7 @@ internal sealed class PlaybackEngine
     private void StartPreload()
     {
         ClearPreload();
-        var candidate = PlaylistScheduler.GetNext(_playlist.Items, _current, DateTime.Now, _failed);
+        var candidate = PlaylistScheduler.GetNext(Items, _current, DateTime.Now, _failed);
         if (candidate is null || (candidate.Id == _current?.Id && candidate.Type == MediaType.Image))
         {
             return;
@@ -275,7 +288,7 @@ internal sealed class PlaybackEngine
 
     private async Task TransitionAsync(CancellationToken stop)
     {
-        var settings = _settings.Current;
+        var settings = Settings;
         var incoming = _back;
         var outgoing = _front;
 
@@ -312,12 +325,12 @@ internal sealed class PlaybackEngine
         var shownFor = NowPlaying?.Item.Id == current.Id ? NowPlaying.ShownFor : Stopwatch.StartNew();
         while (!stop.IsCancellationRequested && !_skipRequested)
         {
-            if (!_settings.Current.OperatingHours.IsOpen(DateTime.Now))
+            if (!Settings.OperatingHours.IsOpen(DateTime.Now))
             {
                 return; // Closing time: the loop switches to the closed screen.
             }
 
-            var latest = _playlist.Items.FirstOrDefault(i => i.Id == current.Id);
+            var latest = Items.FirstOrDefault(i => i.Id == current.Id);
             if (latest is null || !PlaylistScheduler.IsPlayable(latest, DateTime.Now) || latest.FilePath != current.FilePath)
             {
                 _log.Information("Current item {Name} was removed or disabled, advancing", current.OriginalName);
@@ -327,7 +340,7 @@ internal sealed class PlaybackEngine
             TimeSpan remaining;
             if (current.Type == MediaType.Image)
             {
-                remaining = PlaylistScheduler.GetImageDuration(latest, _settings.Current) - shownFor.Elapsed;
+                remaining = PlaylistScheduler.GetImageDuration(latest, Settings) - shownFor.Elapsed;
             }
             else
             {
@@ -418,7 +431,7 @@ internal sealed class PlaybackEngine
     {
         var front = _front;
         Func<TimeSpan?> duration = item.Type == MediaType.Image
-            ? () => PlaylistScheduler.GetImageDuration(_playlist.Items.FirstOrDefault(i => i.Id == item.Id) ?? item, _settings.Current)
+            ? () => PlaylistScheduler.GetImageDuration(Items.FirstOrDefault(i => i.Id == item.Id) ?? item, Settings)
             : () => front.Item?.Id == item.Id ? front.NaturalDuration : null;
         SetState(EngineState.Playing, new NowPlaying(item, Stopwatch.StartNew(), duration));
     }

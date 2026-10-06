@@ -62,6 +62,14 @@ public sealed record PlaylistItem
     /// <summary>Size + last-write stamp of the synced source file, to detect changes.</summary>
     public string? SyncStamp { get; init; }
 
+    /// <summary>
+    /// Numbers of the screens this item is shown on. Null = every screen (including ones added later).
+    /// An empty list = no screen (the item is kept but never shown).
+    /// </summary>
+    public EquatableList<int>? Screens { get; init; }
+
+    public bool IsOnScreen(int number) => Screens is null || Screens.Contains(number);
+
     public string Title => string.IsNullOrWhiteSpace(DisplayName) ? OriginalName : DisplayName;
 
     public bool HasSchedule => Days != WeekDays.All || StartTime is not null || EndTime is not null;

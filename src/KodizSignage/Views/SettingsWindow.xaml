@@ -180,7 +180,7 @@
             </Grid>
         </Border>
 
-        <TabControl x:Name="Tabs" Grid.Row="2" Margin="0,4,0,0">
+        <TabControl x:Name="Tabs" Grid.Row="2" Margin="0,4,0,0" SelectedIndex="{Binding SelectedTab}">
 
             <!-- ===================== MEDIA ===================== -->
             <TabItem Header="{DynamicResource Tab_Media}" DataContext="{Binding Media}">
@@ -209,6 +209,11 @@
                             </StackPanel>
                         </Button>
                         <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4" Visibility="{Binding ShowScreens, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{DynamicResource Filter_Label}" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <ComboBox ItemsSource="{Binding FilterOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                          SelectedValue="{Binding ScreenFilter}" MinWidth="220" />
+                            </StackPanel>
                             <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" />
                             <TextBlock Text="{DynamicResource Media_DropHint}" Style="{StaticResource Secondary}" FontSize="12" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                         </StackPanel>
@@ -286,7 +291,7 @@
                             <TextBlock Grid.Column="5" Text="{DynamicResource Media_Col_Schedule}" Style="{StaticResource ColumnHeader}" Width="170" Visibility="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource InvBoolToVis}}" />
                         </Grid>
 
-                        <ListBox x:Name="MediaList" Grid.Row="1" ItemsSource="{Binding Items}"
+                        <ListBox x:Name="MediaList" Grid.Row="1" ItemsSource="{Binding ItemsView}"
                                  SelectedItem="{Binding SelectedItem}"
                                  SelectionMode="Extended"
                                  ItemContainerStyle="{StaticResource CardListItem}"
@@ -347,7 +352,7 @@
                                                 <Border Background="{StaticResource AccentBrush}" CornerRadius="3" Padding="4,1" Margin="3"
                                                         HorizontalAlignment="Left" VerticalAlignment="Top"
                                                         Visibility="{Binding IsNowPlaying, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Text="{DynamicResource Media_OnAir}" FontSize="10" Foreground="White" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding OnAirText}" FontSize="10" Foreground="White" FontWeight="SemiBold" />
                                                 </Border>
                                             </Grid>
                                         </Border>
@@ -381,6 +386,30 @@
                                                 <TextBlock Text="{Binding ScheduleSummary}" FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" Margin="8,0,0,0"
                                                            TextTrimming="CharacterEllipsis"
                                                            Visibility="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
+                                            <!-- Screen chips: click to show / hide this item on a screen -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0"
+                                                        Visibility="{Binding DataContext.ShowScreens, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource BoolToVis}}">
+                                                <ItemsControl ItemsSource="{Binding ScreenChips}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:ScreenChipViewModel}">
+                                                            <ToggleButton x:Name="Chip" Style="{StaticResource DayToggle}" Width="26" Height="22" FontSize="11"
+                                                                          Content="{Binding Number}" IsChecked="{Binding IsOn}" ToolTip="{Binding Name}" />
+                                                            <DataTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding IsScreenEnabled}" Value="False">
+                                                                    <Setter TargetName="Chip" Property="Opacity" Value="0.45" />
+                                                                </DataTrigger>
+                                                            </DataTemplate.Triggers>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{DynamicResource Media_OnNoScreen}" FontSize="11.5" Foreground="{StaticResource WarningBrush}" VerticalAlignment="Center" Margin="4,0,0,0"
+                                                           Visibility="{Binding IsOnNoScreen, Converter={StaticResource BoolToVis}}" />
                                             </StackPanel>
                                         </StackPanel>
 
@@ -526,6 +555,25 @@
                                                  ToolTip="{Binding DefaultDurationHint}" />
                                     </StackPanel>
 
+                                    <StackPanel Visibility="{Binding ShowScreens, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{DynamicResource Media_Screens}" Style="{StaticResource FieldLabel}" />
+                                        <CheckBox Content="{DynamicResource Media_AllScreens}" IsChecked="{Binding SelectedItem.IsOnAllScreens}" Margin="0,0,0,8" />
+                                        <ItemsControl ItemsSource="{Binding SelectedItem.ScreenChips}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:ScreenChipViewModel}">
+                                                    <CheckBox x:Name="Box" Content="{Binding Name}" IsChecked="{Binding IsOn}" Margin="0,0,0,6" />
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsScreenEnabled}" Value="False">
+                                                            <Setter TargetName="Box" Property="Opacity" Value="0.5" />
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Text="{DynamicResource Media_OnNoScreenHint}" FontSize="11.5" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap"
+                                                   Visibility="{Binding SelectedItem.IsOnNoScreen, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                                    </StackPanel>
+
                                     <TextBlock Text="{DynamicResource Schedule_DatesTitle}" Style="{StaticResource FieldLabel}" />
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -568,6 +616,23 @@
                                         <Button Content="{DynamicResource Bulk_Deactivate}" Command="{Binding DeactivateCommand}" />
                                     </StackPanel>
 
+                                    <StackPanel Visibility="{Binding DataContext.ShowScreens, RelativeSource={RelativeSource AncestorType=ScrollViewer}, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{DynamicResource Media_Screens}" Style="{StaticResource FieldLabel}" />
+                                        <ItemsControl ItemsSource="{Binding Screens}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:BulkScreenOption}">
+                                                    <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" Margin="0,0,0,6" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <WrapPanel>
+                                            <Button Style="{StaticResource SmallButton}" Content="{DynamicResource Bulk_SetScreens}" Command="{Binding SetScreensCommand}" Margin="0,0,6,6" />
+                                            <Button Style="{StaticResource SmallButton}" Content="{DynamicResource Bulk_AddScreens}" Command="{Binding AddScreensCommand}" Margin="0,0,6,6" />
+                                            <Button Style="{StaticResource SmallButton}" Content="{DynamicResource Bulk_RemoveScreens}" Command="{Binding RemoveScreensCommand}" Margin="0,0,6,6" />
+                                            <Button Style="{StaticResource SmallButton}" Content="{DynamicResource Media_AllScreens}" Command="{Binding AllScreensCommand}" Margin="0,0,6,6" />
+                                        </WrapPanel>
+                                    </StackPanel>
+
                                     <TextBlock Text="{DynamicResource Bulk_Duration}" Style="{StaticResource FieldLabel}" />
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -607,85 +672,170 @@
                 </Grid>
             </TabItem>
 
-            <!-- ===================== DISPLAY ===================== -->
+            <!-- ===================== SCREENS ===================== -->
             <TabItem Header="{DynamicResource Tab_Display}" DataContext="{Binding Display}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="24,20" MaxWidth="900" HorizontalAlignment="Left">
-                        <TextBlock Text="{DynamicResource Display_Title}" Style="{StaticResource H1}" />
-                        <TextBlock Text="{DynamicResource Display_Description}" Style="{StaticResource Secondary}" Margin="0,6,0,16" MaxWidth="760" HorizontalAlignment="Left" />
+                    <StackPanel Margin="24,20" MaxWidth="980" HorizontalAlignment="Left">
+                        <TextBlock Text="{DynamicResource Screens_Title}" Style="{StaticResource H1}" />
+                        <TextBlock Text="{DynamicResource Screens_Description}" Style="{StaticResource Secondary}" Margin="0,6,0,14" MaxWidth="820" HorizontalAlignment="Left" />
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <Button Command="{Binding IdentifyCommand}" Margin="0,0,8,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE7F4;" Margin="0,0,8,0" />
-                                    <TextBlock Text="{DynamicResource Display_Identify}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding RefreshCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" Margin="0,0,8,0" />
-                                    <TextBlock Text="{DynamicResource Display_Refresh}" />
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Command="{Binding IdentifyCommand}" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7F4;" Margin="0,0,8,0" />
+                                        <TextBlock Text="{DynamicResource Display_Identify}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding RefreshCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" Margin="0,0,8,0" />
+                                        <TextBlock Text="{DynamicResource Display_Refresh}" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
 
-                        <Border Padding="12,10" CornerRadius="6" Margin="0,0,0,16"
+                        <Border Padding="12,10" CornerRadius="6" Margin="0,0,0,14" Background="{StaticResource WarningSoftBrush}"
                                 Visibility="{Binding StatusText, Converter={StaticResource NullToVis}}">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="Background" Value="{StaticResource ControlBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasWarning}" Value="True">
-                                            <Setter Property="Background" Value="{StaticResource WarningSoftBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
                             <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
                         </Border>
 
-                        <ItemsControl ItemsSource="{Binding Displays}">
+                        <ItemsControl ItemsSource="{Binding Cards}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type vm:DisplayItemViewModel}">
+                                <DataTemplate DataType="{x:Type vm:ScreenCardViewModel}">
                                     <Border x:Name="Card" Style="{StaticResource Card}" Padding="16" Margin="0,0,0,10">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Border Width="56" Height="40" CornerRadius="6" Background="{StaticResource ControlBrush}" Margin="0,0,16,0">
-                                                <TextBlock Text="{Binding Number}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Border>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" />
-                                                    <Border Background="{StaticResource ControlBrush}" CornerRadius="4" Padding="6,1" Margin="10,0,0,0"
-                                                            Visibility="{Binding IsPrimary, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="{DynamicResource Display_Primary}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
-                                                    </Border>
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Number -->
+                                                <Border x:Name="NumberBox" Width="52" Height="52" CornerRadius="8" Background="{StaticResource ControlBrush}" Margin="0,0,16,0" VerticalAlignment="Top">
+                                                    <TextBlock Text="{Binding Badge}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <!-- Title, hardware, status -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                        <Border Background="{StaticResource ControlBrush}" CornerRadius="4" Padding="6,1" Margin="10,0,0,0"
+                                                                Visibility="{Binding IsPrimary, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="{DynamicResource Display_Primary}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" />
+                                                        </Border>
+                                                        <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="4" Padding="6,1" Margin="10,0,0,0"
+                                                                Visibility="{Binding IsConnected, Converter={StaticResource InvBoolToVis}}">
+                                                            <TextBlock Text="{DynamicResource Screen_NotConnected}" FontSize="11" Foreground="{StaticResource WarningBrush}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Hardware}" Foreground="{StaticResource TextMutedBrush}" FontSize="12" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                        <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                            <Ellipse.Style>
+                                                                <Style TargetType="Ellipse">
+                                                                    <Setter Property="Fill" Value="{StaticResource TextMutedBrush}" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Playing">
+                                                                            <Setter Property="Fill" Value="{StaticResource SuccessBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Waiting">
+                                                                            <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Fallback">
+                                                                            <Setter Property="Fill" Value="{StaticResource WarningBrush}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Ellipse.Style>
+                                                        </Ellipse>
+                                                        <TextBlock Text="{Binding StatusText}" FontSize="12.5" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding MediaText}" FontSize="12.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="14,0,0,0"
+                                                                   Visibility="{Binding HasConfig, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
                                                 </StackPanel>
-                                                <TextBlock Margin="0,3,0,0" Foreground="{StaticResource TextSecondaryBrush}">
-                                                    <Run Text="{Binding Resolution, Mode=OneWay}" />
-                                                    <Run Text=" · " />
-                                                    <Run Text="{Binding Details, Mode=OneWay}" />
-                                                </TextBlock>
-                                            </StackPanel>
-                                            <Grid Grid.Column="2" VerticalAlignment="Center">
-                                                <Button Content="{DynamicResource Display_Use}"
-                                                        Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Visibility="{Binding IsSelected, Converter={StaticResource InvBoolToVis}}" />
-                                                <StackPanel Orientation="Horizontal" Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE73E;" Foreground="{StaticResource SuccessBrush}" Margin="0,0,8,0" />
-                                                    <TextBlock Text="{DynamicResource Display_Selected}" Foreground="{StaticResource SuccessBrush}" FontWeight="SemiBold" />
-                                                </StackPanel>
+
+                                                <!-- On/off -->
+                                                <CheckBox Grid.Column="2" Content="{DynamicResource Screen_ShowHere}" IsChecked="{Binding IsEnabled}" VerticalAlignment="Top" Margin="12,4,0,0"
+                                                          IsEnabled="{Binding CanToggle}" />
                                             </Grid>
-                                        </Grid>
+
+                                            <!-- Actions -->
+                                            <WrapPanel Margin="68,12,0,0" Visibility="{Binding HasConfig, Converter={StaticResource BoolToVis}}">
+                                                <TextBox Width="220" Margin="0,0,8,6" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Delay=700}"
+                                                         ToolTip="{DynamicResource Screen_NameHint}" />
+                                                <Button Style="{StaticResource SmallButton}" Command="{Binding EditMediaCommand}" Margin="0,0,8,6">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8B9;" FontSize="12" Margin="0,0,6,0" />
+                                                        <TextBlock Text="{DynamicResource Screen_EditMedia}" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource SmallButton}" Command="{Binding PreviewCommand}" Margin="0,0,8,6">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7B3;" FontSize="12" Margin="0,0,6,0" />
+                                                        <TextBlock Text="{DynamicResource Preview_Button}" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource SmallButton}" Command="{Binding ToggleExpandedCommand}" Margin="0,0,8,6">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE713;" FontSize="12" Margin="0,0,6,0" />
+                                                        <TextBlock Text="{DynamicResource Screen_Appearance}" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource SmallButton}" Command="{Binding ForgetCommand}" Margin="0,0,8,6"
+                                                        Visibility="{Binding IsConnected, Converter={StaticResource InvBoolToVis}}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="12" Foreground="{StaticResource DangerBrush}" Margin="0,0,6,0" />
+                                                        <TextBlock Text="{DynamicResource Screen_Forget}" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </WrapPanel>
+
+                                            <!-- Per-screen appearance -->
+                                            <Border Margin="68,8,0,0" Padding="14" CornerRadius="8" Background="{StaticResource SurfaceRaisedBrush}"
+                                                    Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="240" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Text="{DynamicResource General_Scaling}" VerticalAlignment="Center" Margin="0,0,16,8" />
+                                                    <ComboBox Grid.Column="1" Margin="0,0,0,8"
+                                                              ItemsSource="{Binding DataContext.ScalingChoices, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                              DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ScalingChoice}" />
+                                                    <TextBlock Grid.Row="1" Text="{DynamicResource General_SectionAudio}" VerticalAlignment="Center" Margin="0,0,16,8" />
+                                                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"
+                                                              ItemsSource="{Binding DataContext.SoundChoices, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                              DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding SoundChoice}" />
+                                                    <CheckBox Grid.Row="2" Content="{DynamicResource Screen_OwnBackground}" IsChecked="{Binding HasOwnBackground}" Margin="0,0,16,0" />
+                                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" IsEnabled="{Binding HasOwnBackground}">
+                                                        <Border Width="30" Height="30" CornerRadius="6" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="0,0,8,0"
+                                                                Background="{Binding BackgroundColor, Converter={StaticResource ColorToBrush}}" />
+                                                        <TextBox Width="110" Text="{Binding BackgroundColor, UpdateSourceTrigger=PropertyChanged, Delay=500}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
                                     </Border>
                                     <DataTemplate.Triggers>
-                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                        <DataTrigger Binding="{Binding IsEnabled}" Value="True">
                                             <Setter TargetName="Card" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                            <Setter TargetName="NumberBox" Property="Background" Value="{StaticResource AccentBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                            <Setter TargetName="Card" Property="Opacity" Value="0.85" />
                                         </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>

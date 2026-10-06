@@ -20,7 +20,7 @@ public partial class PlayerWindow : Window
     private readonly ILogger _log;
     private DisplayInfo? _target;
 
-    internal PlayerWindow(IPlaylistService playlist, ISettingsService settings, ILogger log, bool preview = false)
+    internal PlayerWindow(IPlaylistService playlist, ISettingsService settings, ILogger log, int? screenNumber, bool preview = false)
     {
         InitializeComponent();
         _log = log.ForContext<PlayerWindow>();
@@ -28,7 +28,7 @@ public partial class PlayerWindow : Window
 
         var layerA = new MediaLayer("A", LayerA, ImageA, VideoA, _log) { ForceMute = preview };
         var layerB = new MediaLayer("B", LayerB, ImageB, VideoB, _log) { ForceMute = preview };
-        Engine = new PlaybackEngine(layerA, layerB, EmptyState, ClosedState, playlist, settings,
+        Engine = new PlaybackEngine(layerA, layerB, EmptyState, ClosedState, playlist, settings, screenNumber,
             () => preview ? 1280 : _target?.Width ?? (int)SystemParameters.PrimaryScreenWidth, log);
 
         if (preview)

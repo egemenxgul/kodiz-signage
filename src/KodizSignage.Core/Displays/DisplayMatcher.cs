@@ -61,5 +61,58 @@ public static class DisplayMatcher
         return new DisplayMatch(primary, DisplayMatchKind.Fallback);
     }
 
+    /// <summary>
+    /// Matches several screens at once; a physical display is never given to two screens. Rules are
+    /// applied in passes (exact → position+resolution → device name → "primary" screens) so that a
+    /// strong match always wins over a weaker one. Unmatched screens get <see cref="DisplayMatchKind.Fallback"/>
+    /// with a null display.
+    /// </summary>
+    public static IReadOnlyDictionary<int, DisplayMatch> MatchAll(IReadOnlyList<ScreenConfig> screens, IReadOnlyList<DisplayInfo> displays)
+    {
+        var result = new Dictionary<int, DisplayMatch>();
+        var used = new HashSet<DisplayInfo>();
+
+        void Pass(DisplayMatchKind kind, Func<SavedDisplay, DisplayInfo, bool> rule)
+        {
+            foreach (var screen in screens.Where(s => s.Display is not null && !result.ContainsKey(s.Number)))
+            {
+                var display = displays.FirstOrDefault(d => !used.Contains(d) && rule(screen.Display!, d));
+                if (display is not null)
+                {
+                    used.Add(display);
+                    result[screen.Number] = new DisplayMatch(display, kind);
+                }
+            }
+        }
+
+        Pass(DisplayMatchKind.Exact, (s, d) => Same(d.DeviceName, s.DeviceName) && d.Width == s.Width && d.Height == s.Height);
+        Pass(DisplayMatchKind.SamePositionAndResolution, (s, d) => d.X == s.X && d.Y == s.Y && d.Width == s.Width && d.Height == s.Height);
+        Pass(DisplayMatchKind.SameDeviceName, (s, d) => Same(d.DeviceName, s.DeviceName));
+
+        // Screens without a stored display follow the primary display (if no other screen took it).
+        var primary = displays.FirstOrDefault(d => d.IsPrimary) ?? displays.FirstOrDefault();
+        foreach (var screen in screens.Where(s => s.Display is null && !result.ContainsKey(s.Number)))
+        {
+            if (primary is not null && used.Add(primary))
+            {
+                result[screen.Number] = new DisplayMatch(primary, DisplayMatchKind.NotConfigured);
+            }
+        }
+
+        foreach (var screen in screens.Where(s => !result.ContainsKey(s.Number)))
+        {
+            result[screen.Number] = new DisplayMatch(null, displays.Count == 0 ? DisplayMatchKind.None : DisplayMatchKind.Fallback);
+        }
+
+        return result;
+    }
+
+    /// <summary>The display a screen may borrow while its own one is missing (primary, if no other screen uses it).</summary>
+    public static DisplayInfo? FallbackDisplay(IReadOnlyDictionary<int, DisplayMatch> matches, IReadOnlyList<DisplayInfo> displays)
+    {
+        var primary = displays.FirstOrDefault(d => d.IsPrimary) ?? displays.FirstOrDefault();
+        return primary is not null && matches.Values.All(m => m.Display != primary) ? primary : null;
+    }
+
     private static bool Same(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
 }

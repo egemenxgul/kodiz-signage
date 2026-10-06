@@ -13,7 +13,11 @@ public sealed record AppSettings
 
     public AppLanguage Language { get; init; } = AppLanguage.Auto;
 
+    /// <summary>Legacy single-display setting (v1.0/1.1); migrated into <see cref="Screens"/> by <see cref="Normalize"/>.</summary>
     public SavedDisplay? SelectedDisplay { get; init; }
+
+    /// <summary>The screens the show is played on. Never empty after <see cref="Normalize"/>.</summary>
+    public EquatableList<ScreenConfig> Screens { get; init; } = EquatableList<ScreenConfig>.Empty;
 
     public bool StartWithWindows { get; init; } = true;
 
@@ -58,6 +62,8 @@ public sealed record AppSettings
     /// <summary>Clamps out-of-range values (e.g. from a hand-edited file) to sane ones.</summary>
     public AppSettings Normalize() => this with
     {
+        Screens = NormalizeScreens(Screens, SelectedDisplay),
+        SelectedDisplay = null,
         DefaultImageDurationSeconds = double.IsFinite(DefaultImageDurationSeconds)
             ? Math.Clamp(DefaultImageDurationSeconds, MinImageDuration, MaxImageDuration)
             : 10,
@@ -74,6 +80,38 @@ public sealed record AppSettings
         OperatingHours = (OperatingHours ?? new OperatingHours()).Normalize(),
         WatchFolderPath = string.IsNullOrWhiteSpace(WatchFolderPath) ? null : WatchFolderPath.Trim(),
     };
+
+    /// <summary>
+    /// Migrates the old single display into screen 1, removes duplicates/invalid entries and makes
+    /// sure at least one screen exists (screen 1 on the primary display).
+    /// </summary>
+    private static EquatableList<ScreenConfig> NormalizeScreens(EquatableList<ScreenConfig>? screens, SavedDisplay? legacy)
+    {
+        var list = (screens ?? EquatableList<ScreenConfig>.Empty)
+            .Where(s => s is not null && s.Number is >= 1 and <= ScreenConfig.MaxScreens)
+            .GroupBy(s => s.Number)
+            .Select(g => g.First().Normalize())
+            .OrderBy(s => s.Number)
+            .ToList();
+
+        if (list.Count == 0)
+        {
+            list.Add(new ScreenConfig { Number = 1, Display = legacy });
+        }
+
+        return list.ToEquatableList();
+    }
+
+    public ScreenConfig? GetScreen(int number) => Screens.FirstOrDefault(s => s.Number == number);
+
+    public AppSettings WithScreen(ScreenConfig screen) => this with
+    {
+        Screens = Screens.Where(s => s.Number != screen.Number).Append(screen).OrderBy(s => s.Number).ToEquatableList(),
+    };
+
+    /// <summary>Smallest number not used by an existing screen.</summary>
+    public int NextScreenNumber() =>
+        Enumerable.Range(1, ScreenConfig.MaxScreens).FirstOrDefault(n => Screens.All(s => s.Number != n));
 
     public static bool IsValidColor(string? value) =>
         value is { Length: 7 } && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit);

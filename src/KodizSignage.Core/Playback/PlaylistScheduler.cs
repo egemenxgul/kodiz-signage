@@ -35,6 +35,10 @@ public static class PlaylistScheduler
         return ScheduleRules.IsInWindow(item.Days, item.StartTime, item.EndTime, now);
     }
 
+    /// <summary>The items assigned to screen <paramref name="screenNumber"/>, in playlist order.</summary>
+    public static IReadOnlyList<PlaylistItem> ForScreen(IEnumerable<PlaylistItem> items, int screenNumber) =>
+        Sort(items.Where(i => i.IsOnScreen(screenNumber)));
+
     public static IReadOnlyList<PlaylistItem> GetPlayable(IEnumerable<PlaylistItem> items, DateTime now) =>
         Sort(items).Where(i => IsPlayable(i, now)).ToList();
 

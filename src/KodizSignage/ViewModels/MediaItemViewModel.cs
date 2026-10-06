@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using KodizSignage.Core.Models;
@@ -5,6 +6,45 @@ using KodizSignage.Core.Playback;
 using KodizSignage.Services;
 
 namespace KodizSignage.ViewModels;
+
+/// <summary>A screen toggle ("chip") of a media row: is this item shown on screen N?</summary>
+public sealed partial class ScreenChipViewModel : ObservableObject
+{
+    private readonly Action<int, bool> _toggle;
+    private bool _syncing;
+
+    public ScreenChipViewModel(int number, string name, bool isEnabled, Action<int, bool> toggle)
+    {
+        Number = number;
+        _name = name;
+        _isScreenEnabled = isEnabled;
+        _toggle = toggle;
+    }
+
+    public int Number { get; }
+
+    [ObservableProperty] private string _name;
+
+    /// <summary>False when the screen itself is switched off (shown dimmed).</summary>
+    [ObservableProperty] private bool _isScreenEnabled;
+
+    [ObservableProperty] private bool _isOn;
+
+    public void Set(bool isOn)
+    {
+        _syncing = true;
+        IsOn = isOn;
+        _syncing = false;
+    }
+
+    partial void OnIsOnChanged(bool value)
+    {
+        if (!_syncing)
+        {
+            _toggle(Number, value);
+        }
+    }
+}
 
 /// <summary>One row of the media list. Edits are pushed to the playlist service via a callback.</summary>
 public sealed partial class MediaItemViewModel : ObservableObject
@@ -56,6 +96,19 @@ public sealed partial class MediaItemViewModel : ObservableObject
     [ObservableProperty]
     private string _scheduleSummary = string.Empty;
 
+    /// <summary>"ON AIR" badge text (with screen numbers when several screens exist), null when not playing.</summary>
+    [ObservableProperty]
+    private string? _onAirText;
+
+    /// <summary>Shown on no enabled screen at all.</summary>
+    [ObservableProperty]
+    private bool _isOnNoScreen;
+
+    [ObservableProperty]
+    private bool _isOnAllScreens;
+
+    public ObservableCollection<ScreenChipViewModel> ScreenChips { get; } = new();
+
     public ScheduleEditor Schedule { get; }
 
     public Guid Id => Item.Id;
@@ -84,6 +137,7 @@ public sealed partial class MediaItemViewModel : ObservableObject
             EndDate = item.EndDate;
             DisplayName = item.DisplayName ?? string.Empty;
             Schedule.Load(item.Days, item.StartTime, item.EndTime);
+            SyncScreenChips();
             RefreshTexts();
             OnPropertyChanged(nameof(Name));
             OnPropertyChanged(nameof(OriginalName));
@@ -104,6 +158,68 @@ public sealed partial class MediaItemViewModel : ObservableObject
     {
         IsPlayableNow = PlaylistScheduler.IsPlayable(Item, DateTime.Now);
         ScheduleSummary = ScheduleText.Describe(Item, _loc);
+    }
+
+    /// <summary>Rebuilds the chips when screens were added/removed/renamed.</summary>
+    public void UpdateScreens(IReadOnlyList<ScreenConfig> screens, Func<ScreenConfig, string> nameOf)
+    {
+        if (ScreenChips.Select(c => c.Number).SequenceEqual(screens.Select(s => s.Number)))
+        {
+            foreach (var (chip, screen) in ScreenChips.Zip(screens))
+            {
+                chip.Name = nameOf(screen);
+                chip.IsScreenEnabled = screen.Enabled;
+            }
+        }
+        else
+        {
+            ScreenChips.Clear();
+            foreach (var screen in screens)
+            {
+                ScreenChips.Add(new ScreenChipViewModel(screen.Number, nameOf(screen), screen.Enabled, ToggleScreen));
+            }
+        }
+
+        SyncScreenChips();
+    }
+
+    private void SyncScreenChips()
+    {
+        foreach (var chip in ScreenChips)
+        {
+            chip.Set(Item.IsOnScreen(chip.Number));
+        }
+
+        _syncing = true;
+        IsOnAllScreens = Item.Screens is null;
+        _syncing = false;
+        IsOnNoScreen = !ScreenChips.Any(c => c.IsScreenEnabled && c.IsOn);
+    }
+
+    /// <summary>Adds/removes one screen; "all screens" turns into an explicit list first.</summary>
+    private void ToggleScreen(int number, bool on)
+    {
+        var current = Item.Screens?.ToList() ?? ScreenChips.Select(c => c.Number).ToList();
+        current.Remove(number);
+        if (on)
+        {
+            current.Add(number);
+        }
+
+        Commit(Item with { Screens = current.Order().ToEquatableList() });
+    }
+
+    partial void OnIsOnAllScreensChanged(bool value)
+    {
+        if (_syncing)
+        {
+            return;
+        }
+
+        Commit(Item with
+        {
+            Screens = value ? null : ScreenChips.Where(c => c.IsOn).Select(c => c.Number).ToEquatableList(),
+        });
     }
 
     partial void OnIsActiveChanged(bool value) => Commit(Item with { IsActive = value });

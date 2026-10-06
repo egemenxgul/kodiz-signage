@@ -25,6 +25,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         _playback = playback;
         _loc = loc;
 
+        Display.EditMediaRequested += (_, number) =>
+        {
+            Media.FilterToScreen(number);
+            SelectedTab = 0;
+        };
         _playback.StateChanged += (_, _) => Application.Current.Dispatcher.BeginInvoke(UpdateState);
         _loc.LanguageChanged += (_, _) => UpdateState();
         UpdateState();
@@ -36,6 +41,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     public ShortcutsViewModel Shortcuts { get; }
 
     [ObservableProperty] private bool _isPlaying;
+
+    /// <summary>0 Media, 1 Screens, 2 General, 3 Shortcuts.</summary>
+    [ObservableProperty] private int _selectedTab;
     [ObservableProperty] private string _statusText = string.Empty;
     [ObservableProperty] private string _placementText = string.Empty;
 
@@ -61,24 +69,30 @@ public sealed partial class SettingsViewModel : ObservableObject
     private void UpdateState()
     {
         var status = _playback.Status;
+        var screens = _playback.Screens.Where(x => x.Status != ScreenStatus.Off).ToList();
         IsPlaying = _playback.IsRunning;
-        IsFallback = status is PlaybackStatus.OnFallbackDisplay or PlaybackStatus.WaitingForDisplay;
+        IsFallback = status is PlaybackStatus.OnFallbackDisplay or PlaybackStatus.WaitingForDisplay or PlaybackStatus.PartiallyWaiting;
         StatusText = _loc.Get(status switch
         {
             PlaybackStatus.Stopped => "Status_Stopped",
             PlaybackStatus.Closed => "Status_Closed",
             PlaybackStatus.Empty => "Status_Empty",
             PlaybackStatus.WaitingForDisplay => "Status_WaitingDisplay",
+            PlaybackStatus.NoScreens => "Status_NoScreens",
             _ => "Status_Playing",
         });
 
-        var placement = _playback.CurrentPlacement;
         PlacementText = status switch
         {
+            PlaybackStatus.Stopped => string.Empty,
+            PlaybackStatus.NoScreens => _loc.Get("Screens_NoneEnabled"),
             PlaybackStatus.OnFallbackDisplay => _loc.Get("Status_Fallback"),
             PlaybackStatus.WaitingForDisplay => _loc.Get("Status_WaitingDisplayHint"),
-            PlaybackStatus.Stopped => string.Empty,
-            _ when placement?.Display is { } d => _loc.Format("Status_OnDisplay", $"{d.DeviceName.TrimStart('\\', '.')} · {d.Width}×{d.Height}"),
+            PlaybackStatus.PartiallyWaiting => _loc.Format("Status_PartiallyWaiting",
+                screens.Count(x => x.Status != ScreenStatus.Waiting), screens.Count,
+                string.Join(", ", screens.Where(x => x.Status == ScreenStatus.Waiting).Select(x => x.Number))),
+            _ when screens.Count > 1 => _loc.Format("Status_OnScreens", screens.Count),
+            _ when screens.FirstOrDefault()?.Display is { } d => _loc.Format("Status_OnDisplay", $"{d.DeviceName.TrimStart('\\', '.')} · {d.Width}×{d.Height}"),
             _ => string.Empty,
         };
     }

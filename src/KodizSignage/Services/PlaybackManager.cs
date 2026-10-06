@@ -11,32 +11,34 @@ using static KodizSignage.Native.NativeMethods;
 
 namespace KodizSignage.Services;
 
-/// <summary>High-level state for the status line and tray.</summary>
+/// <summary>Overall state for the status line and tray.</summary>
 public enum PlaybackStatus
 {
     Stopped,
     Playing,
-    /// <summary>Nothing active / in its time window.</summary>
+    /// <summary>Nothing active / in its time window (on every screen).</summary>
     Empty,
     /// <summary>Outside the opening hours.</summary>
     Closed,
-    /// <summary>The selected display is missing; the player is hidden until it returns.</summary>
+    /// <summary>All screens wait for their display.</summary>
     WaitingForDisplay,
-    /// <summary>The selected display is missing; playing on the primary display meanwhile.</summary>
+    /// <summary>At least one screen plays on the primary display instead of its own.</summary>
     OnFallbackDisplay,
+    /// <summary>Some screens play, others wait for their display.</summary>
+    PartiallyWaiting,
+    /// <summary>Every screen is switched off.</summary>
+    NoScreens,
 }
 
 public interface IPlaybackManager
 {
-    /// <summary>True when the user wants playback (it may still be waiting for the display).</summary>
+    /// <summary>True when the user wants playback (screens may still wait for their display).</summary>
     bool IsRunning { get; }
 
     PlaybackStatus Status { get; }
 
-    /// <summary>The display the player currently uses, and whether it is the one the user selected.</summary>
-    DisplayMatch? CurrentPlacement { get; }
-
-    NowPlaying? NowPlaying { get; }
+    /// <summary>One entry per configured screen.</summary>
+    IReadOnlyList<ScreenState> Screens { get; }
 
     event EventHandler? StateChanged;
 
@@ -46,21 +48,22 @@ public interface IPlaybackManager
 
     Task ToggleAsync();
 
+    /// <summary>Skips to the next item on every screen.</summary>
     void Next();
 
-    /// <summary>Plays the show in an ordinary window (muted) – independent of the real player.</summary>
-    void ShowPreview();
+    /// <summary>Plays a screen's lineup (null = all media) in an ordinary, muted window.</summary>
+    void ShowPreview(int? screenNumber);
 
-    /// <summary>True when the visible full-screen player covers the monitor <paramref name="hwnd"/> is on.</summary>
+    /// <summary>True when a visible full-screen player covers the monitor <paramref name="hwnd"/> is on.</summary>
     bool CoversMonitorOf(IntPtr hwnd);
 
-    /// <summary>Closes the player window for good (application exit).</summary>
+    /// <summary>Closes all player windows for good (application exit).</summary>
     Task ShutdownAsync();
 }
 
 /// <summary>
-/// Owns the player window: start/stop, placement on the selected display (fallback or waiting,
-/// 5-second retry), sleep prevention and live application of settings / playlist changes.
+/// Runs one full-screen player per enabled screen: placement on its display (waiting or falling
+/// back when the display is missing, 5-second retry), sleep prevention and live updates.
 /// </summary>
 public sealed class PlaybackManager : IPlaybackManager
 {
@@ -74,14 +77,10 @@ public sealed class PlaybackManager : IPlaybackManager
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _retryTimer;
     private readonly DispatcherTimer _displayChangeDebounce;
-
-    private PlayerWindow? _window;
-    private PlayerWindow? _preview;
-    private CancellationTokenSource? _previewCts;
-    private CancellationTokenSource? _cts;
-    private Task _loop = Task.CompletedTask;
-    private bool _waitingForDisplay;
-    private DisplayMatchKind? _lastLoggedKind;
+    private readonly Dictionary<int, ScreenPlayer> _players = new();
+    private readonly Dictionary<int, PlayerWindow> _previews = new();
+    private const int AllMediaPreviewKey = 0;
+    private string _lastPlacementLog = string.Empty;
 
     public PlaybackManager(
         ISettingsService settings,
@@ -98,21 +97,23 @@ public sealed class PlaybackManager : IPlaybackManager
         _dispatcher = Application.Current.Dispatcher;
 
         _retryTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher) { Interval = RetryInterval };
-        _retryTimer.Tick += (_, _) => PlaceWindow();
+        _retryTimer.Tick += (_, _) => PlaceAll();
 
         // Windows rearranges monitors in several steps; wait for it to settle.
         _displayChangeDebounce = new DispatcherTimer(DispatcherPriority.Background, _dispatcher) { Interval = TimeSpan.FromSeconds(1) };
         _displayChangeDebounce.Tick += (_, _) =>
         {
             _displayChangeDebounce.Stop();
-            PlaceWindow();
+            PlaceAll();
         };
 
         _settings.Changed += (_, e) => _dispatcher.BeginInvoke(() => OnSettingsChanged(e));
         _playlist.Changed += (_, _) => _dispatcher.BeginInvoke(() =>
         {
-            _window?.Engine.Invalidate();
-            _preview?.Engine.Invalidate();
+            foreach (var window in AllWindows())
+            {
+                window.Engine.Invalidate();
+            }
         });
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
@@ -122,13 +123,9 @@ public sealed class PlaybackManager : IPlaybackManager
 
     public PlaybackStatus Status { get; private set; } = PlaybackStatus.Stopped;
 
-    public DisplayMatch? CurrentPlacement { get; private set; }
-
-    public NowPlaying? NowPlaying => IsLoopActive ? _window?.Engine.NowPlaying : null;
+    public IReadOnlyList<ScreenState> Screens { get; private set; } = Array.Empty<ScreenState>();
 
     public event EventHandler? StateChanged;
-
-    private bool IsLoopActive => _cts is not null;
 
     public void Start()
     {
@@ -139,10 +136,9 @@ public sealed class PlaybackManager : IPlaybackManager
 
         _log.Information("Starting playback");
         IsRunning = true;
-        var window = EnsureWindow();
-        window.ApplyBackground(_settings.Current.BackgroundColor);
-        window.SetSettingsShortcut(HotkeyDisplay.Format(_settings.Current.Hotkeys.ShowSettings));
-        PlaceWindow(); // Starts the loop when (and only when) a usable display is there.
+        SyncPlayers();
+        PlaceAll(); // Starts each screen when (and only when) its display is there.
+        UpdateStatus();
     }
 
     public async Task StopAsync()
@@ -154,9 +150,13 @@ public sealed class PlaybackManager : IPlaybackManager
 
         _log.Information("Stopping playback");
         IsRunning = false;
-        _waitingForDisplay = false;
         _retryTimer.Stop();
-        await StopLoopAsync();
+        foreach (var player in _players.Values.ToList())
+        {
+            player.IsWaiting = false;
+            await player.StopAsync();
+        }
+
         _power.AllowSleep();
         UpdateStatus();
     }
@@ -174,113 +174,100 @@ public sealed class PlaybackManager : IPlaybackManager
 
     public void Next()
     {
-        if (IsLoopActive)
+        foreach (var player in _players.Values.Where(p => p.IsActive))
         {
-            _window?.Engine.RequestNext();
+            player.Window.Engine.RequestNext();
         }
     }
 
-    public void ShowPreview()
+    public void ShowPreview(int? screenNumber)
     {
-        if (_preview is not null)
+        var key = screenNumber ?? AllMediaPreviewKey;
+        if (_previews.TryGetValue(key, out var existing))
         {
-            _preview.Activate();
+            existing.Activate();
             return;
         }
 
-        var preview = new PlayerWindow(_playlist, _settings, _log, preview: true);
-        preview.Title = (Application.Current.TryFindResource("Preview_Title") as string) ?? "Preview";
-        preview.ApplyBackground(_settings.Current.BackgroundColor);
+        var preview = new PlayerWindow(_playlist, _settings, _log, screenNumber, preview: true);
+        var title = (Application.Current.TryFindResource("Preview_Title") as string) ?? "Preview";
+        preview.Title = screenNumber is { } n ? $"{title} · {ScreenName(n)}" : title;
+        preview.ApplyBackground(preview.Engine.Settings.BackgroundColor);
         var cts = new CancellationTokenSource();
         preview.Closed += (_, _) =>
         {
             cts.Cancel();
-            _preview = null;
-            _previewCts = null;
+            _previews.Remove(key);
         };
-        _preview = preview;
-        _previewCts = cts;
+        _previews[key] = preview;
         preview.Show();
         _ = preview.Engine.RunAsync(cts.Token);
     }
 
     public bool CoversMonitorOf(IntPtr hwnd)
     {
-        if (_window is not { IsVisible: true } window || hwnd == IntPtr.Zero)
+        if (hwnd == IntPtr.Zero)
         {
             return false;
         }
 
-        var playerMonitor = MonitorFromWindow(window.Handle, MONITOR_DEFAULTTONULL);
-        return playerMonitor != IntPtr.Zero && playerMonitor == MonitorFromWindow(hwnd, MONITOR_DEFAULTTONULL);
+        var monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONULL);
+        return monitor != IntPtr.Zero && _players.Values.Any(p =>
+            p.Window.IsVisible && MonitorFromWindow(p.Window.Handle, MONITOR_DEFAULTTONULL) == monitor);
     }
 
     public async Task ShutdownAsync()
     {
         await StopAsync();
-        _previewCts?.Cancel();
-        _preview?.Close();
+        foreach (var preview in _previews.Values.ToList())
+        {
+            preview.Close();
+        }
+
         SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
-        if (_window is not null)
+        foreach (var player in _players.Values.ToList())
         {
-            _window.AllowClose = true;
-            _window.Close();
-            _window = null;
+            await player.CloseAsync();
+        }
+
+        _players.Clear();
+    }
+
+    private IEnumerable<PlayerWindow> AllWindows() => _players.Values.Select(p => p.Window).Concat(_previews.Values);
+
+    private string ScreenName(int number) =>
+        _settings.Current.GetScreen(number)?.Name is { } name
+            ? $"{number} · {name}"
+            : string.Format((Application.Current.TryFindResource("Screen_Default") as string) ?? "Screen {0}", number);
+
+    /// <summary>Creates players for enabled screens and closes the ones of disabled/removed screens.</summary>
+    private void SyncPlayers()
+    {
+        var enabled = _settings.Current.Screens.Where(s => s.Enabled).Select(s => s.Number).ToHashSet();
+
+        foreach (var number in _players.Keys.Where(n => !enabled.Contains(n)).ToList())
+        {
+            _log.Information("Screen {Number} removed or switched off", number);
+            var player = _players[number];
+            _players.Remove(number);
+            _ = player.CloseAsync();
+        }
+
+        foreach (var number in enabled.Where(n => !_players.ContainsKey(n)))
+        {
+            var window = new PlayerWindow(_playlist, _settings, _log, number);
+            window.Engine.StateChanged += (_, _) => UpdateStatus();
+            window.ApplyBackground(window.Engine.Settings.BackgroundColor);
+            window.SetSettingsShortcut(HotkeyDisplay.Format(_settings.Current.Hotkeys.ShowSettings));
+            _players[number] = new ScreenPlayer(number, window, _log);
         }
     }
 
-    private PlayerWindow EnsureWindow()
+    /// <summary>Puts every screen on its display; missing displays make the screen wait (or borrow the primary).</summary>
+    private void PlaceAll()
     {
-        if (_window is null)
-        {
-            _window = new PlayerWindow(_playlist, _settings, _log);
-            _window.Engine.StateChanged += (_, _) => UpdateStatus();
-        }
-
-        return _window;
-    }
-
-    private void StartLoop()
-    {
-        if (IsLoopActive || _window is null)
-        {
-            return;
-        }
-
-        _window.Show();
-        _cts = new CancellationTokenSource();
-        _loop = _window.Engine.RunAsync(_cts.Token);
-        UpdateStatus();
-    }
-
-    private async Task StopLoopAsync()
-    {
-        if (_cts is null)
-        {
-            return;
-        }
-
-        _cts.Cancel();
-        try
-        {
-            await _loop;
-        }
-        catch (Exception ex)
-        {
-            _log.Debug(ex, "Loop ended with exception");
-        }
-
-        _cts.Dispose();
-        _cts = null;
-        _window?.Hide();
-        UpdateStatus();
-    }
-
-    /// <summary>Moves the player to the selected display; if it is missing, falls back or waits (per setting).</summary>
-    private void PlaceWindow()
-    {
-        if (!IsRunning || _window is null)
+        if (!IsRunning)
         {
             _retryTimer.Stop();
             return;
@@ -288,109 +275,145 @@ public sealed class PlaybackManager : IPlaybackManager
 
         var settings = _settings.Current;
         var displays = _displays.GetDisplays();
-        var match = DisplayMatcher.Find(settings.SelectedDisplay, displays);
-        CurrentPlacement = match;
-        var wait = !match.IsSatisfied && (settings.DisplayFallback == DisplayFallback.Hide || match.Display is null);
+        var screens = settings.Screens.Where(s => s.Enabled && _players.ContainsKey(s.Number)).ToList();
+        var matches = DisplayMatcher.MatchAll(screens, displays);
+        var fallback = settings.DisplayFallback == DisplayFallback.ShowOnPrimary
+            ? DisplayMatcher.FallbackDisplay(matches, displays)
+            : null;
 
-        if (match.Kind != _lastLoggedKind)
+        var anyMissing = false;
+        foreach (var screen in screens)
         {
-            _lastLoggedKind = match.Kind;
-            if (match.IsSatisfied)
+            var player = _players[screen.Number];
+            var match = matches[screen.Number];
+            var display = match.Display;
+            player.IsOnFallback = false;
+
+            if (display is null && fallback is not null)
             {
-                _log.Information("Player on {Device} {W}x{H} ({Kind})",
-                    match.Display?.DeviceName, match.Display?.Width, match.Display?.Height, match.Kind);
+                display = fallback;
+                fallback = null; // Only one screen may borrow the primary display.
+                player.IsOnFallback = true;
             }
-            else
+
+            anyMissing |= match.Display is null;
+            player.Display = display;
+
+            if (display is null)
             {
-                _log.Warning("Selected display {Saved} not found ({Count} displays); {Action}, retrying every {Interval}",
-                    settings.SelectedDisplay?.DeviceName, displays.Count,
-                    wait ? "player hidden" : "using primary display", RetryInterval);
+                if (!player.IsWaiting)
+                {
+                    player.IsWaiting = true;
+                    _ = player.StopAsync(); // Hide: never cover another screen (e.g. the cashier's).
+                }
+
+                continue;
             }
+
+            player.IsWaiting = false;
+            player.Window.MoveTo(display); // Always re-apply: Windows may have moved/resized us.
+            player.Start();
+            player.Window.MoveTo(display);
         }
 
-        if (match.IsSatisfied)
-        {
-            _retryTimer.Stop();
-        }
-        else if (!_retryTimer.IsEnabled)
+        if (anyMissing && !_retryTimer.IsEnabled)
         {
             _retryTimer.Start();
         }
-
-        if (wait)
+        else if (!anyMissing)
         {
-            if (!_waitingForDisplay)
-            {
-                _waitingForDisplay = true;
-                _ = StopLoopAsync(); // Hide: never cover another screen (e.g. the cashier's).
-            }
-
-            UpdateStatus();
-            return;
+            _retryTimer.Stop();
         }
 
-        _waitingForDisplay = false;
-        _window.MoveTo(match.Display!); // Always re-apply: Windows may have moved/resized us.
-        StartLoop();
-        _window.MoveTo(match.Display!);
+        LogPlacement(screens, matches, displays.Count);
         UpdateStatus();
+    }
+
+    private void LogPlacement(IReadOnlyList<ScreenConfig> screens, IReadOnlyDictionary<int, DisplayMatch> matches, int displayCount)
+    {
+        var summary = string.Join("; ", screens.Select(s =>
+        {
+            var p = _players[s.Number];
+            return $"{s.Number}→{(p.Display?.DeviceName ?? "waiting")}{(p.IsOnFallback ? " (fallback)" : string.Empty)} [{matches[s.Number].Kind}]";
+        }));
+
+        if (summary != _lastPlacementLog)
+        {
+            _lastPlacementLog = summary;
+            _log.Information("Screens placed on {Count} displays: {Summary}", displayCount, summary);
+        }
     }
 
     private void UpdateStatus()
     {
-        var engine = _window?.Engine.State ?? EngineState.Idle;
-        var status = !IsRunning ? PlaybackStatus.Stopped
-            : _waitingForDisplay ? PlaybackStatus.WaitingForDisplay
-            : engine == EngineState.Closed ? PlaybackStatus.Closed
-            : engine == EngineState.Empty ? PlaybackStatus.Empty
-            : CurrentPlacement is { IsSatisfied: false } ? PlaybackStatus.OnFallbackDisplay
+        var states = new List<ScreenState>();
+        foreach (var screen in _settings.Current.Screens)
+        {
+            if (!screen.Enabled || !_players.TryGetValue(screen.Number, out var player))
+            {
+                states.Add(new ScreenState(screen.Number, ScreenStatus.Off, null, null));
+                continue;
+            }
+
+            var engine = player.Window.Engine;
+            var status = !IsRunning ? ScreenStatus.Stopped
+                : player.IsWaiting ? ScreenStatus.Waiting
+                : engine.State == EngineState.Closed ? ScreenStatus.Closed
+                : engine.State == EngineState.Empty ? ScreenStatus.Empty
+                : player.IsOnFallback ? ScreenStatus.Fallback
+                : ScreenStatus.Playing;
+            states.Add(new ScreenState(screen.Number, status, player.Display, player.IsActive ? engine.NowPlaying : null));
+        }
+
+        Screens = states;
+        var active = states.Where(s => s.Status != ScreenStatus.Off).ToList();
+        Status = !IsRunning ? PlaybackStatus.Stopped
+            : active.Count == 0 ? PlaybackStatus.NoScreens
+            : active.All(s => s.Status == ScreenStatus.Waiting) ? PlaybackStatus.WaitingForDisplay
+            : active.Any(s => s.Status == ScreenStatus.Fallback) ? PlaybackStatus.OnFallbackDisplay
+            : active.Any(s => s.Status == ScreenStatus.Waiting) ? PlaybackStatus.PartiallyWaiting
+            : active.All(s => s.Status == ScreenStatus.Closed) ? PlaybackStatus.Closed
+            : active.All(s => s.Status is ScreenStatus.Empty or ScreenStatus.Closed) ? PlaybackStatus.Empty
             : PlaybackStatus.Playing;
 
-        // The system must stay awake to bring the show back; the display only while something is shown.
+        // The system stays awake to bring the show back; displays only while something is shown.
         if (IsRunning)
         {
-            var displayMayRest = status == PlaybackStatus.WaitingForDisplay ||
-                                 (status == PlaybackStatus.Closed && _settings.Current.OperatingHours.AllowDisplaySleep);
+            var allowSleepWhenClosed = _settings.Current.OperatingHours.AllowDisplaySleep;
+            var displayMayRest = active.Count == 0 || active.All(s =>
+                s.Status == ScreenStatus.Waiting || (s.Status == ScreenStatus.Closed && allowSleepWhenClosed));
             _power.PreventSleep(keepDisplayOn: !displayMayRest);
         }
 
-        Status = status;
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnSettingsChanged(SettingsChangedEventArgs e)
     {
         var (old, current) = (e.OldSettings, e.NewSettings);
-        foreach (var window in new[] { _window, _preview })
+        foreach (var window in AllWindows())
         {
-            if (window is null)
-            {
-                continue;
-            }
-
-            if (old.BackgroundColor != current.BackgroundColor)
-            {
-                window.ApplyBackground(current.BackgroundColor);
-            }
-
+            var effective = window.Engine.Settings;
+            window.ApplyBackground(effective.BackgroundColor);
             if (old.Hotkeys != current.Hotkeys)
             {
                 window.SetSettingsShortcut(HotkeyDisplay.Format(current.Hotkeys.ShowSettings));
             }
 
-            window.Engine.ApplySettings(current);
+            window.Engine.ApplySettings(effective);
             window.Engine.Invalidate();
         }
 
-        if (old.SelectedDisplay != current.SelectedDisplay || old.DisplayFallback != current.DisplayFallback)
+        if (old.Screens != current.Screens || old.DisplayFallback != current.DisplayFallback)
         {
-            PlaceWindow();
+            if (IsRunning)
+            {
+                SyncPlayers();
+                PlaceAll();
+            }
         }
 
-        if (old.OperatingHours != current.OperatingHours)
-        {
-            UpdateStatus();
-        }
+        UpdateStatus();
     }
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)

@@ -8,11 +8,11 @@ namespace KodizSignage.Views;
 /// <summary>Shows a large number on a display for a few seconds.</summary>
 public partial class IdentifyWindow : Window
 {
-    public IdentifyWindow(DisplayInfo display, int number)
+    public IdentifyWindow(DisplayInfo display, string number, string detail)
     {
         InitializeComponent();
-        NumberText.Text = number.ToString();
-        DetailText.Text = $"{display.Width} × {display.Height}";
+        NumberText.Text = number;
+        DetailText.Text = detail;
 
         SourceInitialized += (_, _) =>
         {
@@ -21,9 +21,10 @@ public partial class IdentifyWindow : Window
         };
     }
 
-    public static void ShowAll(IReadOnlyList<DisplayInfo> displays, TimeSpan duration)
+    /// <summary>Shows a big label on every display (label + detail line per display).</summary>
+    public static void ShowAll(IReadOnlyList<(DisplayInfo Display, string Number, string Detail)> displays, TimeSpan duration)
     {
-        var windows = displays.Select((d, i) => new IdentifyWindow(d, i + 1)).ToList();
+        var windows = displays.Select(d => new IdentifyWindow(d.Display, d.Number, d.Detail)).ToList();
         foreach (var window in windows)
         {
             window.Show();

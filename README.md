@@ -1,8 +1,9 @@
 # Kodiz Signage
 
 Kafe, mağaza ve benzeri mekânlar için Windows dijital tabela (digital signage) oynatıcısı.
-Tek bir Windows PC'ye (HDMI splitter üzerinden birden fazla TV'ye) bağlı ekranda fotoğraf, video ve
-PDF sayfalarından oluşan bir oynatma listesini tam ekran ve sonsuz döngüde gösterir. İnternet gerektirmez.
+Bir Windows PC'ye bağlı **bir veya birden çok ekranda** (doğrudan veya HDMI splitter üzerinden) fotoğraf,
+video ve PDF sayfalarından oluşan oynatma listelerini tam ekran ve sonsuz döngüde gösterir. Her ekran
+kendi medyasını oynatabilir. İnternet gerektirmez.
 
 - .NET 8 / WPF, MVVM (CommunityToolkit.Mvvm), tek dosya self-contained `.exe`
 - Türkçe / İngilizce arayüz (varsayılan: işletim sistemi dili, ayarlardan canlı değiştirilebilir)
@@ -19,7 +20,8 @@ PDF sayfalarından oluşan bir oynatma listesini tam ekran ve sonsuz döngüde g
 | Liste | Sürükle-bırak sıralama, çoklu seçim ve toplu düzenleme, görünen ad, aktif/pasif, resim süresi, tarih aralığı, **gün ve saat planı**, 10 sn içinde geri alınabilir silme |
 | Planlama | Öğe başına tarih aralığı + gün + saat (gece yarısını geçebilir); genel **çalışma saatleri** (dışında siyah ekran) |
 | İçe aktarma | İlerleme göstergesi, kopya dosya tespiti, disk alanı kontrolü, codec/çözünürlük/HEIC uyarıları, **izlenen klasör** (USB / OneDrive / ağ klasörü) |
-| Ekran | Ekran seçimi, "Ekranları Tanımla", ekran kaybolursa **gizle ve bekle** (veya ana ekranda göster) + 5 sn'de bir yeniden deneme |
+| Çoklu ekran | Bağlı tüm ekranları algılar; her ekran açılıp kapatılabilir, isim alır ve **kendi medya listesini** oynatır. Ekrana özel ölçekleme, arka plan ve ses ayarı |
+| Ekran | "Ekranları Tanımla", ekran kaybolursa **gizle ve bekle** (veya ana ekranda göster) + 5 sn'de bir yeniden deneme |
 | Sistem | Kurulum ve güncelleme, Başlat menüsü kısayolu, Windows ile otomatik başlama, tek örnek, tray ikonu, değiştirilebilir global kısayollar, uyku engelleme, ayarlar için PIN, yedekle / geri yükle |
 | Dayanıklılık | Atomik JSON yazımı, bozuk dosyada yedekten veya varsayılandan devam, global hata yakalama, çökmede kendini yeniden başlatma, art arda çökmede **güvenli mod** |
 
@@ -72,6 +74,41 @@ bunu anlatan bir Windows bildirimi gösterilir.
 - **Yayın göstergesi:** O an TV'de oynayan öğe listede **YAYINDA** etiketiyle işaretlenir. Üst çubukta da adı ve kalan süresi yazar.
 - **Önizle:** Gösterimi bu bilgisayarda küçük ve sessiz bir pencerede oynatır. TV'deki gösterimi etkilemez.
 
+### Birden çok ekran (Ekranlar sekmesi)
+
+Bilgisayara bağlı her ekran ayrı bir kart olarak listelenir ("5 ekran algılandı"):
+
+- **Bu ekranda gösterim** anahtarıyla ekran açılır veya kapatılır. Kapalı ekranda hiçbir şey gösterilmez;
+  ayarları ve medya atamaları saklanır.
+- Her ekrana bir isim verilebilir (örneğin "Bar üstü", "Kasa", "Vitrin").
+- Kartta ekranın durumu ("Oynuyor: menu.jpg", "Ekran bekleniyor") ve kaç medya atandığı görünür.
+- **Görünüm** bölümünden ekrana özel ölçekleme, arka plan rengi ve video sesi seçilebilir.
+  Varsayılan olarak genel ayarlar kullanılır.
+- **Medyayı düzenle**, Medya sekmesini yalnızca o ekranın medyasını gösterecek şekilde açar.
+  **Önizle**, o ekranın gösterimini küçük bir pencerede oynatır.
+- Bağlı olmayan ama kayıtlı ekranlar "Bağlı değil" olarak listelenir. **Unut** ile kaldırılabilir.
+
+**Hangi medya hangi ekranda?** Birden çok ekran varken Medya sekmesinde her satırda ekran düğmeleri
+çıkar: **[1] [2] [3] [4] [5]**. Tıklayarak o medyayı o ekrana ekler veya çıkarırsınız. Örnek:
+
+| Medya | Ekran 1 | Ekran 2 | Ekran 3 |
+|---|---|---|---|
+| a, b, c | ✔ | ✔ | |
+| x, y, z | | ✔ | ✔ |
+
+Bu durumda ekran 1 `a b c`, ekran 2 `a b c x y z`, ekran 3 `x y z` oynatır. Sıra tüm ekranlarda ortaktır;
+her ekran kendi öğelerini bu sırayla oynatır.
+
+- Üstteki **Gösterilen** filtresiyle yalnızca bir ekranın medyası listelenir. Filtre açıkken eklenen
+  yeni dosyalar doğrudan o ekrana atanır.
+- Detay panelinde ekranlar isimleriyle seçilir. **"Tüm ekranlar (sonradan eklenenler dahil)"** seçili
+  medya, ileride eklenecek ekranlarda da gösterilir.
+- Toplu düzenlemede seçili medyalar ekranlara atanabilir: yalnızca işaretli ekranlar / ekle / çıkar.
+- Hiçbir açık ekrana atanmamış medya "hiçbir ekranda değil" uyarısıyla işaretlenir.
+
+Eski sürümlerden gelen kurulumlarda daha önce seçilmiş ekran otomatik olarak **Ekran 1** olur ve tüm
+medya tüm ekranlarda gösterilmeye devam eder.
+
 ### İzlenen klasör (Genel sekmesi)
 
 Seçilen klasördeki medya dosyaları listeye otomatik eklenir: yeni dosyalar eklenir, değişen dosyalar
@@ -84,11 +121,12 @@ sahibi menü görselini telefondan OneDrive klasörüne atar, bir dakika içinde
 Açılınca bu saatlerin dışında TV'de siyah ekran gösterilir. İsteğe bağlı olarak ekranın Windows güç
 ayarlarına göre uykuya geçmesine izin verilir; bunun için Windows'ta "ekranı kapat" süresi ayarlı olmalıdır.
 
-### Ekran (Ekran sekmesi)
+### Ekran bağlantısı kesilirse (Ekranlar sekmesi)
 
-Kasa monitörü gibi ikinci bir ekran varsa ve TV kapatılırsa Windows TV ekranını kaybedebilir.
-Varsayılan **"Gizle ve bekle"** ayarında gösterim bu durumda başka bir ekranı kaplamaz; TV geri gelince
-kendiliğinden devam eder. İstenirse **"Geçici olarak ana ekranda göster"** seçilebilir.
+TV kapatıldığında veya splitter geç tanındığında Windows o ekranı kaybedebilir. Varsayılan
+**"Gizle ve bekle"** ayarında o ekranın gösterimi başka bir ekranı (örneğin kasa monitörünü) kaplamaz; ekran
+geri gelince kendiliğinden devam eder. Diğer ekranlar etkilenmez. İstenirse **"Geçici olarak ana ekranda
+göster"** seçilebilir; ana ekran başka bir ekrana atanmamışsa kullanılır.
 
 ### Güvenlik ve yedekleme (Genel sekmesi)
 
@@ -276,7 +314,8 @@ gidecekse Windows ses çıkışını TV veya splitter olarak seçin.
 
 | Belirti | Çözüm |
 |---|---|
-| Gösterim başka ekranda | Ayarlar → Ekran → doğru ekranda "Bu ekranı kullan" |
+| Gösterim yanlış ekranda | Ayarlar → Ekranlar → "Ekranları Tanımla" ile numaraları görün; istenmeyen ekranı kapatın, doğru ekranı açın |
+| Bir ekranda içerik yok | Medya sekmesinde filtreyi o ekrana alın; medyaların o ekranın düğmesi işaretli mi bakın |
 | Durum "Seçili ekran bekleniyor" | TV kapalı veya HDMI bağlantısı yok. TV açılınca gösterim kendiliğinden başlar |
 | Bir video oynamıyor | Log'a bakın (Genel → Log klasörünü aç). H.264 MP4'e dönüştürün |
 | HEIC/WEBP resim görünmüyor | Microsoft Store'dan "HEIF Görüntü Uzantıları" veya "Webp Görüntü Uzantıları" yükleyin |

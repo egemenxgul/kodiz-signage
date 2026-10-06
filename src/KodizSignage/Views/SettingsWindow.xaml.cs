@@ -256,10 +256,11 @@ public partial class SettingsWindow : Window
         if (e.Data.GetData(typeof(MediaItemViewModel)) is MediaItemViewModel dragged)
         {
             e.Handled = true;
+            // Use the target row's position in the whole playlist (the list may be filtered to a screen).
             var target = FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject);
-            var index = target is null
-                ? _vm.Media.Items.Count - 1
-                : MediaList.ItemContainerGenerator.IndexFromContainer(target);
+            var index = target?.DataContext is MediaItemViewModel targetItem
+                ? targetItem.Position
+                : _vm.Media.Items.Count - 1;
             if (index >= 0 && dragged.Position != index)
             {
                 _vm.Media.Move(dragged, index);

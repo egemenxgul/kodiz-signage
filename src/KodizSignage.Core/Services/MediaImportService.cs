@@ -58,6 +58,9 @@ public sealed record ImportOptions
     public string? SyncFileName { get; init; }
 
     public string? SyncStamp { get; init; }
+
+    /// <summary>Screens new items are assigned to; null = all screens.</summary>
+    public EquatableList<int>? Screens { get; init; }
 }
 
 /// <summary>Reads video metadata for containers the built-in MP4 parser cannot handle.</summary>
@@ -264,6 +267,7 @@ public sealed class MediaImportService : IMediaImportService
             ContentHash = hash,
             SyncFileName = options.SyncFileName,
             SyncStamp = options.SyncStamp,
+            Screens = options.Screens,
         };
 
         if (type == MediaType.Video)
@@ -338,6 +342,7 @@ public sealed class MediaImportService : IMediaImportService
             ContentHash = $"{hash}#{i + 1}",
             SyncFileName = options.SyncFileName,
             SyncStamp = options.SyncStamp,
+            Screens = options.Screens,
         }).ToList();
 
         foreach (var item in items)

@@ -1,12 +1,15 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using KodizSignage.Core;
 using KodizSignage.Core.Models;
+using KodizSignage.Core.Playback;
 using KodizSignage.Core.Services;
 using KodizSignage.Services;
 using Serilog;
@@ -58,19 +61,43 @@ public sealed partial class MediaViewModel : ObservableObject
         _log = log.ForContext<MediaViewModel>();
 
         Bulk = new BulkEditViewModel(this, loc);
+        ItemsView = CollectionViewSource.GetDefaultView(Items);
+        ItemsView.Filter = o => o is MediaItemViewModel vm && (ScreenFilter == 0 || vm.Item.IsOnScreen(ScreenFilter));
 
         _undoTimer = new DispatcherTimer { Interval = UndoWindow };
         _undoTimer.Tick += (_, _) => CommitPendingDelete();
 
         _playlist.Changed += (_, _) => Application.Current.Dispatcher.BeginInvoke(Sync);
         _loc.LanguageChanged += (_, _) => RefreshTexts();
-        _settings.Changed += (_, _) => Application.Current.Dispatcher.BeginInvoke(() => OnPropertyChanged(nameof(DefaultDurationHint)));
+        _settings.Changed += (_, e) => Application.Current.Dispatcher.BeginInvoke(() =>
+        {
+            OnPropertyChanged(nameof(DefaultDurationHint));
+            if (e.OldSettings.Screens != e.NewSettings.Screens)
+            {
+                UpdateScreens();
+            }
+        });
         _folderSync.StatusChanged += (_, _) => Application.Current.Dispatcher.BeginInvoke(UpdateFolderStatus);
+        UpdateScreens();
         Sync();
         UpdateFolderStatus();
     }
 
     public ObservableCollection<MediaItemViewModel> Items { get; } = new();
+
+    /// <summary>The list as shown (filtered to one screen when <see cref="ScreenFilter"/> is set).</summary>
+    public ICollectionView ItemsView { get; }
+
+    /// <summary>"All media" + one entry per screen.</summary>
+    public ObservableCollection<ScreenFilterOption> FilterOptions { get; } = new();
+
+    /// <summary>0 = all media, otherwise a screen number.</summary>
+    [ObservableProperty]
+    private int _screenFilter;
+
+    /// <summary>More than one screen is configured: show screen chips and the filter.</summary>
+    [ObservableProperty]
+    private bool _showScreens;
 
     public BulkEditViewModel Bulk { get; }
 
@@ -114,6 +141,45 @@ public sealed partial class MediaViewModel : ObservableObject
 
     public string DefaultDurationHint => $"{_loc.Get("Media_DefaultDuration")} ({_settings.Current.DefaultImageDurationSeconds:0.#})";
 
+    partial void OnScreenFilterChanged(int value)
+    {
+        ItemsView.Refresh();
+        UpdateSummary();
+    }
+
+    /// <summary>Called when screens were added, removed, renamed or switched on/off.</summary>
+    private void UpdateScreens()
+    {
+        var screens = _settings.Current.Screens;
+        ShowScreens = screens.Count > 1;
+
+        var selected = ScreenFilter;
+        FilterOptions.Clear();
+        FilterOptions.Add(new ScreenFilterOption(0, _loc.Get("Filter_AllMedia")));
+        foreach (var screen in screens)
+        {
+            FilterOptions.Add(new ScreenFilterOption(screen.Number, ScreenLabel(screen) + (screen.Enabled ? string.Empty : $" ({_loc.Get("Screen_Off")})")));
+        }
+
+        ScreenFilter = FilterOptions.Any(o => o.Value == selected) ? selected : 0;
+        OnPropertyChanged(nameof(ScreenFilter));
+
+        foreach (var vm in Items)
+        {
+            vm.UpdateScreens(screens, ScreenLabel);
+        }
+
+        Bulk.UpdateScreens(screens, ScreenLabel);
+        ItemsView.Refresh();
+        UpdateSummary();
+    }
+
+    internal string ScreenLabel(ScreenConfig screen) =>
+        screen.Name is { } name ? $"{screen.Number} · {name}" : _loc.Format("Screen_Default", screen.Number);
+
+    /// <summary>Shows only the media of one screen (used by "Edit media" on the Screens tab).</summary>
+    public void FilterToScreen(int number) => ScreenFilter = number;
+
     // ---- Import ----------------------------------------------------------------------------------
 
     [RelayCommand(CanExecute = nameof(CanAddFiles))]
@@ -132,7 +198,12 @@ public sealed partial class MediaViewModel : ObservableObject
     private void CancelImport() => _importCts?.Cancel();
 
     [RelayCommand]
-    private void Preview() => _playback.ShowPreview();
+    private void Preview()
+    {
+        // The filtered screen, the only screen, or the whole library.
+        var screens = _settings.Current.Screens;
+        _playback.ShowPreview(ScreenFilter != 0 ? ScreenFilter : screens.Count == 1 ? screens[0].Number : null);
+    }
 
     /// <summary>Imports files (from the dialog or drag &amp; drop) showing progress.</summary>
     public async Task ImportAsync(IReadOnlyList<string> paths)
@@ -153,7 +224,11 @@ public sealed partial class MediaViewModel : ObservableObject
 
         try
         {
-            var result = await _import.ImportAsync(paths, progress, _importCts.Token);
+            // With a screen filter active, new media goes to that screen only.
+            var options = ScreenFilter == 0
+                ? ImportOptions.Default
+                : new ImportOptions { Screens = new[] { ScreenFilter }.ToEquatableList() };
+            var result = await _import.ImportAsync(paths, progress, _importCts.Token, options);
             ReportImportResult(result);
 
             if (result.Imported.Count > 0)
@@ -210,21 +285,26 @@ public sealed partial class MediaViewModel : ObservableObject
 
     // ---- Ordering ----------------------------------------------------------------------------------
 
+    // Moves are relative to the *visible* neighbour, so they also work while filtered to a screen.
     [RelayCommand]
     private void MoveUp(MediaItemViewModel? item)
     {
-        if (item is not null && item.Position > 0)
+        var visible = ItemsView.Cast<MediaItemViewModel>().ToList();
+        var index = item is null ? -1 : visible.IndexOf(item);
+        if (index > 0)
         {
-            _playlist.Move(item.Id, item.Position - 1);
+            _playlist.Move(item!.Id, visible[index - 1].Position);
         }
     }
 
     [RelayCommand]
     private void MoveDown(MediaItemViewModel? item)
     {
-        if (item is not null && item.Position < Items.Count - 1)
+        var visible = ItemsView.Cast<MediaItemViewModel>().ToList();
+        var index = item is null ? -1 : visible.IndexOf(item);
+        if (index >= 0 && index < visible.Count - 1)
         {
-            _playlist.Move(item.Id, item.Position + 1);
+            _playlist.Move(item!.Id, visible[index + 1].Position);
         }
     }
 
@@ -346,18 +426,28 @@ public sealed partial class MediaViewModel : ObservableObject
 
     public void Tick()
     {
-        var now = _playback.NowPlaying;
+        var playing = _playback.Screens.Where(s => s.NowPlaying is not null).ToList();
+        var onAir = playing.GroupBy(s => s.NowPlaying!.Item.Id).ToDictionary(g => g.Key, g => g.Select(s => s.Number).Order().ToList());
+        var multi = _settings.Current.Screens.Count(s => s.Enabled) > 1;
         foreach (var vm in Items)
         {
-            vm.IsNowPlaying = now is not null && vm.Id == now.Item.Id;
+            var screens = onAir.GetValueOrDefault(vm.Id);
+            vm.IsNowPlaying = screens is not null;
+            vm.OnAirText = screens is null ? null
+                : multi ? $"{_loc.Get("Media_OnAir")} · {string.Join(", ", screens)}"
+                : _loc.Get("Media_OnAir");
         }
 
+        var activeScreens = _playback.Screens.Count(s => s.Status != ScreenStatus.Off);
+        var now = playing.FirstOrDefault()?.NowPlaying;
         NowPlayingText = _playback.Status switch
         {
             PlaybackStatus.Stopped => string.Empty,
+            PlaybackStatus.NoScreens => _loc.Get("Screens_NoneEnabled"),
             PlaybackStatus.Closed => _loc.Get("NowPlaying_Closed"),
             PlaybackStatus.Empty => _loc.Get("NowPlaying_Empty"),
             PlaybackStatus.WaitingForDisplay => _loc.Get("NowPlaying_WaitingDisplay"),
+            _ when activeScreens > 1 => _loc.Format("NowPlaying_Screens", playing.Count, activeScreens),
             _ when now is null => string.Empty,
             _ when now.Remaining is { } r && r > TimeSpan.Zero => _loc.Format("NowPlaying_Remaining", now.Item.Title, Math.Ceiling(r.TotalSeconds)),
             _ => _loc.Format("NowPlaying_Item", now.Item.Title),
@@ -408,6 +498,7 @@ public sealed partial class MediaViewModel : ObservableObject
             else
             {
                 vm = new MediaItemViewModel(item, _playlist.Update, _loc);
+                vm.UpdateScreens(_settings.Current.Screens, ScreenLabel);
                 Items.Insert(index, vm);
                 _ = LoadThumbnailAsync(vm);
             }
@@ -426,6 +517,7 @@ public sealed partial class MediaViewModel : ObservableObject
         }
 
         SelectedItems = SelectedItems.Where(Items.Contains).ToList();
+        ItemsView.Refresh();
         OnPropertyChanged(nameof(IsEmpty));
         UpdateSummary();
         UpdateDiskUsage();
@@ -433,8 +525,11 @@ public sealed partial class MediaViewModel : ObservableObject
 
     private void UpdateSummary()
     {
-        var playable = Items.Count(i => i.IsPlayableNow);
-        Summary = _loc.Format("Media_Count", Items.Count, playable);
+        var shown = ScreenFilter == 0 ? Items.ToList() : Items.Where(i => i.Item.IsOnScreen(ScreenFilter)).ToList();
+        var playable = shown.Count(i => i.IsPlayableNow);
+        Summary = ScreenFilter == 0
+            ? _loc.Format("Media_Count", shown.Count, playable)
+            : _loc.Format("Media_CountScreen", FilterOptions.FirstOrDefault(o => o.Value == ScreenFilter)?.Label ?? string.Empty, shown.Count, playable);
         OnPropertyChanged(nameof(DefaultDurationHint));
     }
 
@@ -511,12 +606,56 @@ public sealed partial class BulkEditViewModel : ObservableObject
 
     public ScheduleEditor Schedule { get; }
 
+    /// <summary>Screen checkboxes for "assign to screens".</summary>
+    public ObservableCollection<BulkScreenOption> Screens { get; } = new();
+
     [ObservableProperty] private string _title = string.Empty;
     [ObservableProperty] private double? _duration;
     [ObservableProperty] private DateTime? _startDate;
     [ObservableProperty] private DateTime? _endDate;
 
     public void OnSelectionChanged(int count) => Title = _loc.Format("Bulk_Title", count);
+
+    internal void UpdateScreens(IReadOnlyList<ScreenConfig> screens, Func<ScreenConfig, string> label)
+    {
+        var checkedNumbers = Screens.Where(s => s.IsChecked).Select(s => s.Number).ToHashSet();
+        Screens.Clear();
+        foreach (var screen in screens)
+        {
+            Screens.Add(new BulkScreenOption(screen.Number, label(screen)) { IsChecked = checkedNumbers.Contains(screen.Number) });
+        }
+    }
+
+    private List<int> CheckedScreens() => Screens.Where(s => s.IsChecked).Select(s => s.Number).ToList();
+
+    /// <summary>Shows the selection on exactly the checked screens.</summary>
+    [RelayCommand]
+    private void SetScreens()
+    {
+        var chosen = CheckedScreens().ToEquatableList();
+        _owner.ApplyToSelection(i => i with { Screens = chosen });
+    }
+
+    /// <summary>Adds the checked screens, keeping the existing ones.</summary>
+    [RelayCommand]
+    private void AddScreens()
+    {
+        var add = CheckedScreens();
+        _owner.ApplyToSelection(i => i.Screens is null ? i : i with { Screens = i.Screens.Union(add).Order().ToEquatableList() });
+    }
+
+    /// <summary>Removes the checked screens (an "all screens" item becomes "all others").</summary>
+    [RelayCommand]
+    private void RemoveScreens()
+    {
+        var remove = CheckedScreens();
+        var all = Screens.Select(s => s.Number).ToList();
+        _owner.ApplyToSelection(i => i with { Screens = (i.Screens ?? (IEnumerable<int>)all).Except(remove).Order().ToEquatableList() });
+    }
+
+    /// <summary>Shows the selection on every screen, including screens added later.</summary>
+    [RelayCommand]
+    private void AllScreens() => _owner.ApplyToSelection(i => i with { Screens = null });
 
     [RelayCommand]
     private void Activate() => _owner.ApplyToSelection(i => i with { IsActive = true });
@@ -556,4 +695,21 @@ public sealed partial class BulkEditViewModel : ObservableObject
 
     [RelayCommand]
     private void Delete() => _owner.DeleteItems(_owner.SelectedItems.ToList());
+}
+
+public sealed record ScreenFilterOption(int Value, string Label);
+
+public sealed partial class BulkScreenOption : ObservableObject
+{
+    public BulkScreenOption(int number, string label)
+    {
+        Number = number;
+        Label = label;
+    }
+
+    public int Number { get; }
+
+    public string Label { get; }
+
+    [ObservableProperty] private bool _isChecked;
 }

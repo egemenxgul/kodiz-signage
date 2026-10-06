@@ -71,8 +71,29 @@ internal static class SmokeTest
             media.SelectedItem = media.Items.FirstOrDefault();
             await Task.Delay(800);
 
-            playback.ShowPreview();
+            playback.ShowPreview(null);
             await Task.Delay(2500);
+
+            // Multi-screen: a second screen on a display that does not exist must wait without errors,
+            // and the media list must filter / toggle per screen.
+            settings.Update(s => s.WithScreen(new Core.Models.ScreenConfig
+            {
+                Number = 2,
+                Name = "Smoke",
+                Display = new Core.Models.SavedDisplay(@"\\.\DISPLAY99", 1920, 1080, 99999, 0),
+            }));
+            await Task.Delay(1500);
+            var first = media.Items.FirstOrDefault();
+            if (first is not null && first.ScreenChips.Count == 2)
+            {
+                first.ScreenChips[1].IsOn = false;
+            }
+
+            media.FilterToScreen(2);
+            await Task.Delay(800);
+            media.FilterToScreen(0);
+            tabs?.SetCurrentValue(TabControl.SelectedIndexProperty, 1);
+            await Task.Delay(800);
 
             settings.Update(s => s with { Language = s.Language == Core.Models.AppLanguage.English ? Core.Models.AppLanguage.Turkish : Core.Models.AppLanguage.English });
             services.GetRequiredService<ILocalizationService>().Apply(settings.Current.Language);

@@ -28,7 +28,7 @@
     <sys:String x:Key="Action_Next" xml:space="preserve">Next</sys:String>
     <sys:String x:Key="Settings_AutoSaved" xml:space="preserve">Changes are saved automatically and applied to playback instantly.</sys:String>
     <sys:String x:Key="Tab_Media" xml:space="preserve">Media</sys:String>
-    <sys:String x:Key="Tab_Display" xml:space="preserve">Display</sys:String>
+    <sys:String x:Key="Tab_Display" xml:space="preserve">Screens</sys:String>
     <sys:String x:Key="Tab_General" xml:space="preserve">General</sys:String>
     <sys:String x:Key="Tab_Shortcuts" xml:space="preserve">Shortcuts</sys:String>
     <sys:String x:Key="Media_AddFiles" xml:space="preserve">Add Files</sys:String>
@@ -238,5 +238,44 @@
     <sys:String x:Key="TrayHint_Title" xml:space="preserve">Kodiz Signage keeps running</sys:String>
     <sys:String x:Key="TrayHint_Text" xml:space="preserve">The settings window was closed; playback continues. Reopen with {0} or Kodiz Signage in the Start menu.</sys:String>
     <sys:String x:Key="SafeMode_Text" xml:space="preserve">The app closed unexpectedly several times in a short period. Playback starts automatically in {0} minutes. See the log folder for details.</sys:String>
+    <sys:String x:Key="Screens_Title" xml:space="preserve">Screens</sys:String>
+    <sys:String x:Key="Screens_Description" xml:space="preserve">Every display connected to this PC can run its own show. Switch off displays you don't want to use; each enabled screen plays the media assigned to it independently. Choose which media appears on which screen with the screen buttons in the Media tab or with &quot;Edit media&quot;.</sys:String>
+    <sys:String x:Key="Screens_Summary" xml:space="preserve">{0} displays detected · showing on {1} screens</sys:String>
+    <sys:String x:Key="Screens_NoneEnabled" xml:space="preserve">No screen is enabled. Switch on at least one screen in the Screens tab.</sys:String>
+    <sys:String x:Key="Screen_Default" xml:space="preserve">Screen {0}</sys:String>
+    <sys:String x:Key="Screen_ShowHere" xml:space="preserve">Show on this screen</sys:String>
+    <sys:String x:Key="Screen_NotConnected" xml:space="preserve">Not connected</sys:String>
+    <sys:String x:Key="Screen_NotUsed" xml:space="preserve">Not used – switch it on with the toggle on the right</sys:String>
+    <sys:String x:Key="Screen_Off" xml:space="preserve">off</sys:String>
+    <sys:String x:Key="Screen_Playing" xml:space="preserve">Playing: {0}</sys:String>
+    <sys:String x:Key="Screen_PlayingFallback" xml:space="preserve">Playing on the primary display (own display missing): {0}</sys:String>
+    <sys:String x:Key="Screen_Empty" xml:space="preserve">Nothing to show on this screen right now</sys:String>
+    <sys:String x:Key="Screen_Waiting" xml:space="preserve">Waiting for the display – starts by itself when connected</sys:String>
+    <sys:String x:Key="Screen_Missing" xml:space="preserve">Saved display: {0}, {1} × {2} – not connected</sys:String>
+    <sys:String x:Key="Screen_MissingPrimary" xml:space="preserve">Uses the primary display – currently taken by another screen</sys:String>
+    <sys:String x:Key="Screen_MediaCount" xml:space="preserve">{0} media assigned · {1} playable now</sys:String>
+    <sys:String x:Key="Screen_NameHint" xml:space="preserve">Name this screen (e.g. Above the bar, Counter, Window)</sys:String>
+    <sys:String x:Key="Screen_EditMedia" xml:space="preserve">Edit media</sys:String>
+    <sys:String x:Key="Screen_Appearance" xml:space="preserve">Appearance</sys:String>
+    <sys:String x:Key="Screen_Forget" xml:space="preserve">Forget</sys:String>
+    <sys:String x:Key="Screen_ForgetConfirm" xml:space="preserve">Forget &quot;{0}&quot;? Its settings are removed; media is kept.</sys:String>
+    <sys:String x:Key="Screen_OwnBackground" xml:space="preserve">Own background color</sys:String>
+    <sys:String x:Key="ScreenOverride_General" xml:space="preserve">Use general setting</sys:String>
+    <sys:String x:Key="ScreenOverride_SoundOn" xml:space="preserve">Sound on</sys:String>
+    <sys:String x:Key="ScreenOverride_SoundOff" xml:space="preserve">Sound off</sys:String>
+    <sys:String x:Key="Filter_Label" xml:space="preserve">Showing:</sys:String>
+    <sys:String x:Key="Filter_AllMedia" xml:space="preserve">All media</sys:String>
+    <sys:String x:Key="Media_CountScreen" xml:space="preserve">{0}: {1} items · {2} playable now</sys:String>
+    <sys:String x:Key="Media_Screens" xml:space="preserve">Shown on screens</sys:String>
+    <sys:String x:Key="Media_AllScreens" xml:space="preserve">All screens (including ones added later)</sys:String>
+    <sys:String x:Key="Media_OnNoScreen" xml:space="preserve">on no screen</sys:String>
+    <sys:String x:Key="Media_OnNoScreenHint" xml:space="preserve">This item is not shown on any enabled screen.</sys:String>
+    <sys:String x:Key="Bulk_SetScreens" xml:space="preserve">Only the checked screens</sys:String>
+    <sys:String x:Key="Bulk_AddScreens" xml:space="preserve">Add checked</sys:String>
+    <sys:String x:Key="Bulk_RemoveScreens" xml:space="preserve">Remove checked</sys:String>
+    <sys:String x:Key="NowPlaying_Screens" xml:space="preserve">On air on {0}/{1} screens</sys:String>
+    <sys:String x:Key="Status_NoScreens" xml:space="preserve">No screen enabled</sys:String>
+    <sys:String x:Key="Status_OnScreens" xml:space="preserve">Showing on {0} screens</sys:String>
+    <sys:String x:Key="Status_PartiallyWaiting" xml:space="preserve">{0}/{1} screens playing · waiting: {2}</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Invalid color. Use #RRGGBB.</sys:String>
 </ResourceDictionary>
