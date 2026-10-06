@@ -15,9 +15,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         DisplayViewModel display,
         GeneralViewModel general,
         ShortcutsViewModel shortcuts,
+        UndoBar undo,
         IPlaybackManager playback,
         ILocalizationService loc)
     {
+        Undo = undo;
         Media = media;
         Display = display;
         General = general;
@@ -25,10 +27,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         _playback = playback;
         _loc = loc;
 
-        Display.EditMediaRequested += (_, number) =>
+        Media.OpenScreenRequested += (_, number) =>
         {
-            Media.FilterToScreen(number);
-            SelectedTab = 0;
+            Display.SelectScreen(number);
+            SelectedTab = 1;
         };
         _playback.StateChanged += (_, _) => Application.Current.Dispatcher.BeginInvoke(UpdateState);
         _loc.LanguageChanged += (_, _) => UpdateState();
@@ -39,10 +41,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     public DisplayViewModel Display { get; }
     public GeneralViewModel General { get; }
     public ShortcutsViewModel Shortcuts { get; }
+    public UndoBar Undo { get; }
 
     [ObservableProperty] private bool _isPlaying;
 
-    /// <summary>0 Media, 1 Screens, 2 General, 3 Shortcuts.</summary>
+    /// <summary>0 Library, 1 Screens, 2 General, 3 Shortcuts.</summary>
     [ObservableProperty] private int _selectedTab;
     [ObservableProperty] private string _statusText = string.Empty;
     [ObservableProperty] private string _placementText = string.Empty;

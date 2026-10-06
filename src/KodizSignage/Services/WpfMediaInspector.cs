@@ -1,5 +1,7 @@
 using System.IO;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using KodizSignage.Core.Media;
 using KodizSignage.Core.Services;
 using Serilog;
 using Windows.Data.Pdf;
@@ -30,6 +32,38 @@ public sealed class WpfMediaInspector : IMediaInspector
         {
             _log.Information(ex, "Image {Path} cannot be decoded on this PC", path);
             return false;
+        }
+    }
+
+    public ulong? GetImageSignature(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+            bitmap.StreamSource = stream;
+            bitmap.DecodePixelWidth = PerceptualHash.Width; // Decoding straight to 9×8 is fast even for big photos.
+            bitmap.DecodePixelHeight = PerceptualHash.Height;
+            bitmap.EndInit();
+
+            BitmapSource gray = new FormatConvertedBitmap(bitmap, PixelFormats.Gray8, null, 0);
+            if (gray.PixelWidth != PerceptualHash.Width || gray.PixelHeight != PerceptualHash.Height)
+            {
+                gray = new TransformedBitmap(gray, new ScaleTransform(
+                    (double)PerceptualHash.Width / gray.PixelWidth, (double)PerceptualHash.Height / gray.PixelHeight));
+            }
+
+            var pixels = new byte[PerceptualHash.Width * PerceptualHash.Height];
+            gray.CopyPixels(pixels, PerceptualHash.Width, 0);
+            return PerceptualHash.Compute(pixels);
+        }
+        catch (Exception ex)
+        {
+            _log.Debug(ex, "No image signature for {Path}", path);
+            return null;
         }
     }
 

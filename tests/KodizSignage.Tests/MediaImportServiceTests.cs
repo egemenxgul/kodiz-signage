@@ -24,6 +24,12 @@ public class MediaImportServiceTests
 
         public bool CanDecodeImage(string path) => Decodable;
 
+        /// <summary>File content → fingerprint, to simulate "visually identical" images.</summary>
+        public Dictionary<string, ulong> Signatures { get; } = new();
+
+        public ulong? GetImageSignature(string path) =>
+            System.IO.File.Exists(path) && Signatures.TryGetValue(System.IO.File.ReadAllText(path), out var s) ? s : null;
+
         public Task<IReadOnlyList<string>> RenderPdfAsync(string pdfPath, string outputFolder, int width, CancellationToken cancellationToken)
         {
             var pages = Enumerable.Range(0, PdfPages).Select(_ =>

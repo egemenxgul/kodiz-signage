@@ -239,7 +239,7 @@
     <sys:String x:Key="TrayHint_Text" xml:space="preserve">The settings window was closed; playback continues. Reopen with {0} or Kodiz Signage in the Start menu.</sys:String>
     <sys:String x:Key="SafeMode_Text" xml:space="preserve">The app closed unexpectedly several times in a short period. Playback starts automatically in {0} minutes. See the log folder for details.</sys:String>
     <sys:String x:Key="Screens_Title" xml:space="preserve">Screens</sys:String>
-    <sys:String x:Key="Screens_Description" xml:space="preserve">Every display connected to this PC can run its own show. Switch off displays you don't want to use; each enabled screen plays the media assigned to it independently. Choose which media appears on which screen with the screen buttons in the Media tab or with &quot;Edit media&quot;.</sys:String>
+    <sys:String x:Key="Screens_Description" xml:space="preserve">Pick a screen on the left: its own playlist and settings appear on the right.</sys:String>
     <sys:String x:Key="Screens_Summary" xml:space="preserve">{0} displays detected · showing on {1} screens</sys:String>
     <sys:String x:Key="Screens_NoneEnabled" xml:space="preserve">No screen is enabled. Switch on at least one screen in the Screens tab.</sys:String>
     <sys:String x:Key="Screen_Default" xml:space="preserve">Screen {0}</sys:String>
@@ -277,5 +277,115 @@
     <sys:String x:Key="Status_NoScreens" xml:space="preserve">No screen enabled</sys:String>
     <sys:String x:Key="Status_OnScreens" xml:space="preserve">Showing on {0} screens</sys:String>
     <sys:String x:Key="Status_PartiallyWaiting" xml:space="preserve">{0}/{1} screens playing · waiting: {2}</sys:String>
+    <sys:String x:Key="Tab_Library" xml:space="preserve">Library</sys:String>
+    <sys:String x:Key="Unit_Seconds" xml:space="preserve">s</sys:String>
+    <sys:String x:Key="Library_Search" xml:space="preserve">Search the library…</sys:String>
+    <sys:String x:Key="Library_Hint" xml:space="preserve">Every file is stored once; screens share it. Screen-specific order and settings are in the Screens tab.</sys:String>
+    <sys:String x:Key="Library_Count" xml:space="preserve">{0} media</sys:String>
+    <sys:String x:Key="Library_CountUnused" xml:space="preserve">{0} media · {1} not used on any screen</sys:String>
+    <sys:String x:Key="Library_AutoAddLabel" xml:space="preserve">Add new media automatically to:</sys:String>
+    <sys:String x:Key="Library_AutoAddTo" xml:space="preserve">New media goes to screen {0}</sys:String>
+    <sys:String x:Key="Library_AutoAddNone" xml:space="preserve">New media is not added to any screen automatically – add it by hand</sys:String>
+    <sys:String x:Key="Library_UsedOn" xml:space="preserve">Screen {0}</sys:String>
+    <sys:String x:Key="Library_NotUsed" xml:space="preserve">Not used on any screen</sys:String>
+    <sys:String x:Key="Library_ActiveTooltip" xml:space="preserve">Active by default (screens may override)</sys:String>
+    <sys:String x:Key="Library_DefaultsInfo" xml:space="preserve">These are defaults. A screen uses them unless it sets its own value in the Screens tab.</sys:String>
+    <sys:String x:Key="Library_DefaultActive" xml:space="preserve">Active by default</sys:String>
+    <sys:String x:Key="Library_DefaultDuration" xml:space="preserve">Default duration (s, empty = the screen's default)</sys:String>
+    <sys:String x:Key="Library_OpenScreen" xml:space="preserve">Open this screen's playlist</sys:String>
+    <sys:String x:Key="Library_Delete" xml:space="preserve">Delete from library (removed from all screens)</sys:String>
+    <sys:String x:Key="Library_AlsoFromScreens" xml:space="preserve">also removed from {0} screens</sys:String>
+    <sys:String x:Key="Library_RemovedFromScreen" xml:space="preserve">&quot;{0}&quot; removed from {1}</sys:String>
+    <sys:String x:Key="Picker_Title" xml:space="preserve">Add from library to {0}</sys:String>
+    <sys:String x:Key="Picker_Search" xml:space="preserve">Search…</sys:String>
+    <sys:String x:Key="Picker_SelectAll" xml:space="preserve">Select all</sys:String>
+    <sys:String x:Key="Picker_AlreadyThere" xml:space="preserve">already on this screen</sys:String>
+    <sys:String x:Key="Picker_Count" xml:space="preserve">{0} selected</sys:String>
+    <sys:String x:Key="Picker_Add" xml:space="preserve">Add ({0})</sys:String>
+    <sys:String x:Key="Picker_LibraryEmpty" xml:space="preserve">The library is empty. Add media in the Library tab first.</sys:String>
+    <sys:String x:Key="Screens_AllTitle" xml:space="preserve">For all screens</sys:String>
+    <sys:String x:Key="Screen_UnusedHint" xml:space="preserve">This display is not used yet. Once switched on it starts with an empty playlist; add media from the library or copy another screen's playlist.</sys:String>
+    <sys:String x:Key="Screen_PrimaryDisplay" xml:space="preserve">Uses the Windows primary display</sys:String>
+    <sys:String x:Key="Card_Linked" xml:space="preserve">Plays screen {0}'s playlist</sys:String>
+    <sys:String x:Key="Card_LinkedSync" xml:space="preserve">In sync with screen {0}</sys:String>
+    <sys:String x:Key="Audio_Title" xml:space="preserve">Where should video sound play?</sys:String>
+    <sys:String x:Key="Audio_EachScreen" xml:space="preserve">Each screen by its own setting</sys:String>
+    <sys:String x:Key="Audio_OnlyScreen" xml:space="preserve">Only {0}</sys:String>
+    <sys:String x:Key="Performance_Preload" xml:space="preserve">Preload the next video (smooth transitions)</sys:String>
+    <sys:String x:Key="Performance_PreloadHint" xml:space="preserve">When off, each screen uses one video decoder; reduces stutter on weak PCs with many video screens, at the cost of a short pause between videos.</sys:String>
+    <sys:String x:Key="Performance_Warning" xml:space="preserve">{0} screens play videos; up to {1} decoders may run at once. If playback stutters, turn off preloading or convert videos to 1080p.</sys:String>
+    <sys:String x:Key="Rotation_Title" xml:space="preserve">Rotation</sys:String>
+    <sys:String x:Key="Rotation_Hint" xml:space="preserve">For TVs mounted in portrait or upside down. Does not change Windows settings.</sys:String>
+    <sys:String x:Key="Rotation_0" xml:space="preserve">None (landscape)</sys:String>
+    <sys:String x:Key="Rotation_90" xml:space="preserve">90° (portrait)</sys:String>
+    <sys:String x:Key="Rotation_180" xml:space="preserve">180° (upside down)</sys:String>
+    <sys:String x:Key="Rotation_270" xml:space="preserve">270° (portrait, other way)</sys:String>
+    <sys:String x:Key="Editor_Header" xml:space="preserve">Editing {0} – changes here affect only this screen</sys:String>
+    <sys:String x:Key="Editor_TabPlaylist" xml:space="preserve">Playlist</sys:String>
+    <sys:String x:Key="Editor_TabSettings" xml:space="preserve">Screen settings</sys:String>
+    <sys:String x:Key="Editor_Summary" xml:space="preserve">{0} items · {1} playable now</sys:String>
+    <sys:String x:Key="Editor_LinkNone" xml:space="preserve">Plays its own playlist</sys:String>
+    <sys:String x:Key="Editor_LinkTo" xml:space="preserve">Plays the playlist of {0}</sys:String>
+    <sys:String x:Key="Editor_LinkHint" xml:space="preserve">When playing another screen's playlist, changes there apply here too.</sys:String>
+    <sys:String x:Key="Editor_LinkConfirm" xml:space="preserve">This screen will play the playlist of {0}. Its own playlist is kept and comes back when unlinked. Continue?</sys:String>
+    <sys:String x:Key="Editor_Linked" xml:space="preserve">This screen plays the playlist of {0}. Select that screen to edit it, or switch back to &quot;Plays its own playlist&quot; above.</sys:String>
+    <sys:String x:Key="Editor_LinkedSync" xml:space="preserve">This screen plays in sync with {0}: it switches items at the same moment.</sys:String>
+    <sys:String x:Key="Editor_Synchronized" xml:space="preserve">Play in sync</sys:String>
+    <sys:String x:Key="Editor_SynchronizedHint" xml:space="preserve">Shows the same item at the same moment as the linked screen (for TVs side by side).</sys:String>
+    <sys:String x:Key="Editor_AutoAdd" xml:space="preserve">Add new library media to this playlist automatically</sys:String>
+    <sys:String x:Key="Editor_AddFromLibrary" xml:space="preserve">Add from library</sys:String>
+    <sys:String x:Key="Editor_AddFiles" xml:space="preserve">Add files to this screen</sys:String>
+    <sys:String x:Key="Editor_CopyFrom" xml:space="preserve">Copy from another screen…</sys:String>
+    <sys:String x:Key="Editor_CopyConfirm" xml:space="preserve">The playlist of {1} will be replaced by the one of {0} (including screen-specific settings). Continue?</sys:String>
+    <sys:String x:Key="Editor_Duplicate" xml:space="preserve">Add once more to this playlist</sys:String>
+    <sys:String x:Key="Editor_Remove" xml:space="preserve">Remove from this screen (stays in the library)</sys:String>
+    <sys:String x:Key="Editor_RemoveSelected" xml:space="preserve">Remove selected from this screen</sys:String>
+    <sys:String x:Key="Editor_RemovedOne" xml:space="preserve">&quot;{0}&quot; removed from {1}</sys:String>
+    <sys:String x:Key="Editor_RemovedMany" xml:space="preserve">{0} items removed from {1}</sys:String>
+    <sys:String x:Key="Editor_EmptyTitle" xml:space="preserve">This screen's playlist is empty</sys:String>
+    <sys:String x:Key="Editor_EmptyHint" xml:space="preserve">Pick media with &quot;Add from library&quot;, add files, or copy another screen's playlist.</sys:String>
+    <sys:String x:Key="Editor_NoSelection" xml:space="preserve">Select an item to set screen-specific values.&#10;Use Ctrl or Shift to select several.</sys:String>
+    <sys:String x:Key="Editor_BulkTitle" xml:space="preserve">Selected items (this screen only)</sys:String>
+    <sys:String x:Key="Editor_BulkHint" xml:space="preserve">Changes apply only to the selected items on this screen.</sys:String>
+    <sys:String x:Key="Editor_SettingsInfo" xml:space="preserve">Settings left unchecked use the values from the General tab.</sys:String>
+    <sys:String x:Key="Editor_Identity" xml:space="preserve">Screen</sys:String>
+    <sys:String x:Key="Editor_OwnDuration" xml:space="preserve">Own default image duration</sys:String>
+    <sys:String x:Key="Editor_GeneralValue" xml:space="preserve">General setting: {0}</sys:String>
+    <sys:String x:Key="Editor_OwnTransitionDuration" xml:space="preserve">Own transition duration</sys:String>
+    <sys:String x:Key="Editor_OwnVolume" xml:space="preserve">Own volume</sys:String>
+    <sys:String x:Key="Editor_AudioOtherScreen" xml:space="preserve">Sound is set to play only from screen {0} (Screens tab, bottom left).</sys:String>
+    <sys:String x:Key="Editor_AudioThisScreen" xml:space="preserve">Video sound plays only from this screen.</sys:String>
+    <sys:String x:Key="Editor_OwnHours" xml:space="preserve">Own opening hours</sys:String>
+    <sys:String x:Key="Editor_OwnHoursHint" xml:space="preserve">E.g. the window display can switch off at night while the indoor one stays on.</sys:String>
+    <sys:String x:Key="Entry_ScreenSpecific" xml:space="preserve">screen-specific</sys:String>
+    <sys:String x:Key="Entry_OverrideInfo" xml:space="preserve">Values here apply to this screen only. Anything you don't change comes from the library defaults.</sys:String>
+    <sys:String x:Key="Entry_ActiveHere" xml:space="preserve">Active on this screen</sys:String>
+    <sys:String x:Key="Entry_ActiveTooltip" xml:space="preserve">Active on this screen</sys:String>
+    <sys:String x:Key="Entry_DurationHere" xml:space="preserve">Duration on this screen (s)</sys:String>
+    <sys:String x:Key="Entry_TransitionHere" xml:space="preserve">Transition into this item</sys:String>
+    <sys:String x:Key="Entry_TransitionScreen" xml:space="preserve">Screen setting</sys:String>
+    <sys:String x:Key="Entry_OwnDates" xml:space="preserve">Own date range on this screen</sys:String>
+    <sys:String x:Key="Entry_OwnSchedule" xml:space="preserve">Own days and hours on this screen</sys:String>
+    <sys:String x:Key="Entry_DefaultFromLibrary" xml:space="preserve">Default (library): {0}</sys:String>
+    <sys:String x:Key="Entry_DefaultFromScreen" xml:space="preserve">Default (screen): {0}</sys:String>
+    <sys:String x:Key="Entry_Active" xml:space="preserve">active</sys:String>
+    <sys:String x:Key="Entry_Inactive" xml:space="preserve">inactive</sys:String>
+    <sys:String x:Key="Entry_Reset" xml:space="preserve">Reset to default</sys:String>
+    <sys:String x:Key="Entry_ResetAll" xml:space="preserve">Reset all to default</sys:String>
+    <sys:String x:Key="Duplicate_Title_Exact" xml:space="preserve">This file is already in the library</sys:String>
+    <sys:String x:Key="Duplicate_Title_SimilarImage" xml:space="preserve">A visually identical picture is already in the library</sys:String>
+    <sys:String x:Key="Duplicate_Title_SimilarVideo" xml:space="preserve">Probably the same video is already in the library</sys:String>
+    <sys:String x:Key="Duplicate_Title_SameName" xml:space="preserve">A different file with the same name exists</sys:String>
+    <sys:String x:Key="Duplicate_Explain_Exact" xml:space="preserve">The contents are identical (even if the names differ). Using the existing one takes no extra space; adding again uses {0} more.</sys:String>
+    <sys:String x:Key="Duplicate_Explain_SimilarImage" xml:space="preserve">The pictures look the same (maybe re-saved, resized or in another format).</sys:String>
+    <sys:String x:Key="Duplicate_Explain_SimilarVideo" xml:space="preserve">Length, resolution and size are nearly the same – most likely another copy of the same video.</sys:String>
+    <sys:String x:Key="Duplicate_Explain_SameName" xml:space="preserve">Probably an updated version. &quot;Replace&quot; keeps its place and settings on every screen and deletes the old file.</sys:String>
+    <sys:String x:Key="Duplicate_New" xml:space="preserve">File to add</sys:String>
+    <sys:String x:Key="Duplicate_Existing" xml:space="preserve">Already in the library</sys:String>
+    <sys:String x:Key="Duplicate_UseExisting" xml:space="preserve">Use the existing one</sys:String>
+    <sys:String x:Key="Duplicate_AddCopy" xml:space="preserve">Add anyway (+{0})</sys:String>
+    <sys:String x:Key="Duplicate_Replace" xml:space="preserve">Replace the old one</sys:String>
+    <sys:String x:Key="Duplicate_Skip" xml:space="preserve">Skip</sys:String>
+    <sys:String x:Key="Duplicate_ApplyToAll" xml:space="preserve">Do the same for similar cases in this import</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Invalid color. Use #RRGGBB.</sys:String>
 </ResourceDictionary>

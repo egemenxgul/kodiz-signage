@@ -33,6 +33,7 @@ public partial class SettingsWindow : Window
         _tick.Tick += (_, _) =>
         {
             _vm.Media.Tick();
+            _vm.Display.Editor.Tick();
             UpdateTopmost();
         };
 
@@ -42,6 +43,7 @@ public partial class SettingsWindow : Window
         Activated += (_, _) =>
         {
             _vm.Media.RefreshTexts();
+            _vm.Display.Editor.RefreshTexts();
             _vm.General.RefreshSystemInfo();
         };
         Deactivated += (_, _) => CommitFocusedTextBox();
@@ -359,6 +361,76 @@ public partial class SettingsWindow : Window
             HotkeyDisplay.IsModifierKey(HotkeyDisplay.RealKey(e)))
         {
             _vm.Shortcuts.ShowPending(item, HotkeyDisplay.CurrentModifiers());
+            e.Handled = true;
+        }
+    }
+
+    // ---- Screen playlist (entries) -------------------------------------------------------------
+
+    private Point? _entryDragStart;
+    private EntryViewModel? _entryDragItem;
+
+    private void EntryList_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
+        _vm.Display.Editor.SelectedEntries = EntryList.SelectedItems.Cast<EntryViewModel>().ToList();
+
+    private void EntryList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _entryDragStart = null;
+        _entryDragItem = null;
+        if (e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: EntryViewModel entry })
+        {
+            _entryDragStart = e.GetPosition(EntryList);
+            _entryDragItem = entry;
+        }
+    }
+
+    private void EntryList_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_entryDragStart is not { } start || _entryDragItem is null || e.LeftButton != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        var delta = e.GetPosition(EntryList) - start;
+        if (Math.Abs(delta.Y) < SystemParameters.MinimumVerticalDragDistance &&
+            Math.Abs(delta.X) < SystemParameters.MinimumHorizontalDragDistance)
+        {
+            return;
+        }
+
+        var entry = _entryDragItem;
+        _entryDragStart = null;
+        _entryDragItem = null;
+        DragDrop.DoDragDrop(EntryList, new DataObject(typeof(EntryViewModel), entry), DragDropEffects.Move);
+    }
+
+    private void EntryList_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(typeof(EntryViewModel)) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void EntryList_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(typeof(EntryViewModel)) is not EntryViewModel dragged)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        var target = FindAncestor<ListBoxItem>(e.OriginalSource as DependencyObject);
+        var index = target?.DataContext is EntryViewModel targetEntry ? targetEntry.Position : _vm.Display.Editor.Entries.Count - 1;
+        if (index >= 0 && dragged.Position != index)
+        {
+            _vm.Display.Editor.Move(dragged, index);
+        }
+    }
+
+    private void EntryList_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Delete && e.OriginalSource is ListBoxItem && _vm.Display.Editor.SelectedEntries.Count > 0)
+        {
+            _vm.Display.Editor.RemoveEntries(_vm.Display.Editor.SelectedEntries.ToList());
             e.Handled = true;
         }
     }

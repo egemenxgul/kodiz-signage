@@ -61,3 +61,11 @@ public sealed class InverseBoolConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value is not true;
 }
+
+/// <summary>0-based index → 1-based position number.</summary>
+public sealed class PlusOneConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value is int n ? n + 1 : value ?? string.Empty;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}

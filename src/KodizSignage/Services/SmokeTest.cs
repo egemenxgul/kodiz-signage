@@ -83,15 +83,27 @@ internal static class SmokeTest
                 Display = new Core.Models.SavedDisplay(@"\\.\DISPLAY99", 1920, 1080, 99999, 0),
             }));
             await Task.Delay(1500);
+            // Library chips put media on screen 2's own playlist; the editor shows it.
             var first = media.Items.FirstOrDefault();
             if (first is not null && first.ScreenChips.Count == 2)
             {
-                first.ScreenChips[1].IsOn = false;
+                first.ScreenChips[1].IsOn = true;
             }
 
-            media.FilterToScreen(2);
+            var displayVm = services.GetRequiredService<ViewModels.DisplayViewModel>();
+            displayVm.SelectScreen(2);
             await Task.Delay(800);
-            media.FilterToScreen(0);
+            var editor = displayVm.Editor;
+            if (editor.Entries.FirstOrDefault() is { } entry)
+            {
+                editor.SelectedEntry = entry;
+                entry.DurationOverride = 3;
+                entry.OverrideSchedule = true;
+            }
+
+            editor.RotationChoice = 1;
+            editor.HasOwnDuration = true;
+            await Task.Delay(800);
             tabs?.SetCurrentValue(TabControl.SelectedIndexProperty, 1);
             await Task.Delay(800);
 

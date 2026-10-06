@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading.Channels;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -89,7 +90,135 @@ internal sealed class PlaybackEngine
 
     /// <summary>The items of this screen, in playlist order.</summary>
     private IReadOnlyList<PlaylistItem> Items =>
-        ScreenNumber is { } n ? PlaylistScheduler.ForScreen(_playlist.Items, n) : _playlist.Items;
+        ScreenNumber is { } n ? _playlist.GetScreenItems(n) : _playlist.Items;
+
+    // ---- Synchronized playback ---------------------------------------------------------------------
+
+    private sealed record FollowCommand(PlaylistItem? Show, PlaylistItem? Preload, EngineState? Mirror);
+
+    private readonly Channel<FollowCommand> _follow = Channel.CreateUnbounded<FollowCommand>();
+    private PlaybackEngine? _leader;
+
+    /// <summary>Raised (UI thread) right before this engine switches to <c>item</c> – synchronized screens follow it.</summary>
+    public event Action<PlaylistItem>? ItemStarting;
+
+    /// <summary>Raised when this engine preloads its likely next item.</summary>
+    public event Action<PlaylistItem>? PreloadHint;
+
+    /// <summary>
+    /// When set, this engine does not run its own schedule but shows exactly what the leader shows,
+    /// switching at the same moment (screens linked with "synchronized").
+    /// </summary>
+    public PlaybackEngine? Leader
+    {
+        get => _leader;
+        set
+        {
+            if (ReferenceEquals(_leader, value) || ReferenceEquals(value, this))
+            {
+                return;
+            }
+
+            if (_leader is { } old)
+            {
+                old.ItemStarting -= OnLeaderItemStarting;
+                old.PreloadHint -= OnLeaderPreloadHint;
+                old.StateChanged -= OnLeaderStateChanged;
+            }
+
+            _leader = value;
+            while (_follow.Reader.TryRead(out _))
+            {
+            }
+
+            if (value is not null)
+            {
+                value.ItemStarting += OnLeaderItemStarting;
+                value.PreloadHint += OnLeaderPreloadHint;
+                value.StateChanged += OnLeaderStateChanged;
+                if (value.CurrentItem is { } now)
+                {
+                    _follow.Writer.TryWrite(new FollowCommand(now, null, null)); // Join where the leader is.
+                }
+            }
+
+            _log.Information("Screen {Screen}: {Mode}", ScreenNumber, value is null ? "plays its own schedule" : $"follows screen {value.ScreenNumber}");
+            _wake.Set();
+        }
+    }
+
+    private void OnLeaderItemStarting(PlaylistItem item) => _follow.Writer.TryWrite(new FollowCommand(item, null, null));
+
+    private void OnLeaderPreloadHint(PlaylistItem item) => _follow.Writer.TryWrite(new FollowCommand(null, item, null));
+
+    private void OnLeaderStateChanged(object? sender, EventArgs e)
+    {
+        if (_leader?.State is EngineState.Empty or EngineState.Closed)
+        {
+            _follow.Writer.TryWrite(new FollowCommand(null, null, _leader.State));
+        }
+    }
+
+    private async Task FollowStepAsync(CancellationToken stop)
+    {
+        FollowCommand command;
+        using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(stop))
+        {
+            timeout.CancelAfter(MaxWait); // Re-check regularly whether we still follow.
+            try
+            {
+                command = await _follow.Reader.ReadAsync(timeout.Token);
+            }
+            catch (OperationCanceledException) when (!stop.IsCancellationRequested)
+            {
+                return;
+            }
+        }
+
+        if (command.Mirror is EngineState.Empty)
+        {
+            await EnterEmptyAsync();
+            return;
+        }
+
+        if (command.Mirror is EngineState.Closed)
+        {
+            await EnterClosedAsync();
+            return;
+        }
+
+        if (command.Preload is { } hint)
+        {
+            if (hint.Type == MediaType.Image || Settings.PreloadVideos)
+            {
+                ClearPreload();
+                _preload = (hint, _back.LoadAsync(hint, _playlist.GetFullPath(hint), _decodeWidth(), CancellationToken.None));
+            }
+
+            return;
+        }
+
+        if (command.Show is not { } item)
+        {
+            return;
+        }
+
+        HideClosed();
+        item = Items.FirstOrDefault(i => i.Id == item.Id) ?? item;
+        if (_front.Item is { } shown && shown.Id == item.Id && item.Type == MediaType.Image && !_emptyVisible)
+        {
+            _current = item;
+            PublishNowPlaying(item);
+            return;
+        }
+
+        if (await LoadIntoBackAsync(item, stop))
+        {
+            await TransitionAsync(item, stop);
+            _current = item;
+            PublishNowPlaying(item);
+        }
+    }
 
     /// <summary>General settings with this screen's overrides (scaling, background, sound).</summary>
     public AppSettings Settings =>
@@ -187,6 +316,12 @@ internal sealed class PlaybackEngine
         {
             _skipRequested = false;
 
+            if (_leader is not null)
+            {
+                await FollowStepAsync(stop);
+                continue;
+            }
+
             if (!Settings.OperatingHours.IsOpen(DateTime.Now))
             {
                 await ShowClosedAsync(stop);
@@ -241,7 +376,8 @@ internal sealed class PlaybackEngine
 
             consecutiveFailures = 0;
             _failed.Remove(next.Id);
-            await TransitionAsync(stop);
+            ItemStarting?.Invoke(next);
+            await TransitionAsync(next, stop);
             _current = next;
             _log.Debug("Showing {Name}", next.OriginalName);
             PublishNowPlaying(next);
@@ -273,6 +409,14 @@ internal sealed class PlaybackEngine
             return;
         }
 
+        PreloadHint?.Invoke(candidate);
+
+        // Performance mode: one video decoder per screen instead of two.
+        if (candidate.Type == MediaType.Video && !Settings.PreloadVideos)
+        {
+            return;
+        }
+
         var task = _back.LoadAsync(candidate, _playlist.GetFullPath(candidate), _decodeWidth(), CancellationToken.None);
         _preload = (candidate, task);
     }
@@ -286,7 +430,7 @@ internal sealed class PlaybackEngine
         }
     }
 
-    private async Task TransitionAsync(CancellationToken stop)
+    private async Task TransitionAsync(PlaylistItem item, CancellationToken stop)
     {
         var settings = Settings;
         var incoming = _back;
@@ -297,7 +441,7 @@ internal sealed class PlaybackEngine
         outgoing.ZIndex = 0;
         incoming.Start(settings);
 
-        var duration = settings.Transition == TransitionType.Fade
+        var duration = (item.Transition ?? settings.Transition) == TransitionType.Fade
             ? TimeSpan.FromSeconds(settings.TransitionDurationSeconds)
             : TimeSpan.Zero;
 
@@ -370,6 +514,14 @@ internal sealed class PlaybackEngine
 
     private async Task ShowEmptyAsync(CancellationToken stop, TimeSpan? recheck = null)
     {
+        await EnterEmptyAsync();
+
+        // Re-check periodically (date ranges may become valid at midnight) or when woken.
+        await _wake.WaitAsync(recheck ?? EmptyRecheckInterval, stop);
+    }
+
+    private async Task EnterEmptyAsync()
+    {
         if (!_emptyVisible)
         {
             _log.Information("Nothing to play, showing empty screen");
@@ -384,15 +536,18 @@ internal sealed class PlaybackEngine
             _current = null;
             SetState(EngineState.Empty);
         }
-
-        // Re-check periodically (date ranges may become valid at midnight) or when woken.
-        await _wake.WaitAsync(recheck ?? EmptyRecheckInterval, stop);
     }
 
     private bool _closedVisible;
 
     /// <summary>Outside the opening hours: everything unloaded, plain black screen.</summary>
     private async Task ShowClosedAsync(CancellationToken stop)
+    {
+        await EnterClosedAsync();
+        await _wake.WaitAsync(MaxWait, stop);
+    }
+
+    private async Task EnterClosedAsync()
     {
         if (!_closedVisible)
         {
@@ -408,8 +563,6 @@ internal sealed class PlaybackEngine
             _current = null;
             SetState(EngineState.Closed);
         }
-
-        await _wake.WaitAsync(MaxWait, stop);
     }
 
     private void HideClosed()

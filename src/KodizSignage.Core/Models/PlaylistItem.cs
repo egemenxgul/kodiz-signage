@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace KodizSignage.Core.Models;
 
 /// <summary>
@@ -52,6 +54,11 @@ public sealed record PlaylistItem
     /// <summary>SHA-256 of the file content (hex), used to detect duplicate imports.</summary>
     public string? ContentHash { get; init; }
 
+    /// <summary>Perceptual fingerprint of images (hex dHash) – finds re-saved / resized copies.</summary>
+    public string? ImageSignature { get; init; }
+
+    public long? FileSize { get; init; }
+
     public int? VideoWidth { get; init; }
 
     public int? VideoHeight { get; init; }
@@ -68,7 +75,20 @@ public sealed record PlaylistItem
     /// </summary>
     public EquatableList<int>? Screens { get; init; }
 
+    /// <summary>Legacy (v1.2) assignment; only used to migrate into screen playlists.</summary>
     public bool IsOnScreen(int number) => Screens is null || Screens.Contains(number);
+
+    /// <summary>Set on resolved screen entries: the library item this entry plays (Id is then the entry id).</summary>
+    [JsonIgnore]
+    public Guid? MediaId { get; init; }
+
+    /// <summary>Set on resolved screen entries: transition override for this entry.</summary>
+    [JsonIgnore]
+    public TransitionType? Transition { get; init; }
+
+    /// <summary>The library item id (also for resolved screen entries).</summary>
+    [JsonIgnore]
+    public Guid LibraryId => MediaId ?? Id;
 
     public string Title => string.IsNullOrWhiteSpace(DisplayName) ? OriginalName : DisplayName;
 
@@ -77,6 +97,14 @@ public sealed record PlaylistItem
 
 public sealed class PlaylistDocument
 {
-    public int SchemaVersion { get; set; } = 1;
+    public const int CurrentSchema = 2;
+
+    /// <summary>1 = single shared playlist (v1.0–1.2), 2 = library + per-screen playlists.</summary>
+    public int SchemaVersion { get; set; } = CurrentSchema;
+
+    /// <summary>The media library.</summary>
     public List<PlaylistItem> Items { get; set; } = new();
+
+    /// <summary>Each screen's own playlist.</summary>
+    public List<ScreenPlaylist> Screens { get; set; } = new();
 }

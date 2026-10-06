@@ -23,6 +23,11 @@ public sealed partial class ScreenChipViewModel : ObservableObject
 
     public int Number { get; }
 
+    public System.Windows.Media.Brush ColorBrush => ScreenColors.Brush(Number);
+
+    /// <summary>The screen plays another screen's playlist: membership is read-only here.</summary>
+    [ObservableProperty] private bool _isLinked;
+
     [ObservableProperty] private string _name;
 
     /// <summary>False when the screen itself is switched off (shown dimmed).</summary>
@@ -53,10 +58,13 @@ public sealed partial class MediaItemViewModel : ObservableObject
     private readonly ILocalizationService _loc;
     private bool _syncing;
 
-    public MediaItemViewModel(PlaylistItem item, Action<PlaylistItem> commit, ILocalizationService loc)
+    private readonly Action<Guid, int, bool> _toggleScreen;
+
+    public MediaItemViewModel(PlaylistItem item, Action<PlaylistItem> commit, ILocalizationService loc, Action<Guid, int, bool> toggleScreen)
     {
         _commit = commit;
         _loc = loc;
+        _toggleScreen = toggleScreen;
         _item = item;
         Schedule = new ScheduleEditor(loc, autoCommit: true,
             (days, start, end) => Commit(Item with { Days = days, StartTime = start, EndTime = end }));
@@ -104,8 +112,9 @@ public sealed partial class MediaItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isOnNoScreen;
 
+    /// <summary>"Screen 1, 3" – where this media is used.</summary>
     [ObservableProperty]
-    private bool _isOnAllScreens;
+    private string _usageText = string.Empty;
 
     public ObservableCollection<ScreenChipViewModel> ScreenChips { get; } = new();
 
@@ -137,7 +146,6 @@ public sealed partial class MediaItemViewModel : ObservableObject
             EndDate = item.EndDate;
             DisplayName = item.DisplayName ?? string.Empty;
             Schedule.Load(item.Days, item.StartTime, item.EndTime);
-            SyncScreenChips();
             RefreshTexts();
             OnPropertyChanged(nameof(Name));
             OnPropertyChanged(nameof(OriginalName));
@@ -160,66 +168,34 @@ public sealed partial class MediaItemViewModel : ObservableObject
         ScheduleSummary = ScheduleText.Describe(Item, _loc);
     }
 
-    /// <summary>Rebuilds the chips when screens were added/removed/renamed.</summary>
-    public void UpdateScreens(IReadOnlyList<ScreenConfig> screens, Func<ScreenConfig, string> nameOf)
+    /// <summary>
+    /// Rebuilds/updates the screen chips. <paramref name="isOn"/>: the media is in that screen's playlist;
+    /// <paramref name="linkedTo"/>: the screen plays another screen's playlist (chip read-only).
+    /// </summary>
+    public void UpdateScreens(IReadOnlyList<ScreenConfig> screens, Func<ScreenConfig, string> nameOf, Func<int, bool> isOn, Func<int, bool> isLinked)
     {
-        if (ScreenChips.Select(c => c.Number).SequenceEqual(screens.Select(s => s.Number)))
-        {
-            foreach (var (chip, screen) in ScreenChips.Zip(screens))
-            {
-                chip.Name = nameOf(screen);
-                chip.IsScreenEnabled = screen.Enabled;
-            }
-        }
-        else
+        if (!ScreenChips.Select(c => c.Number).SequenceEqual(screens.Select(s => s.Number)))
         {
             ScreenChips.Clear();
             foreach (var screen in screens)
             {
-                ScreenChips.Add(new ScreenChipViewModel(screen.Number, nameOf(screen), screen.Enabled, ToggleScreen));
+                ScreenChips.Add(new ScreenChipViewModel(screen.Number, nameOf(screen), screen.Enabled, (n, on) => _toggleScreen(Id, n, on)));
             }
         }
 
-        SyncScreenChips();
-    }
-
-    private void SyncScreenChips()
-    {
-        foreach (var chip in ScreenChips)
+        foreach (var (chip, screen) in ScreenChips.Zip(screens))
         {
-            chip.Set(Item.IsOnScreen(chip.Number));
+            chip.Name = nameOf(screen);
+            chip.IsScreenEnabled = screen.Enabled;
+            chip.IsLinked = isLinked(screen.Number);
+            chip.Set(isOn(screen.Number));
         }
 
-        _syncing = true;
-        IsOnAllScreens = Item.Screens is null;
-        _syncing = false;
+        var used = ScreenChips.Where(c => c.IsOn).Select(c => c.Number).ToList();
         IsOnNoScreen = !ScreenChips.Any(c => c.IsScreenEnabled && c.IsOn);
-    }
-
-    /// <summary>Adds/removes one screen; "all screens" turns into an explicit list first.</summary>
-    private void ToggleScreen(int number, bool on)
-    {
-        var current = Item.Screens?.ToList() ?? ScreenChips.Select(c => c.Number).ToList();
-        current.Remove(number);
-        if (on)
-        {
-            current.Add(number);
-        }
-
-        Commit(Item with { Screens = current.Order().ToEquatableList() });
-    }
-
-    partial void OnIsOnAllScreensChanged(bool value)
-    {
-        if (_syncing)
-        {
-            return;
-        }
-
-        Commit(Item with
-        {
-            Screens = value ? null : ScreenChips.Where(c => c.IsOn).Select(c => c.Number).ToEquatableList(),
-        });
+        UsageText = used.Count == 0
+            ? _loc.Get("Library_NotUsed")
+            : _loc.Format("Library_UsedOn", string.Join(", ", used));
     }
 
     partial void OnIsActiveChanged(bool value) => Commit(Item with { IsActive = value });

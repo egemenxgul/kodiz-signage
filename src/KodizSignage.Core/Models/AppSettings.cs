@@ -59,6 +59,23 @@ public sealed record AppSettings
     /// <summary>The user declined copying the app to its install folder.</summary>
     public bool InstallDeclined { get; init; }
 
+    /// <summary>When set, only this screen plays video sound (avoids several screens talking at once).</summary>
+    public int? AudioScreen { get; init; }
+
+    /// <summary>Pre-load the next video while the current one plays (smoother, but two decoders per screen).</summary>
+    public bool PreloadVideos { get; init; } = true;
+
+    /// <summary>Look for new versions on GitHub once a day.</summary>
+    public bool CheckForUpdates { get; init; } = true;
+
+    /// <summary>Install downloaded updates by itself at a quiet time (otherwise ask).</summary>
+    public bool AutoInstallUpdates { get; init; } = true;
+
+    /// <summary>A version that failed (rolled back) and is not offered again.</summary>
+    public string? SkippedUpdateVersion { get; init; }
+
+    public DateTime? LastUpdateCheck { get; init; }
+
     /// <summary>Clamps out-of-range values (e.g. from a hand-edited file) to sane ones.</summary>
     public AppSettings Normalize() => this with
     {

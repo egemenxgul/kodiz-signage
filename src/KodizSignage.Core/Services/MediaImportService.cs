@@ -33,13 +33,51 @@ public sealed record ImportWarning(string FileName, ImportWarningKind Kind);
 
 public sealed record ImportFailure(string FileName, string Reason, ImportFailureKind Kind = ImportFailureKind.Error);
 
+/// <summary>How a new file relates to media already in the library.</summary>
+public enum DuplicateKind
+{
+    /// <summary>Byte-for-byte the same content (name may differ).</summary>
+    Exact,
+    /// <summary>Visually the same picture (re-saved, resized, other format).</summary>
+    SimilarImage,
+    /// <summary>Same length, resolution and about the same size – most likely the same video.</summary>
+    SimilarVideo,
+    /// <summary>Same file name but different content – maybe a new version.</summary>
+    SameName,
+}
+
+public enum DuplicateAnswer
+{
+    /// <summary>Don't copy; use the library item (added to the target screens if missing).</summary>
+    UseExisting,
+    /// <summary>Add as a separate library item anyway.</summary>
+    AddCopy,
+    /// <summary>The new file replaces the library item; screens keep their entries and overrides.</summary>
+    ReplaceExisting,
+    Skip,
+}
+
+public sealed record DuplicateQuestion(
+    string FileName,
+    string SourcePath,
+    long SourceSize,
+    PlaylistItem Existing,
+    string ExistingPath,
+    DuplicateKind Kind);
+
 public sealed record ImportResult(
     IReadOnlyList<PlaylistItem> Imported,
     IReadOnlyList<ImportWarning> Warnings,
     IReadOnlyList<string> Unsupported,
     IReadOnlyList<ImportFailure> Failed,
-    IReadOnlyList<string> Duplicates)
+    IReadOnlyList<string> Duplicates,
+    IReadOnlyList<Guid>? DuplicateIds = null,
+    IReadOnlyList<string>? Replaced = null,
+    IReadOnlyList<string>? Skipped = null)
 {
+    /// <summary>Library items the duplicates were resolved to ("use existing").</summary>
+    public IReadOnlyList<Guid> ExistingIds => DuplicateIds ?? Array.Empty<Guid>();
+
     public IReadOnlyList<string> WarningsOf(ImportWarningKind kind) =>
         Warnings.Where(w => w.Kind == kind).Select(w => w.FileName).ToList();
 }
@@ -48,7 +86,7 @@ public sealed record ImportOptions
 {
     public static ImportOptions Default { get; } = new();
 
-    /// <summary>Skip files whose content is already in the playlist.</summary>
+    /// <summary>Check new files against the library (exact, similar, same name).</summary>
     public bool SkipDuplicates { get; init; } = true;
 
     /// <summary>Append each imported item to the playlist right away.</summary>
@@ -59,8 +97,14 @@ public sealed record ImportOptions
 
     public string? SyncStamp { get; init; }
 
-    /// <summary>Screens new items are assigned to; null = all screens.</summary>
-    public EquatableList<int>? Screens { get; init; }
+    /// <summary>Screens whose playlists receive the new items; null = screens with "add new media automatically".</summary>
+    public IReadOnlyCollection<int>? TargetScreens { get; init; }
+
+    /// <summary>
+    /// Asks the user what to do with a duplicate. Without it: exact copies use the existing item,
+    /// similar files / same names are added.
+    /// </summary>
+    public Func<DuplicateQuestion, Task<DuplicateAnswer>>? DuplicateHandler { get; init; }
 }
 
 /// <summary>Reads video metadata for containers the built-in MP4 parser cannot handle.</summary>
@@ -80,6 +124,9 @@ public interface IMediaInspector
     /// <summary>True when the OS can decode the image (codec installed).</summary>
     bool CanDecodeImage(string path);
 
+    /// <summary>Perceptual fingerprint (<see cref="PerceptualHash"/>) of an image, null if it cannot be decoded.</summary>
+    ulong? GetImageSignature(string path);
+
     /// <summary>Renders every page of a PDF to PNG files in <paramref name="outputFolder"/>. Returns the files in page order.</summary>
     Task<IReadOnlyList<string>> RenderPdfAsync(string pdfPath, string outputFolder, int width, CancellationToken cancellationToken);
 }
@@ -87,6 +134,8 @@ public interface IMediaInspector
 public sealed class NullMediaInspector : IMediaInspector
 {
     public bool CanDecodeImage(string path) => true;
+
+    public ulong? GetImageSignature(string path) => null;
 
     public Task<IReadOnlyList<string>> RenderPdfAsync(string pdfPath, string outputFolder, int width, CancellationToken cancellationToken) =>
         throw new NotSupportedException("PDF rendering is not available on this platform.");
@@ -96,7 +145,7 @@ public interface IMediaImportService
 {
     /// <summary>
     /// Copies the files (directories are expanded) into the media folder under GUID names and
-    /// (by default) appends them to the playlist one by one. Runs off the calling thread.
+    /// (by default) adds them to the library one by one. Runs off the calling thread.
     /// </summary>
     Task<ImportResult> ImportAsync(
         IReadOnlyList<string> paths,
@@ -118,7 +167,7 @@ public sealed class MediaImportService : IMediaImportService
     private readonly IVideoMetadataProvider _videoMetadata;
     private readonly IMediaInspector _inspector;
     private readonly ILogger _log;
-    private readonly SemaphoreSlim _hashGate = new(1, 1);
+    private readonly SemaphoreSlim _indexGate = new(1, 1);
 
     public MediaImportService(
         AppPaths paths,
@@ -151,6 +200,34 @@ public sealed class MediaImportService : IMediaImportService
         }
     }
 
+    /// <summary>What this import knows about the library (and the files added during it).</summary>
+    private sealed class LibraryIndex
+    {
+        public Dictionary<string, PlaylistItem> ByHash { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<PlaylistItem> Items { get; } = new();
+
+        public void Add(PlaylistItem item)
+        {
+            Items.Add(item);
+            if (item.ContentHash is { } hash)
+            {
+                ByHash.TryAdd(hash, item);
+            }
+        }
+    }
+
+    private sealed class Outcome
+    {
+        public List<PlaylistItem> Imported { get; } = new();
+        public List<ImportWarning> Warnings { get; } = new();
+        public List<string> Unsupported { get; } = new();
+        public List<ImportFailure> Failed { get; } = new();
+        public List<string> Duplicates { get; } = new();
+        public List<Guid> DuplicateIds { get; } = new();
+        public List<string> Replaced { get; } = new();
+        public List<string> Skipped { get; } = new();
+    }
+
     public async Task<ImportResult> ImportAsync(
         IReadOnlyList<string> paths,
         IProgress<ImportProgress>? progress,
@@ -159,27 +236,23 @@ public sealed class MediaImportService : IMediaImportService
     {
         options ??= ImportOptions.Default;
         var files = ExpandPaths(paths);
-        var imported = new List<PlaylistItem>();
-        var warnings = new List<ImportWarning>();
-        var unsupported = new List<string>();
-        var failed = new List<ImportFailure>();
-        var duplicates = new List<string>();
+        var outcome = new Outcome();
 
         Directory.CreateDirectory(_paths.MediaFolder);
-        var knownHashes = options.SkipDuplicates ? await GetKnownHashesAsync(cancellationToken).ConfigureAwait(false) : new HashSet<string>();
+        var index = options.SkipDuplicates ? await BuildIndexAsync(cancellationToken).ConfigureAwait(false) : new LibraryIndex();
 
-        for (var index = 0; index < files.Count; index++)
+        for (var i = 0; i < files.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var source = files[index];
+            var source = files[i];
             var name = Path.GetFileName(source);
             if (!MediaFormats.IsSupported(source))
             {
-                unsupported.Add(name);
+                outcome.Unsupported.Add(name);
                 continue;
             }
 
-            var fileIndex = index;
+            var fileIndex = i;
             void Report(double fraction) => progress?.Report(new ImportProgress(fileIndex, files.Count, name, fraction));
             Report(0);
 
@@ -188,22 +261,18 @@ public sealed class MediaImportService : IMediaImportService
                 var length = new FileInfo(source).Length;
                 if (FreeSpace() - length < ReserveBytes)
                 {
-                    failed.Add(new ImportFailure(name, "Not enough disk space", ImportFailureKind.DiskFull));
+                    outcome.Failed.Add(new ImportFailure(name, "Not enough disk space", ImportFailureKind.DiskFull));
                     _log.Warning("Not enough disk space to import {Name} ({Bytes} bytes)", name, length);
                     continue;
                 }
 
-                var items = MediaFormats.IsDocument(source)
-                    ? await ImportDocumentAsync(source, name, Report, knownHashes, duplicates, failed, options, cancellationToken).ConfigureAwait(false)
-                    : await ImportFileAsync(source, name, Report, knownHashes, duplicates, warnings, options, cancellationToken).ConfigureAwait(false);
-
-                if (items.Count > 0)
+                if (MediaFormats.IsDocument(source))
                 {
-                    imported.AddRange(items);
-                    if (options.AddToPlaylist)
-                    {
-                        _playlist.Add(items); // One by one: a later cancel keeps what was already copied.
-                    }
+                    await ImportDocumentAsync(source, name, Report, index, outcome, options, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    await ImportFileAsync(source, name, length, Report, index, outcome, options, cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
@@ -212,7 +281,7 @@ public sealed class MediaImportService : IMediaImportService
             }
             catch (Exception ex)
             {
-                failed.Add(new ImportFailure(name, ex.Message));
+                outcome.Failed.Add(new ImportFailure(name, ex.Message));
                 _log.Error(ex, "Import of {Source} failed", source);
             }
             finally
@@ -221,16 +290,17 @@ public sealed class MediaImportService : IMediaImportService
             }
         }
 
-        return new ImportResult(imported, warnings, unsupported, failed, duplicates);
+        return new ImportResult(outcome.Imported, outcome.Warnings, outcome.Unsupported, outcome.Failed,
+            outcome.Duplicates, outcome.DuplicateIds, outcome.Replaced, outcome.Skipped);
     }
 
-    private async Task<IReadOnlyList<PlaylistItem>> ImportFileAsync(
+    private async Task ImportFileAsync(
         string source,
         string name,
+        long length,
         Action<double> report,
-        HashSet<string> knownHashes,
-        List<string> duplicates,
-        List<ImportWarning> warnings,
+        LibraryIndex index,
+        Outcome outcome,
         ImportOptions options,
         CancellationToken cancellationToken)
     {
@@ -250,14 +320,6 @@ public sealed class MediaImportService : IMediaImportService
             throw;
         }
 
-        if (options.SkipDuplicates && !knownHashes.Add(hash))
-        {
-            TryDelete(destination);
-            duplicates.Add(name);
-            _log.Information("Skipped duplicate {Name}", name);
-            return Array.Empty<PlaylistItem>();
-        }
-
         var item = new PlaylistItem
         {
             Id = id,
@@ -265,9 +327,9 @@ public sealed class MediaImportService : IMediaImportService
             FilePath = storedName,
             Type = type,
             ContentHash = hash,
+            FileSize = length,
             SyncFileName = options.SyncFileName,
             SyncStamp = options.SyncStamp,
-            Screens = options.Screens,
         };
 
         if (type == MediaType.Video)
@@ -283,108 +345,256 @@ public sealed class MediaImportService : IMediaImportService
 
             if (!info.Recommended)
             {
-                warnings.Add(new ImportWarning(name, ImportWarningKind.VideoFormat));
+                outcome.Warnings.Add(new ImportWarning(name, ImportWarningKind.VideoFormat));
             }
 
             if (info.HighResolution)
             {
-                warnings.Add(new ImportWarning(name, ImportWarningKind.HighResolution));
+                outcome.Warnings.Add(new ImportWarning(name, ImportWarningKind.HighResolution));
             }
         }
-        else if (MediaFormats.CodecDependentImageExtensions.Contains(Path.GetExtension(source)) && !_inspector.CanDecodeImage(destination))
+        else
         {
-            item = item with { HasCompatibilityWarning = true };
-            warnings.Add(new ImportWarning(name, ImportWarningKind.ImageCodecMissing));
+            if (MediaFormats.CodecDependentImageExtensions.Contains(Path.GetExtension(source)) && !_inspector.CanDecodeImage(destination))
+            {
+                item = item with { HasCompatibilityWarning = true };
+                outcome.Warnings.Add(new ImportWarning(name, ImportWarningKind.ImageCodecMissing));
+            }
+
+            if (_inspector.GetImageSignature(destination) is { } signature)
+            {
+                item = item with { ImageSignature = PerceptualHash.Format(signature) };
+            }
+        }
+
+        // ---- Duplicate checks (strongest match first) ----
+        PlaylistItem? replaceTarget = null;
+        if (options.SkipDuplicates && FindDuplicate(item, index) is { } duplicate)
+        {
+            var (existing, kind) = duplicate;
+            var answer = options.DuplicateHandler is { } ask
+                ? await ask(new DuplicateQuestion(name, source, length, existing, _playlist.GetFullPath(existing), kind)).ConfigureAwait(false)
+                : kind == DuplicateKind.Exact ? DuplicateAnswer.UseExisting : DuplicateAnswer.AddCopy;
+            _log.Information("{Name} matches {Existing} ({Kind}): {Answer}", name, existing.OriginalName, kind, answer);
+
+            switch (answer)
+            {
+                case DuplicateAnswer.UseExisting:
+                    TryDelete(destination);
+                    outcome.Duplicates.Add(name);
+                    outcome.DuplicateIds.Add(existing.Id);
+                    if (options.AddToPlaylist)
+                    {
+                        _playlist.AddToScreensIfMissing(new[] { existing.Id }, options.TargetScreens);
+                    }
+
+                    return;
+
+                case DuplicateAnswer.Skip:
+                    TryDelete(destination);
+                    outcome.Skipped.Add(name);
+                    return;
+
+                case DuplicateAnswer.ReplaceExisting:
+                    replaceTarget = existing;
+                    break;
+            }
+        }
+
+        index.Add(item);
+        outcome.Imported.Add(item);
+        if (options.AddToPlaylist)
+        {
+            if (replaceTarget is not null)
+            {
+                // Keeps the screens' entries and overrides, deletes the old file.
+                _playlist.Replace(new[] { replaceTarget.Id }, new[] { item with { DisplayName = replaceTarget.DisplayName } });
+                outcome.Replaced.Add(name);
+            }
+            else
+            {
+                _playlist.Add(new[] { item }, options.TargetScreens); // One by one: a later cancel keeps what was copied.
+            }
         }
 
         _log.Information("Imported {Name} as {Stored}", name, storedName);
-        return new[] { item };
     }
 
-    private async Task<IReadOnlyList<PlaylistItem>> ImportDocumentAsync(
+    /// <summary>The library item a new file duplicates, if any.</summary>
+    internal static (PlaylistItem Existing, DuplicateKind Kind)? FindDuplicate(PlaylistItem candidate, IEnumerable<PlaylistItem> library) =>
+        FindDuplicate(candidate, BuildIndex(library));
+
+    private static LibraryIndex BuildIndex(IEnumerable<PlaylistItem> items)
+    {
+        var index = new LibraryIndex();
+        foreach (var item in items)
+        {
+            index.Add(item);
+        }
+
+        return index;
+    }
+
+    private static (PlaylistItem Existing, DuplicateKind Kind)? FindDuplicate(PlaylistItem candidate, LibraryIndex index)
+    {
+        if (candidate.ContentHash is { } hash && index.ByHash.TryGetValue(hash, out var exact))
+        {
+            return (exact, DuplicateKind.Exact);
+        }
+
+        if (candidate.Type == MediaType.Image && PerceptualHash.Parse(candidate.ImageSignature) is { } signature)
+        {
+            var similar = index.Items.FirstOrDefault(i => i.Type == MediaType.Image &&
+                                                         PerceptualHash.Parse(i.ImageSignature) is { } other &&
+                                                         PerceptualHash.AreSimilar(signature, other));
+            if (similar is not null)
+            {
+                return (similar, DuplicateKind.SimilarImage);
+            }
+        }
+
+        if (candidate.Type == MediaType.Video && candidate.VideoDurationSeconds is { } duration)
+        {
+            var similar = index.Items.FirstOrDefault(i => i.Type == MediaType.Video &&
+                                                         i.VideoDurationSeconds is { } d && Math.Abs(d - duration) <= 0.5 &&
+                                                         i.VideoWidth == candidate.VideoWidth && i.VideoHeight == candidate.VideoHeight &&
+                                                         i.FileSize is { } size && candidate.FileSize is { } newSize &&
+                                                         Math.Abs(size - newSize) <= Math.Max(size, newSize) * 0.15);
+            if (similar is not null)
+            {
+                return (similar, DuplicateKind.SimilarVideo);
+            }
+        }
+
+        var sameName = index.Items.FirstOrDefault(i => string.Equals(i.OriginalName, candidate.OriginalName, StringComparison.OrdinalIgnoreCase));
+        return sameName is null ? null : (sameName, DuplicateKind.SameName);
+    }
+
+    private async Task ImportDocumentAsync(
         string source,
         string name,
         Action<double> report,
-        HashSet<string> knownHashes,
-        List<string> duplicates,
-        List<ImportFailure> failed,
+        LibraryIndex index,
+        Outcome outcome,
         ImportOptions options,
         CancellationToken cancellationToken)
     {
         var hash = await HashFileAsync(source, cancellationToken).ConfigureAwait(false);
-        if (options.SkipDuplicates && knownHashes.Contains(hash + "#1"))
+        if (options.SkipDuplicates)
         {
-            duplicates.Add(name);
-            return Array.Empty<PlaylistItem>();
+            var pages = index.Items.Where(i => i.ContentHash?.StartsWith(hash + "#", StringComparison.OrdinalIgnoreCase) == true)
+                .OrderBy(i => int.TryParse(i.ContentHash![(hash.Length + 1)..], out var n) ? n : 0)
+                .ToList();
+            if (pages.Count > 0)
+            {
+                var answer = options.DuplicateHandler is { } ask
+                    ? await ask(new DuplicateQuestion(name, source, new FileInfo(source).Length, pages[0], _playlist.GetFullPath(pages[0]), DuplicateKind.Exact)).ConfigureAwait(false)
+                    : DuplicateAnswer.UseExisting;
+                if (answer is DuplicateAnswer.UseExisting or DuplicateAnswer.ReplaceExisting)
+                {
+                    outcome.Duplicates.Add(name);
+                    outcome.DuplicateIds.AddRange(pages.Select(p => p.Id));
+                    if (options.AddToPlaylist)
+                    {
+                        _playlist.AddToScreensIfMissing(pages.Select(p => p.Id), options.TargetScreens);
+                    }
+
+                    return;
+                }
+
+                if (answer == DuplicateAnswer.Skip)
+                {
+                    outcome.Skipped.Add(name);
+                    return;
+                }
+            }
         }
 
-        IReadOnlyList<string> pages;
+        IReadOnlyList<string> rendered;
         try
         {
-            pages = await _inspector.RenderPdfAsync(source, _paths.MediaFolder, PdfPageWidth, cancellationToken).ConfigureAwait(false);
+            rendered = await _inspector.RenderPdfAsync(source, _paths.MediaFolder, PdfPageWidth, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _log.Error(ex, "PDF {Name} could not be rendered", name);
-            failed.Add(new ImportFailure(name, ex.Message, ImportFailureKind.Document));
-            return Array.Empty<PlaylistItem>();
+            outcome.Failed.Add(new ImportFailure(name, ex.Message, ImportFailureKind.Document));
+            return;
         }
 
         report(1);
         var baseName = Path.GetFileNameWithoutExtension(name);
-        var items = pages.Select((page, i) => new PlaylistItem
+        var items = rendered.Select((page, i) => new PlaylistItem
         {
             Id = Guid.TryParse(Path.GetFileNameWithoutExtension(page), out var pageId) ? pageId : Guid.NewGuid(),
             OriginalName = name,
-            DisplayName = pages.Count > 1 ? $"{baseName} · {i + 1}/{pages.Count}" : null,
+            DisplayName = rendered.Count > 1 ? $"{baseName} · {i + 1}/{rendered.Count}" : null,
             FilePath = Path.GetFileName(page),
             Type = MediaType.Image,
             ContentHash = $"{hash}#{i + 1}",
+            FileSize = new FileInfo(page).Length,
             SyncFileName = options.SyncFileName,
             SyncStamp = options.SyncStamp,
-            Screens = options.Screens,
         }).ToList();
 
         foreach (var item in items)
         {
-            knownHashes.Add(item.ContentHash!);
+            index.Add(item);
+        }
+
+        outcome.Imported.AddRange(items);
+        if (options.AddToPlaylist)
+        {
+            _playlist.Add(items, options.TargetScreens);
         }
 
         _log.Information("Imported PDF {Name} as {Pages} pages", name, items.Count);
-        return items;
     }
 
-    /// <summary>Hashes of all items; older items without one are hashed once and updated.</summary>
-    private async Task<HashSet<string>> GetKnownHashesAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Library snapshot for duplicate checks. Items from older versions get their content hash,
+    /// size and image fingerprint once (stored for next time).
+    /// </summary>
+    private async Task<LibraryIndex> BuildIndexAsync(CancellationToken cancellationToken)
     {
-        await _hashGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _indexGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var hashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var index = new LibraryIndex();
             var updates = new List<PlaylistItem>();
             foreach (var item in _playlist.Items)
             {
-                if (item.ContentHash is { } known)
-                {
-                    hashes.Add(known);
-                    continue;
-                }
-
+                var updated = item;
                 var path = _playlist.GetFullPath(item);
-                if (!File.Exists(path))
+                if (File.Exists(path))
                 {
-                    continue;
+                    try
+                    {
+                        if (updated.ContentHash is null)
+                        {
+                            updated = updated with { ContentHash = await HashFileAsync(path, cancellationToken).ConfigureAwait(false) };
+                        }
+
+                        if (updated.FileSize is null)
+                        {
+                            updated = updated with { FileSize = new FileInfo(path).Length };
+                        }
+
+                        if (updated.Type == MediaType.Image && updated.ImageSignature is null && _inspector.GetImageSignature(path) is { } signature)
+                        {
+                            updated = updated with { ImageSignature = PerceptualHash.Format(signature) };
+                        }
+                    }
+                    catch (IOException ex)
+                    {
+                        _log.Debug(ex, "Could not index {Path}", path);
+                    }
                 }
 
-                try
+                index.Add(updated);
+                if (updated != item)
                 {
-                    var hash = await HashFileAsync(path, cancellationToken).ConfigureAwait(false);
-                    hashes.Add(hash);
-                    updates.Add(item with { ContentHash = hash });
-                }
-                catch (IOException ex)
-                {
-                    _log.Debug(ex, "Could not hash {Path}", path);
+                    updates.Add(updated);
                 }
             }
 
@@ -393,11 +603,11 @@ public sealed class MediaImportService : IMediaImportService
                 _playlist.UpdateRange(updates);
             }
 
-            return hashes;
+            return index;
         }
         finally
         {
-            _hashGate.Release();
+            _indexGate.Release();
         }
     }
 

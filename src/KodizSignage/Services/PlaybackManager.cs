@@ -114,6 +114,8 @@ public sealed class PlaybackManager : IPlaybackManager
             {
                 window.Engine.Invalidate();
             }
+
+            AssignLeaders(); // Links / "synchronized" may have changed.
         });
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
@@ -190,6 +192,7 @@ public sealed class PlaybackManager : IPlaybackManager
         }
 
         var preview = new PlayerWindow(_playlist, _settings, _log, screenNumber, preview: true);
+        preview.ApplyRotation(screenNumber is { } r ? _settings.Current.GetScreen(r)?.Rotation ?? 0 : 0);
         var title = (Application.Current.TryFindResource("Preview_Title") as string) ?? "Preview";
         preview.Title = screenNumber is { } n ? $"{title} · {ScreenName(n)}" : title;
         preview.ApplyBackground(preview.Engine.Settings.BackgroundColor);
@@ -254,9 +257,11 @@ public sealed class PlaybackManager : IPlaybackManager
             _ = player.CloseAsync();
         }
 
+        _playlist.EnsureScreens(_settings.Current.Screens.Select(s => s.Number));
         foreach (var number in enabled.Where(n => !_players.ContainsKey(n)))
         {
             var window = new PlayerWindow(_playlist, _settings, _log, number);
+            window.ApplyRotation(_settings.Current.GetScreen(number)?.Rotation ?? 0);
             window.Engine.StateChanged += (_, _) => UpdateStatus();
             window.ApplyBackground(window.Engine.Settings.BackgroundColor);
             window.SetSettingsShortcut(HotkeyDisplay.Format(_settings.Current.Hotkeys.ShowSettings));
@@ -326,7 +331,31 @@ public sealed class PlaybackManager : IPlaybackManager
         }
 
         LogPlacement(screens, matches, displays.Count);
+        AssignLeaders();
         UpdateStatus();
+    }
+
+    /// <summary>
+    /// Screens linked with "synchronized" follow the engine of the screen whose playlist they play,
+    /// as long as that screen is actually running; otherwise they run their own schedule.
+    /// </summary>
+    private void AssignLeaders()
+    {
+        foreach (var player in _players.Values)
+        {
+            var playlist = _playlist.GetScreenPlaylist(player.Number);
+            PlaybackEngine? leader = null;
+            if (playlist is { Synchronized: true, LinkedTo: not null } && player.IsActive)
+            {
+                var source = _playlist.ResolveSource(player.Number);
+                if (source != player.Number && _players.TryGetValue(source, out var sourcePlayer) && sourcePlayer.IsActive)
+                {
+                    leader = sourcePlayer.Window.Engine;
+                }
+            }
+
+            player.Window.Engine.Leader = leader;
+        }
     }
 
     private void LogPlacement(IReadOnlyList<ScreenConfig> screens, IReadOnlyDictionary<int, DisplayMatch> matches, int displayCount)
@@ -391,6 +420,11 @@ public sealed class PlaybackManager : IPlaybackManager
     private void OnSettingsChanged(SettingsChangedEventArgs e)
     {
         var (old, current) = (e.OldSettings, e.NewSettings);
+        foreach (var player in _players.Values)
+        {
+            player.Window.ApplyRotation(current.GetScreen(player.Number)?.Rotation ?? 0);
+        }
+
         foreach (var window in AllWindows())
         {
             var effective = window.Engine.Settings;

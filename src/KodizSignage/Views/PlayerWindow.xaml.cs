@@ -19,6 +19,7 @@ public partial class PlayerWindow : Window
 {
     private readonly ILogger _log;
     private DisplayInfo? _target;
+    private int _rotation;
 
     internal PlayerWindow(IPlaylistService playlist, ISettingsService settings, ILogger log, int? screenNumber, bool preview = false)
     {
@@ -29,7 +30,9 @@ public partial class PlayerWindow : Window
         var layerA = new MediaLayer("A", LayerA, ImageA, VideoA, _log) { ForceMute = preview };
         var layerB = new MediaLayer("B", LayerB, ImageB, VideoB, _log) { ForceMute = preview };
         Engine = new PlaybackEngine(layerA, layerB, EmptyState, ClosedState, playlist, settings, screenNumber,
-            () => preview ? 1280 : _target?.Width ?? (int)SystemParameters.PrimaryScreenWidth, log);
+            () => preview ? 1280
+                : _rotation is 90 or 270 ? _target?.Height ?? (int)SystemParameters.PrimaryScreenHeight
+                : _target?.Width ?? (int)SystemParameters.PrimaryScreenWidth, log);
 
         if (preview)
         {
@@ -70,6 +73,19 @@ public partial class PlayerWindow : Window
         {
             Background = Brushes.Black;
         }
+    }
+
+    /// <summary>Rotates all content (0/90/180/270°) for TVs mounted in portrait or upside down.</summary>
+    public void ApplyRotation(int degrees)
+    {
+        if (_rotation == degrees)
+        {
+            return;
+        }
+
+        _rotation = degrees;
+        Root.LayoutTransform = degrees == 0 ? Transform.Identity : new RotateTransform(degrees);
+        _log.Information("Rotation set to {Degrees}°", degrees);
     }
 
     /// <summary>Shows how to open the settings on the "nothing to show" screen (hidden if no shortcut).</summary>

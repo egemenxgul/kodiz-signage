@@ -92,7 +92,15 @@ public partial class App : Application
         // ---- Data ----
         var playlist = _services.GetRequiredService<IPlaylistService>();
         playlist.Load();
+        playlist.EnsureScreens(settings.Current.Screens.Select(s => s.Number)); // Also migrates v1.2 playlists.
         playlist.CleanupOrphanFiles();
+        settings.Changed += (_, args) =>
+        {
+            if (args.OldSettings.Screens != args.NewSettings.Screens)
+            {
+                playlist.EnsureScreens(args.NewSettings.Screens.Select(s => s.Number));
+            }
+        };
 
         // ---- System integration ----
         if (!isSmokeTest)
@@ -296,8 +304,11 @@ public partial class App : Application
         services.AddSingleton<IThumbnailService, ThumbnailService>();
         services.AddSingleton<IPlaybackManager, PlaybackManager>();
         services.AddSingleton<TrayService>();
+        services.AddSingleton<IDuplicateResolver, DuplicateResolver>();
 
         // UI
+        services.AddSingleton<UndoBar>();
+        services.AddSingleton<ScreenEditorViewModel>();
         services.AddSingleton<MediaViewModel>();
         services.AddSingleton<DisplayViewModel>();
         services.AddSingleton<GeneralViewModel>();
@@ -356,7 +367,7 @@ public partial class App : Application
     {
         var services = _services!;
         services.GetRequiredService<IPinGate>().Lock();
-        services.GetRequiredService<MediaViewModel>().CommitPendingDelete();
+        services.GetRequiredService<UndoBar>().Commit();
 
         // Windows 11 hides tray icons by default: tell the user once where the app went.
         var settings = services.GetRequiredService<ISettingsService>();
@@ -401,7 +412,7 @@ public partial class App : Application
         Log.Information("Exiting");
         try
         {
-            _services.GetRequiredService<MediaViewModel>().CommitPendingDelete();
+            _services.GetRequiredService<UndoBar>().Commit();
             await _services.GetRequiredService<IPlaybackManager>().ShutdownAsync();
         }
         catch (Exception ex)

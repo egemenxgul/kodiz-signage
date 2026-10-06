@@ -276,11 +276,14 @@ public class ScreenImportTests
         var import = new Core.Services.MediaImportService(dir.Paths, playlist, new Core.Services.NullVideoMetadataProvider(),
             new MediaImportServiceTests.FakeInspector(), TestLog.None) { FreeSpace = () => long.MaxValue };
 
+        playlist.EnsureScreens(new[] { 1, 3 }); // fresh install: screen 1 auto-adds, screen 3 does not
+
         await import.ImportAsync(new[] { dir.File("src/a.jpg", "a") }, null, CancellationToken.None,
-            new Core.Services.ImportOptions { Screens = new[] { 3 }.ToEquatableList() });
+            new Core.Services.ImportOptions { TargetScreens = new[] { 3 } });
         await import.ImportAsync(new[] { dir.File("src/b.jpg", "b") }, null, CancellationToken.None);
 
-        Assert.Equal(new[] { 3 }, playlist.Items[0].Screens);
-        Assert.Null(playlist.Items[1].Screens);
+        Assert.Equal(new[] { "a.jpg" }, playlist.GetScreenItems(3).Select(i => i.OriginalName));
+        Assert.Equal(new[] { "b.jpg" }, playlist.GetScreenItems(1).Select(i => i.OriginalName));
+        Assert.Equal(2, playlist.Items.Count);
     }
 }

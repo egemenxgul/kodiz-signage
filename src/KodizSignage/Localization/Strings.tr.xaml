@@ -239,7 +239,7 @@
     <sys:String x:Key="TrayHint_Text" xml:space="preserve">Ayarlar penceresi kapatıldı, gösterim sürüyor. Tekrar açmak için {0} veya Başlat menüsündeki Kodiz Signage.</sys:String>
     <sys:String x:Key="SafeMode_Text" xml:space="preserve">Uygulama kısa sürede birkaç kez beklenmedik şekilde kapandı. Gösterim {0} dakika sonra otomatik başlayacak. Ayrıntılar için log klasörüne bakın.</sys:String>
     <sys:String x:Key="Screens_Title" xml:space="preserve">Ekranlar</sys:String>
-    <sys:String x:Key="Screens_Description" xml:space="preserve">Bilgisayara bağlı her ekran ayrı bir gösterim yapabilir. Gösterim istemediğiniz ekranı kapatın; açık her ekran kendisine atanan medyayı kendi başına oynatır. Hangi medyanın hangi ekranda gösterileceğini Medya sekmesinde satırlardaki ekran düğmeleriyle veya &quot;Medyayı düzenle&quot; ile seçersiniz.</sys:String>
+    <sys:String x:Key="Screens_Description" xml:space="preserve">Soldan bir ekran seçin: sağda yalnızca o ekranın listesi ve ayarları görünür.</sys:String>
     <sys:String x:Key="Screens_Summary" xml:space="preserve">{0} ekran algılandı · {1} ekranda gösterim açık</sys:String>
     <sys:String x:Key="Screens_NoneEnabled" xml:space="preserve">Hiçbir ekranda gösterim açık değil. Ekranlar sekmesinden en az bir ekranı açın.</sys:String>
     <sys:String x:Key="Screen_Default" xml:space="preserve">Ekran {0}</sys:String>
@@ -277,5 +277,115 @@
     <sys:String x:Key="Status_NoScreens" xml:space="preserve">Açık ekran yok</sys:String>
     <sys:String x:Key="Status_OnScreens" xml:space="preserve">{0} ekranda gösterim</sys:String>
     <sys:String x:Key="Status_PartiallyWaiting" xml:space="preserve">{0}/{1} ekran oynuyor · bekleyen ekran: {2}</sys:String>
+    <sys:String x:Key="Tab_Library" xml:space="preserve">Kütüphane</sys:String>
+    <sys:String x:Key="Unit_Seconds" xml:space="preserve">sn</sys:String>
+    <sys:String x:Key="Library_Search" xml:space="preserve">Kütüphanede ara…</sys:String>
+    <sys:String x:Key="Library_Hint" xml:space="preserve">Her dosya bir kez saklanır; ekranlar aynı dosyayı paylaşır. Ekrana özel sıra ve ayarlar Ekranlar sekmesinde.</sys:String>
+    <sys:String x:Key="Library_Count" xml:space="preserve">{0} medya</sys:String>
+    <sys:String x:Key="Library_CountUnused" xml:space="preserve">{0} medya · {1} tanesi hiçbir ekranda kullanılmıyor</sys:String>
+    <sys:String x:Key="Library_AutoAddLabel" xml:space="preserve">Yeni medya otomatik eklensin:</sys:String>
+    <sys:String x:Key="Library_AutoAddTo" xml:space="preserve">Yeni eklenen medya Ekran {0} listesine düşer</sys:String>
+    <sys:String x:Key="Library_AutoAddNone" xml:space="preserve">Yeni medya hiçbir ekrana otomatik eklenmez – ekranlara elle ekleyin</sys:String>
+    <sys:String x:Key="Library_UsedOn" xml:space="preserve">Ekran {0}</sys:String>
+    <sys:String x:Key="Library_NotUsed" xml:space="preserve">Hiçbir ekranda kullanılmıyor</sys:String>
+    <sys:String x:Key="Library_ActiveTooltip" xml:space="preserve">Varsayılan olarak aktif (ekranlar kendi ayarıyla değiştirebilir)</sys:String>
+    <sys:String x:Key="Library_DefaultsInfo" xml:space="preserve">Bunlar varsayılan değerlerdir. Bir ekran kendi değerini belirlemediyse bunlar kullanılır. Ekrana özel değerler Ekranlar sekmesinde ayarlanır.</sys:String>
+    <sys:String x:Key="Library_DefaultActive" xml:space="preserve">Varsayılan olarak aktif</sys:String>
+    <sys:String x:Key="Library_DefaultDuration" xml:space="preserve">Varsayılan süre (sn, boş = ekranın varsayılanı)</sys:String>
+    <sys:String x:Key="Library_OpenScreen" xml:space="preserve">Bu ekranın listesini aç</sys:String>
+    <sys:String x:Key="Library_Delete" xml:space="preserve">Kütüphaneden sil (tüm ekranlardan kalkar)</sys:String>
+    <sys:String x:Key="Library_AlsoFromScreens" xml:space="preserve">{0} ekrandan da kaldırıldı</sys:String>
+    <sys:String x:Key="Library_RemovedFromScreen" xml:space="preserve">&quot;{0}&quot;, {1} listesinden çıkarıldı</sys:String>
+    <sys:String x:Key="Picker_Title" xml:space="preserve">{0} listesine kütüphaneden ekle</sys:String>
+    <sys:String x:Key="Picker_Search" xml:space="preserve">Ara…</sys:String>
+    <sys:String x:Key="Picker_SelectAll" xml:space="preserve">Tümünü seç</sys:String>
+    <sys:String x:Key="Picker_AlreadyThere" xml:space="preserve">bu ekranda var</sys:String>
+    <sys:String x:Key="Picker_Count" xml:space="preserve">{0} medya seçildi</sys:String>
+    <sys:String x:Key="Picker_Add" xml:space="preserve">Ekle ({0})</sys:String>
+    <sys:String x:Key="Picker_LibraryEmpty" xml:space="preserve">Kütüphane boş. Önce Kütüphane sekmesinden medya ekleyin.</sys:String>
+    <sys:String x:Key="Screens_AllTitle" xml:space="preserve">Tüm ekranlar için</sys:String>
+    <sys:String x:Key="Screen_UnusedHint" xml:space="preserve">Bu ekranda henüz gösterim yapılmıyor. Açtığınızda boş bir oynatma listesiyle başlar; kütüphaneden medya ekleyebilir veya başka bir ekranın listesini kopyalayabilirsiniz.</sys:String>
+    <sys:String x:Key="Screen_PrimaryDisplay" xml:space="preserve">Windows'un ana ekranını kullanır</sys:String>
+    <sys:String x:Key="Card_Linked" xml:space="preserve">Ekran {0} listesini oynatıyor</sys:String>
+    <sys:String x:Key="Card_LinkedSync" xml:space="preserve">Ekran {0} ile senkron</sys:String>
+    <sys:String x:Key="Audio_Title" xml:space="preserve">Video sesi nereden çıksın?</sys:String>
+    <sys:String x:Key="Audio_EachScreen" xml:space="preserve">Her ekran kendi ayarına göre</sys:String>
+    <sys:String x:Key="Audio_OnlyScreen" xml:space="preserve">Yalnızca {0}</sys:String>
+    <sys:String x:Key="Performance_Preload" xml:space="preserve">Sonraki videoyu önceden yükle (akıcı geçiş)</sys:String>
+    <sys:String x:Key="Performance_PreloadHint" xml:space="preserve">Kapatılırsa her ekranda tek video çözücü çalışır; zayıf bilgisayarlarda çok ekranlı videoda takılmayı azaltır, geçişte kısa bir bekleme olabilir.</sys:String>
+    <sys:String x:Key="Performance_Warning" xml:space="preserve">{0} ekranda video var; aynı anda {1} video çözücü çalışabilir. Takılma olursa önceden yüklemeyi kapatın veya videoları 1080p'ye dönüştürün.</sys:String>
+    <sys:String x:Key="Rotation_Title" xml:space="preserve">Döndürme</sys:String>
+    <sys:String x:Key="Rotation_Hint" xml:space="preserve">Dikey asılmış veya ters takılmış TV'ler için. Windows ayarlarına dokunmaz.</sys:String>
+    <sys:String x:Key="Rotation_0" xml:space="preserve">Yok (yatay)</sys:String>
+    <sys:String x:Key="Rotation_90" xml:space="preserve">90° (dikey)</sys:String>
+    <sys:String x:Key="Rotation_180" xml:space="preserve">180° (ters)</sys:String>
+    <sys:String x:Key="Rotation_270" xml:space="preserve">270° (dikey, diğer yön)</sys:String>
+    <sys:String x:Key="Editor_Header" xml:space="preserve">{0} düzenleniyor – buradaki değişiklikler yalnızca bu ekranı etkiler</sys:String>
+    <sys:String x:Key="Editor_TabPlaylist" xml:space="preserve">Oynatma listesi</sys:String>
+    <sys:String x:Key="Editor_TabSettings" xml:space="preserve">Ekran ayarları</sys:String>
+    <sys:String x:Key="Editor_Summary" xml:space="preserve">{0} öğe · {1} şu an oynatılabilir</sys:String>
+    <sys:String x:Key="Editor_LinkNone" xml:space="preserve">Kendi listesini oynatır</sys:String>
+    <sys:String x:Key="Editor_LinkTo" xml:space="preserve">{0} listesini oynatır</sys:String>
+    <sys:String x:Key="Editor_LinkHint" xml:space="preserve">Başka bir ekranın listesini oynatırsa o listedeki değişiklikler bu ekrana da yansır.</sys:String>
+    <sys:String x:Key="Editor_LinkConfirm" xml:space="preserve">Bu ekran artık {0} listesini oynatacak. Kendi listesi saklanır; bağlantıyı kaldırınca geri gelir. Devam edilsin mi?</sys:String>
+    <sys:String x:Key="Editor_Linked" xml:space="preserve">Bu ekran {0} listesini oynatıyor. Listeyi değiştirmek için o ekranı seçin veya yukarıdan &quot;Kendi listesini oynatır&quot; seçeneğine dönün.</sys:String>
+    <sys:String x:Key="Editor_LinkedSync" xml:space="preserve">Bu ekran {0} ile senkron oynuyor: aynı öğeye aynı anda geçer.</sys:String>
+    <sys:String x:Key="Editor_Synchronized" xml:space="preserve">Senkron oynat</sys:String>
+    <sys:String x:Key="Editor_SynchronizedHint" xml:space="preserve">Bağlı ekranla aynı öğeyi aynı anda gösterir (yan yana TV'ler için).</sys:String>
+    <sys:String x:Key="Editor_AutoAdd" xml:space="preserve">Kütüphaneye eklenen yeni medyayı bu listeye otomatik ekle</sys:String>
+    <sys:String x:Key="Editor_AddFromLibrary" xml:space="preserve">Kütüphaneden ekle</sys:String>
+    <sys:String x:Key="Editor_AddFiles" xml:space="preserve">Bu ekrana dosya ekle</sys:String>
+    <sys:String x:Key="Editor_CopyFrom" xml:space="preserve">Başka ekrandan kopyala…</sys:String>
+    <sys:String x:Key="Editor_CopyConfirm" xml:space="preserve">{1} listesi {0} listesiyle değiştirilecek (ekrana özel ayarlar dahil). Devam edilsin mi?</sys:String>
+    <sys:String x:Key="Editor_Duplicate" xml:space="preserve">Bu listede bir kez daha ekle</sys:String>
+    <sys:String x:Key="Editor_Remove" xml:space="preserve">Bu ekranın listesinden çıkar (kütüphanede kalır)</sys:String>
+    <sys:String x:Key="Editor_RemoveSelected" xml:space="preserve">Seçilenleri bu ekrandan çıkar</sys:String>
+    <sys:String x:Key="Editor_RemovedOne" xml:space="preserve">&quot;{0}&quot;, {1} listesinden çıkarıldı</sys:String>
+    <sys:String x:Key="Editor_RemovedMany" xml:space="preserve">{0} öğe {1} listesinden çıkarıldı</sys:String>
+    <sys:String x:Key="Editor_EmptyTitle" xml:space="preserve">Bu ekranın listesi boş</sys:String>
+    <sys:String x:Key="Editor_EmptyHint" xml:space="preserve">&quot;Kütüphaneden ekle&quot; ile medya seçin, dosya ekleyin ya da başka bir ekranın listesini kopyalayın.</sys:String>
+    <sys:String x:Key="Editor_NoSelection" xml:space="preserve">Bu ekrana özel ayarlar için listeden bir öğe seçin.&#10;Ctrl veya Shift ile birden fazla öğe seçebilirsiniz.</sys:String>
+    <sys:String x:Key="Editor_BulkTitle" xml:space="preserve">Seçili öğeler (yalnızca bu ekran)</sys:String>
+    <sys:String x:Key="Editor_BulkHint" xml:space="preserve">Değişiklikler yalnızca bu ekrandaki seçili öğelere uygulanır.</sys:String>
+    <sys:String x:Key="Editor_SettingsInfo" xml:space="preserve">Boş bırakılan / işaretlenmeyen ayarlar Genel sekmesindeki değerleri kullanır.</sys:String>
+    <sys:String x:Key="Editor_Identity" xml:space="preserve">Ekran</sys:String>
+    <sys:String x:Key="Editor_OwnDuration" xml:space="preserve">Bu ekrana özel varsayılan resim süresi</sys:String>
+    <sys:String x:Key="Editor_GeneralValue" xml:space="preserve">Genel ayar: {0}</sys:String>
+    <sys:String x:Key="Editor_OwnTransitionDuration" xml:space="preserve">Bu ekrana özel geçiş süresi</sys:String>
+    <sys:String x:Key="Editor_OwnVolume" xml:space="preserve">Bu ekrana özel ses seviyesi</sys:String>
+    <sys:String x:Key="Editor_AudioOtherScreen" xml:space="preserve">Ses şu an yalnızca Ekran {0}'dan çıkacak şekilde ayarlı (Ekranlar sekmesi, sol alt).</sys:String>
+    <sys:String x:Key="Editor_AudioThisScreen" xml:space="preserve">Video sesi yalnızca bu ekrandan çıkar.</sys:String>
+    <sys:String x:Key="Editor_OwnHours" xml:space="preserve">Bu ekrana özel çalışma saatleri</sys:String>
+    <sys:String x:Key="Editor_OwnHoursHint" xml:space="preserve">Örneğin vitrin ekranı gece kapanırken içerideki ekran açık kalabilir.</sys:String>
+    <sys:String x:Key="Entry_ScreenSpecific" xml:space="preserve">bu ekrana özel</sys:String>
+    <sys:String x:Key="Entry_OverrideInfo" xml:space="preserve">Buradaki değerler yalnızca bu ekranda geçerlidir. Değiştirmediğiniz değerler kütüphanedeki varsayılanlardan gelir.</sys:String>
+    <sys:String x:Key="Entry_ActiveHere" xml:space="preserve">Bu ekranda aktif</sys:String>
+    <sys:String x:Key="Entry_ActiveTooltip" xml:space="preserve">Bu ekranda aktif</sys:String>
+    <sys:String x:Key="Entry_DurationHere" xml:space="preserve">Bu ekrandaki süre (sn)</sys:String>
+    <sys:String x:Key="Entry_TransitionHere" xml:space="preserve">Bu öğeye geçiş</sys:String>
+    <sys:String x:Key="Entry_TransitionScreen" xml:space="preserve">Ekranın ayarı</sys:String>
+    <sys:String x:Key="Entry_OwnDates" xml:space="preserve">Bu ekrana özel tarih aralığı</sys:String>
+    <sys:String x:Key="Entry_OwnSchedule" xml:space="preserve">Bu ekrana özel gün ve saat planı</sys:String>
+    <sys:String x:Key="Entry_DefaultFromLibrary" xml:space="preserve">Varsayılan (kütüphane): {0}</sys:String>
+    <sys:String x:Key="Entry_DefaultFromScreen" xml:space="preserve">Varsayılan (ekran): {0}</sys:String>
+    <sys:String x:Key="Entry_Active" xml:space="preserve">aktif</sys:String>
+    <sys:String x:Key="Entry_Inactive" xml:space="preserve">pasif</sys:String>
+    <sys:String x:Key="Entry_Reset" xml:space="preserve">Varsayılana döndür</sys:String>
+    <sys:String x:Key="Entry_ResetAll" xml:space="preserve">Tümünü varsayılana döndür</sys:String>
+    <sys:String x:Key="Duplicate_Title_Exact" xml:space="preserve">Bu dosya kütüphanede zaten var</sys:String>
+    <sys:String x:Key="Duplicate_Title_SimilarImage" xml:space="preserve">Görsel olarak aynı bir resim kütüphanede var</sys:String>
+    <sys:String x:Key="Duplicate_Title_SimilarVideo" xml:space="preserve">Muhtemelen aynı video kütüphanede var</sys:String>
+    <sys:String x:Key="Duplicate_Title_SameName" xml:space="preserve">Aynı isimde, içeriği farklı bir dosya var</sys:String>
+    <sys:String x:Key="Duplicate_Explain_Exact" xml:space="preserve">İçerikleri birebir aynı (dosya adı farklı olsa bile). Mevcut olanı kullanırsanız diskte yer kaplamaz; tekrar eklemek {0} daha yer tutar.</sys:String>
+    <sys:String x:Key="Duplicate_Explain_SimilarImage" xml:space="preserve">Resimler görsel olarak aynı görünüyor (yeniden kaydedilmiş, küçültülmüş veya farklı formatta olabilir).</sys:String>
+    <sys:String x:Key="Duplicate_Explain_SimilarVideo" xml:space="preserve">Süre, çözünürlük ve boyut neredeyse aynı; büyük ihtimalle aynı videonun başka bir kopyası.</sys:String>
+    <sys:String x:Key="Duplicate_Explain_SameName" xml:space="preserve">Muhtemelen güncellenmiş bir sürüm. &quot;Eskisinin yerine koy&quot; derseniz ekranlardaki yeri ve ayarları korunur, eski dosya silinir.</sys:String>
+    <sys:String x:Key="Duplicate_New" xml:space="preserve">Eklemek istediğiniz</sys:String>
+    <sys:String x:Key="Duplicate_Existing" xml:space="preserve">Kütüphanede olan</sys:String>
+    <sys:String x:Key="Duplicate_UseExisting" xml:space="preserve">Mevcut olanı kullan</sys:String>
+    <sys:String x:Key="Duplicate_AddCopy" xml:space="preserve">Yine de ayrı ekle (+{0})</sys:String>
+    <sys:String x:Key="Duplicate_Replace" xml:space="preserve">Eskisinin yerine koy</sys:String>
+    <sys:String x:Key="Duplicate_Skip" xml:space="preserve">Atla</sys:String>
+    <sys:String x:Key="Duplicate_ApplyToAll" xml:space="preserve">Bu içe aktarmadaki benzer durumlar için de aynısını yap</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Geçersiz renk. #RRGGBB biçiminde girin.</sys:String>
 </ResourceDictionary>
