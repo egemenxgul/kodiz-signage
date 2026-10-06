@@ -13,7 +13,7 @@
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         Width="800" Height="450">
-    <Grid x:Name="Root" ClipToBounds="True">
+    <Grid x:Name="Root" ClipToBounds="True" Background="Transparent">
         <Grid x:Name="LayerA" Opacity="0">
             <Image x:Name="ImageA" Stretch="Uniform" Visibility="Collapsed"
                    RenderOptions.BitmapScalingMode="HighQuality" />
@@ -29,6 +29,9 @@
 
         <!-- Clock, ticker, logo (above content and the empty state, below "closed"). -->
         <Grid x:Name="OverlayHost" Panel.ZIndex="15" IsHitTestVisible="False" />
+
+        <!-- Long-press feedback ring (above everything). -->
+        <Canvas x:Name="TouchLayer" Panel.ZIndex="30" IsHitTestVisible="False" />
 
         <!-- Outside opening hours: plain black. -->
         <Grid x:Name="ClosedState" Visibility="Collapsed" Opacity="0" Panel.ZIndex="20" Background="Black" />

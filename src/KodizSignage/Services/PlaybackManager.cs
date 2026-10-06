@@ -49,6 +49,9 @@ public interface IPlaybackManager
 
     Task ToggleAsync();
 
+    /// <summary>Someone held a finger on a player screen: open the settings.</summary>
+    event EventHandler? SettingsRequested;
+
     /// <summary>Skips to the next item on every screen.</summary>
     void Next();
 
@@ -76,6 +79,8 @@ public sealed class PlaybackManager : IPlaybackManager
     private readonly ISettingsService _settings;
     private readonly IPlaylistService _playlist;
     private readonly IPlayStatsService _stats;
+
+    public event EventHandler? SettingsRequested;
     private readonly Dictionary<int, Views.Player.NowPlaying?> _lastShown = new();
     private readonly IDisplayService _displays;
     private readonly IPowerService _power;
@@ -288,6 +293,8 @@ public sealed class PlaybackManager : IPlaybackManager
             window.ApplyBackground(window.Engine.Settings.BackgroundColor);
             window.SetSettingsShortcut(HotkeyDisplay.Format(_settings.Current.Hotkeys.ShowSettings));
             ApplyOverlays(window);
+            window.LongPress.IsEnabled = _settings.Current.LongPressOpensSettings;
+            window.LongPress.Completed += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
             _players[number] = new ScreenPlayer(number, window, _log);
         }
     }
@@ -495,6 +502,7 @@ public sealed class PlaybackManager : IPlaybackManager
             window.Engine.ApplySettings(effective);
             window.Engine.Invalidate();
             ApplyOverlays(window);
+            window.LongPress.IsEnabled = !window.IsPreview && current.LongPressOpensSettings;
         }
 
         if (old.Screens != current.Screens || old.DisplayFallback != current.DisplayFallback)

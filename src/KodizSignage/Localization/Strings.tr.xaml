@@ -131,6 +131,8 @@
     <sys:String x:Key="Shortcut_Error_Invalid" xml:space="preserve">Bu tuş kısayol olarak kullanılamaz.</sys:String>
     <sys:String x:Key="Common_Ok" xml:space="preserve">Tamam</sys:String>
     <sys:String x:Key="Common_Cancel" xml:space="preserve">İptal</sys:String>
+    <sys:String x:Key="Common_Yes" xml:space="preserve">Evet</sys:String>
+    <sys:String x:Key="Common_No" xml:space="preserve">Hayır</sys:String>
     <sys:String x:Key="Preview_Button" xml:space="preserve">Önizle</sys:String>
     <sys:String x:Key="Preview_Title" xml:space="preserve">Kodiz Signage – Önizleme (sessiz)</sys:String>
     <sys:String x:Key="Preview_Tooltip" xml:space="preserve">Gösterimi bu bilgisayarda küçük bir pencerede oynatır; TV'deki gösterimi etkilemez.</sys:String>
@@ -580,4 +582,12 @@
     <sys:String x:Key="Wizard_Back" xml:space="preserve">Geri</sys:String>
     <sys:String x:Key="Wizard_Next" xml:space="preserve">İleri</sys:String>
     <sys:String x:Key="Wizard_Finish" xml:space="preserve">Bitir</sys:String>
+    <sys:String x:Key="Update_RateLimit" xml:space="preserve">GitHub bu ağdan gelen istekleri geçici olarak sınırladı; bir saat içinde kendiliğinden düzelir</sys:String>
+    <sys:String x:Key="Update_NotFound" xml:space="preserve">güncelleme dosyası henüz yayında değil, biraz sonra tekrar deneyin</sys:String>
+    <sys:String x:Key="AppTheme_Title" xml:space="preserve">Tema</sys:String>
+    <sys:String x:Key="AppTheme_System" xml:space="preserve">Windows ile aynı</sys:String>
+    <sys:String x:Key="AppTheme_Light" xml:space="preserve">Aydınlık</sys:String>
+    <sys:String x:Key="AppTheme_Dark" xml:space="preserve">Koyu</sys:String>
+    <sys:String x:Key="Touch_LongPress" xml:space="preserve">Ekrana 2 saniye basılı tutunca ayarlar açılsın</sys:String>
+    <sys:String x:Key="Touch_LongPressHint" xml:space="preserve">Dokunmatik ekranlarda klavye ve görev çubuğu olmadan ayarlara ulaşmak için. PIN varsa sorulur.</sys:String>
 </ResourceDictionary>

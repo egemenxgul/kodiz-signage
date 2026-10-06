@@ -4,7 +4,7 @@
         xmlns:views="clr-namespace:KodizSignage.Views"
         Width="720" Height="620" MinWidth="480" MinHeight="400"
         WindowStartupLocation="CenterOwner" Topmost="True" ShowInTaskbar="False"
-        Background="{StaticResource BgBrush}" Foreground="{StaticResource TextBrush}"
+        Background="{DynamicResource BgBrush}" Foreground="{DynamicResource TextBrush}"
         FontFamily="{StaticResource UiFont}" FontSize="13"
         Icon="pack://application:,,,/Assets/app.ico">
     <Grid Margin="20">
@@ -23,7 +23,7 @@
             </Grid.ColumnDefinitions>
             <TextBox x:Name="SearchBox" TextChanged="SearchBox_TextChanged" />
             <TextBlock Text="{DynamicResource Picker_Search}" IsHitTestVisible="False" Margin="10,0" VerticalAlignment="Center"
-                       Foreground="{StaticResource TextMutedBrush}" x:Name="SearchHint" />
+                       Foreground="{DynamicResource TextMutedBrush}" x:Name="SearchHint" />
             <Button Grid.Column="1" Margin="8,0,0,0" Content="{DynamicResource Picker_SelectAll}" Click="SelectAll_Click" />
         </Grid>
 
@@ -38,16 +38,16 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <CheckBox IsChecked="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" VerticalAlignment="Center" />
-                        <Border Grid.Column="1" Width="80" Height="45" CornerRadius="4" Background="#0B0D12" ClipToBounds="True" Margin="4,0,12,0">
+                        <Border Grid.Column="1" Width="80" Height="45" CornerRadius="4" Background="{DynamicResource MediaBgBrush}" ClipToBounds="True" Margin="4,0,12,0">
                             <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
                         </Border>
                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                <TextBlock Text="{Binding TypeText}" FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" />
-                                <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="3" Padding="5,0" Margin="8,0,0,0"
+                                <TextBlock Text="{Binding TypeText}" FontSize="11.5" Foreground="{DynamicResource TextMutedBrush}" />
+                                <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="3" Padding="5,0" Margin="8,0,0,0"
                                         Visibility="{Binding AlreadyThereVisibility}">
-                                    <TextBlock Text="{DynamicResource Picker_AlreadyThere}" FontSize="11" Foreground="{StaticResource AccentHoverBrush}" />
+                                    <TextBlock Text="{DynamicResource Picker_AlreadyThere}" FontSize="11" Foreground="{DynamicResource AccentHoverBrush}" />
                                 </Border>
                             </StackPanel>
                         </StackPanel>
@@ -61,7 +61,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock x:Name="CountText" VerticalAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}" />
+            <TextBlock x:Name="CountText" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" />
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Content="{DynamicResource Common_Cancel}" IsCancel="True" Margin="0,0,8,0" MinWidth="90" />
                 <Button x:Name="AddButton" Style="{StaticResource AccentButton}" MinWidth="120" Click="Add_Click" IsEnabled="False" />

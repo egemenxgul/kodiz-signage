@@ -160,6 +160,8 @@ S = [
  # ---- v1.1 ----
  ("Common_Ok", "Tamam", "OK"),
  ("Common_Cancel", "İptal", "Cancel"),
+ ("Common_Yes", "Evet", "Yes"),
+ ("Common_No", "Hayır", "No"),
  ("Preview_Button", "Önizle", "Preview"),
  ("Preview_Title", "Kodiz Signage – Önizleme (sessiz)", "Kodiz Signage – Preview (muted)"),
  ("Preview_Tooltip", "Gösterimi bu bilgisayarda küçük bir pencerede oynatır; TV'deki gösterimi etkilemez.",
@@ -652,6 +654,16 @@ S = [
  ("Wizard_Back", "Geri", "Back"),
  ("Wizard_Next", "İleri", "Next"),
  ("Wizard_Finish", "Bitir", "Finish"),
+ ("Update_RateLimit", "GitHub bu ağdan gelen istekleri geçici olarak sınırladı; bir saat içinde kendiliğinden düzelir",
+                      "GitHub is temporarily limiting requests from this network; it clears by itself within an hour"),
+ ("Update_NotFound", "güncelleme dosyası henüz yayında değil, biraz sonra tekrar deneyin", "the update file is not published yet, try again shortly"),
+ ("AppTheme_Title", "Tema", "Theme"),
+ ("AppTheme_System", "Windows ile aynı", "Same as Windows"),
+ ("AppTheme_Light", "Aydınlık", "Light"),
+ ("AppTheme_Dark", "Koyu", "Dark"),
+ ("Touch_LongPress", "Ekrana 2 saniye basılı tutunca ayarlar açılsın", "Hold the screen for 2 seconds to open the settings"),
+ ("Touch_LongPressHint", "Dokunmatik ekranlarda klavye ve görev çubuğu olmadan ayarlara ulaşmak için. PIN varsa sorulur.",
+                         "For touch screens without a keyboard or taskbar. The PIN is asked if one is set."),
 ]
 def write(path, idx, lang):
     keys=set()

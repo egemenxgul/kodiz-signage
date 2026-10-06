@@ -9,10 +9,12 @@ public static class WebPanelPage
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1117">
+<meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f3f7" media="(prefers-color-scheme: light)">
 <title>Kodiz Signage</title>
 <style>
-:root{--bg:#0f1117;--card:#181b24;--line:#272b36;--text:#eef0f4;--muted:#9aa3b2;--accent:#6366f1;--ok:#22c55e;--warn:#f59e0b;--danger:#ef4444}
+:root{color-scheme:dark;--bg:#0f1117;--card:#181b24;--line:#272b36;--text:#eef0f4;--muted:#9aa3b2;--accent:#6366f1;--ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;--btn:#262a35;--input:#0b0d12;--off:#3a3f4c;--chipon:rgba(99,102,241,.25);--chiptext:#c7c9ff;--toast:#2b3040}
+@media (prefers-color-scheme:light){:root{color-scheme:light;--bg:#f2f3f7;--card:#fff;--line:#d7dbe3;--text:#111827;--muted:#4b5563;--accent:#4f46e5;--ok:#15803d;--warn:#b45309;--danger:#dc2626;--btn:#edeff3;--input:#fff;--off:#c9ced8;--chipon:rgba(79,70,229,.15);--chiptext:#3730a3;--toast:#111827}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:0 16px calc(24px + env(safe-area-inset-bottom))}
 header{position:sticky;top:0;background:var(--bg);display:flex;align-items:center;gap:10px;padding:14px 0 10px;z-index:5}
@@ -21,7 +23,7 @@ header h1{font-size:18px;margin:0;flex:1}
 .logo:after{content:"";border-left:10px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:3px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 2px 8px}
-button{font:inherit;border:0;border-radius:10px;padding:10px 14px;background:#262a35;color:var(--text);cursor:pointer}
+button{font:inherit;border:0;border-radius:10px;padding:12px 16px;min-height:44px;background:var(--btn);color:var(--text);cursor:pointer}
 button.primary{background:var(--accent);color:#fff;font-weight:600}
 button.danger{background:transparent;color:var(--danger);padding:8px}
 button:disabled{opacity:.5}
@@ -33,7 +35,7 @@ button:disabled{opacity:.5}
 .dot.on{background:var(--ok)}.dot.warn{background:var(--warn)}
 .switch{position:relative;width:46px;height:28px;flex:none}
 .switch input{opacity:0;width:0;height:0}
-.switch span{position:absolute;inset:0;background:#3a3f4c;border-radius:20px;transition:.2s}
+.switch span{position:absolute;inset:0;background:var(--off);border-radius:20px;transition:.2s}
 .switch span:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
 .switch input:checked+span{background:var(--accent)}
 .switch input:checked+span:before{transform:translateX(18px)}
@@ -41,12 +43,12 @@ button:disabled{opacity:.5}
 .media:first-child{border-top:0}
 .media img{width:72px;height:41px;object-fit:cover;border-radius:6px;background:#000;flex:none}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.chip{font-size:12px;padding:4px 9px;border-radius:20px;background:#262a35;color:var(--muted)}
-.chip.on{background:rgba(99,102,241,.25);color:#c7c9ff}
-input[type=password],input[type=tel]{width:100%;font:inherit;font-size:22px;letter-spacing:.3em;text-align:center;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0b0d12;color:var(--text)}
+.chip{font-size:13px;padding:6px 12px;min-height:32px;border-radius:20px;background:var(--btn);color:var(--muted)}
+.chip.on{background:var(--chipon);color:var(--chiptext)}
+input[type=password],input[type=tel]{width:100%;font:inherit;font-size:22px;letter-spacing:.3em;text-align:center;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--text)}
 #login{max-width:360px;margin:12vh auto 0;text-align:center}
-#toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:#2b3040;border-radius:12px;padding:12px 14px;display:none;z-index:9}
-.progress{height:6px;background:#262a35;border-radius:3px;overflow:hidden;margin-top:8px;display:none}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:var(--toast);color:#fff;border-radius:12px;padding:12px 14px;display:none;z-index:9}
+.progress{height:6px;background:var(--btn);border-radius:3px;overflow:hidden;margin-top:8px;display:none}
 .progress div{height:100%;width:0;background:var(--accent)}
 .hidden{display:none!important}
 </style>

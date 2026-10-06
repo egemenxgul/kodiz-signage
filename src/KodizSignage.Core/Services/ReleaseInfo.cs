@@ -63,6 +63,31 @@ public sealed record ReleaseInfo(Version Version, string Tag, string ExeUrl, str
         }
     }
 
+    /// <summary>
+    /// Builds the release from where github.com/{repo}/releases/latest redirects to
+    /// (".../releases/tag/v1.4.0"). This page is not rate-limited like the API; the asset URLs follow
+    /// GitHub's fixed download pattern.
+    /// </summary>
+    public static ReleaseInfo? FromTagUrl(string repository, string? location)
+    {
+        const string marker = "/releases/tag/";
+        var index = location?.IndexOf(marker, StringComparison.Ordinal) ?? -1;
+        if (location is null || index < 0)
+        {
+            return null;
+        }
+
+        var tag = Uri.UnescapeDataString(location[(index + marker.Length)..].Split('?', '#')[0].TrimEnd('/'));
+        if (tag.Length == 0 || tag.Contains('/') || !TryParseVersion(tag, out var version))
+        {
+            return null;
+        }
+
+        var download = $"https://github.com/{repository}/releases/download/{Uri.EscapeDataString(tag)}/";
+        return new ReleaseInfo(version, tag, download + ExeAssetName, download + HashAssetName,
+            $"https://github.com/{repository}/releases/tag/{Uri.EscapeDataString(tag)}", string.Empty);
+    }
+
     /// <summary>"v1.3.0" / "1.3" / "1.3.0.0" → 1.3.0.</summary>
     public static bool TryParseVersion(string? text, out Version version)
     {

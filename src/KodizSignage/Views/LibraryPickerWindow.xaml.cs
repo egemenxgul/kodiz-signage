@@ -36,6 +36,7 @@ public partial class LibraryPickerWindow : Window
     private LibraryPickerWindow(IReadOnlyList<PickerItem> items, ILocalizationService loc, string screenTitle)
     {
         InitializeComponent();
+        WindowSizing.FitToWorkArea(this);
         _loc = loc;
         _all = items.ToList();
         Title = loc.Format("Picker_Title", screenTitle);
@@ -55,7 +56,7 @@ public partial class LibraryPickerWindow : Window
             .ToList();
         if (items.Count == 0)
         {
-            MessageBox.Show(loc.Get("Picker_LibraryEmpty"), loc.Get("App_Name"), MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageWindow.Show(Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive), loc.Get("App_Name"), loc.Get("Picker_LibraryEmpty"), MessageKind.Info, loc.Get("Common_Ok"));
             return Array.Empty<Guid>();
         }
 

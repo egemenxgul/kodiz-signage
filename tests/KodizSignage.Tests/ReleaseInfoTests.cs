@@ -68,4 +68,23 @@ public class ReleaseInfoTests
     [InlineData("nothex", false)]
     [InlineData("", false)]
     public void Hash_file_parsing(string text, bool valid) => Assert.Equal(valid, ReleaseInfo.ParseHash(text) is not null);
+
+    [Fact]
+    public void Release_is_built_from_the_latest_page_redirect()
+    {
+        var release = ReleaseInfo.FromTagUrl("egemenxgul/kodiz-signage", "https://github.com/egemenxgul/kodiz-signage/releases/tag/v1.4.0")!;
+
+        Assert.Equal(new Version(1, 4, 0), release.Version);
+        Assert.Equal("v1.4.0", release.Tag);
+        Assert.Equal("https://github.com/egemenxgul/kodiz-signage/releases/download/v1.4.0/KodizSignage.exe", release.ExeUrl);
+        Assert.Equal("https://github.com/egemenxgul/kodiz-signage/releases/download/v1.4.0/KodizSignage.exe.sha256", release.HashUrl);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("https://github.com/egemenxgul/kodiz-signage/releases")]
+    [InlineData("https://github.com/egemenxgul/kodiz-signage/releases/tag/")]
+    [InlineData("https://github.com/egemenxgul/kodiz-signage/releases/tag/nightly")]
+    public void Redirects_without_a_version_are_ignored(string? location) =>
+        Assert.Null(ReleaseInfo.FromTagUrl("egemenxgul/kodiz-signage", location));
 }

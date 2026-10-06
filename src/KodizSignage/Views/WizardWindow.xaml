@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Kodiz Signage" Width="640" Height="560" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen" Topmost="True" ShowInTaskbar="True"
-        Background="{StaticResource BgBrush}" Foreground="{StaticResource TextBrush}"
+        Background="{DynamicResource BgBrush}" Foreground="{DynamicResource TextBrush}"
         FontFamily="{StaticResource UiFont}" FontSize="13"
         Icon="pack://application:,,,/Assets/app.ico">
     <Grid Margin="32,28,32,24">

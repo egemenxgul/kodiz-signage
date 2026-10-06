@@ -131,6 +131,8 @@
     <sys:String x:Key="Shortcut_Error_Invalid" xml:space="preserve">This key cannot be used as a shortcut.</sys:String>
     <sys:String x:Key="Common_Ok" xml:space="preserve">OK</sys:String>
     <sys:String x:Key="Common_Cancel" xml:space="preserve">Cancel</sys:String>
+    <sys:String x:Key="Common_Yes" xml:space="preserve">Yes</sys:String>
+    <sys:String x:Key="Common_No" xml:space="preserve">No</sys:String>
     <sys:String x:Key="Preview_Button" xml:space="preserve">Preview</sys:String>
     <sys:String x:Key="Preview_Title" xml:space="preserve">Kodiz Signage – Preview (muted)</sys:String>
     <sys:String x:Key="Preview_Tooltip" xml:space="preserve">Plays the show in a small window on this PC; does not affect the TV.</sys:String>
@@ -580,4 +582,12 @@
     <sys:String x:Key="Wizard_Back" xml:space="preserve">Back</sys:String>
     <sys:String x:Key="Wizard_Next" xml:space="preserve">Next</sys:String>
     <sys:String x:Key="Wizard_Finish" xml:space="preserve">Finish</sys:String>
+    <sys:String x:Key="Update_RateLimit" xml:space="preserve">GitHub is temporarily limiting requests from this network; it clears by itself within an hour</sys:String>
+    <sys:String x:Key="Update_NotFound" xml:space="preserve">the update file is not published yet, try again shortly</sys:String>
+    <sys:String x:Key="AppTheme_Title" xml:space="preserve">Theme</sys:String>
+    <sys:String x:Key="AppTheme_System" xml:space="preserve">Same as Windows</sys:String>
+    <sys:String x:Key="AppTheme_Light" xml:space="preserve">Light</sys:String>
+    <sys:String x:Key="AppTheme_Dark" xml:space="preserve">Dark</sys:String>
+    <sys:String x:Key="Touch_LongPress" xml:space="preserve">Hold the screen for 2 seconds to open the settings</sys:String>
+    <sys:String x:Key="Touch_LongPressHint" xml:space="preserve">For touch screens without a keyboard or taskbar. The PIN is asked if one is set.</sys:String>
 </ResourceDictionary>

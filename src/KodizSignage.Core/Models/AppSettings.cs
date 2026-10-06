@@ -13,6 +13,11 @@ public sealed record AppSettings
 
     public AppLanguage Language { get; init; } = AppLanguage.Auto;
 
+    public AppTheme Theme { get; init; } = AppTheme.System;
+
+    /// <summary>Hold a finger (or the mouse) on the player for 2 seconds to open the settings (touch screens).</summary>
+    public bool LongPressOpensSettings { get; init; } = true;
+
     /// <summary>Legacy single-display setting (v1.0/1.1); migrated into <see cref="Screens"/> by <see cref="Normalize"/>.</summary>
     public SavedDisplay? SelectedDisplay { get; init; }
 
@@ -108,6 +113,7 @@ public sealed record AppSettings
         ImageMotion = Enum.IsDefined(ImageMotion) ? ImageMotion : ImageMotion.None,
         Scaling = Enum.IsDefined(Scaling) ? Scaling : ScalingMode.Fit,
         Language = Enum.IsDefined(Language) ? Language : AppLanguage.Auto,
+        Theme = Enum.IsDefined(Theme) ? Theme : AppTheme.System,
         Hotkeys = (Hotkeys ?? HotkeySettings.Defaults).Normalize(),
         DisplayFallback = Enum.IsDefined(DisplayFallback) ? DisplayFallback : DisplayFallback.Hide,
         OperatingHours = (OperatingHours ?? new OperatingHours()).Normalize(),

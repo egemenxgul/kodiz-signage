@@ -30,6 +30,34 @@ public partial class PinWindow : Window
 
     public string? EnteredPin { get; private set; }
 
+    /// <summary>The box the number pad types into: the confirmation once the first PIN is complete.</summary>
+    private System.Windows.Controls.PasswordBox Target =>
+        ConfirmBox.Visibility == Visibility.Visible && (ConfirmBox.IsKeyboardFocused || PinBox.Password.Length >= 4 && !PinBox.IsKeyboardFocused)
+            ? ConfirmBox
+            : PinBox;
+
+    private void Digit_Click(object sender, RoutedEventArgs e)
+    {
+        var box = Target;
+        if (box.Password.Length < box.MaxLength && sender is System.Windows.Controls.Button { Content: string digit })
+        {
+            box.Password += digit;
+        }
+
+        box.Focus();
+    }
+
+    private void Backspace_Click(object sender, RoutedEventArgs e)
+    {
+        var box = Target;
+        if (box.Password.Length > 0)
+        {
+            box.Password = box.Password[..^1];
+        }
+
+        box.Focus();
+    }
+
     /// <summary>Asks for the existing PIN. Returns true when <paramref name="verify"/> accepts it.</summary>
     public static bool Ask(string prompt, Func<string, bool> verify, Func<string, string> text) =>
         new PinWindow(prompt, verify, text).ShowDialog() == true;

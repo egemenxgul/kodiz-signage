@@ -7,7 +7,7 @@
                       ToolTip="{DynamicResource Color_Open}" Click="SwatchButton_Click">
             <ToggleButton.Template>
                 <ControlTemplate TargetType="ToggleButton">
-                    <Border x:Name="Frame" CornerRadius="6" BorderThickness="1" BorderBrush="{StaticResource TextMutedBrush}" Padding="2" Background="Transparent">
+                    <Border x:Name="Frame" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource TextMutedBrush}" Padding="2" Background="Transparent">
                         <Grid>
                             <Border CornerRadius="4">
                                 <Border.Background>
@@ -22,15 +22,15 @@
                                 </Border.Background>
                             </Border>
                             <Border x:Name="Fill" CornerRadius="4" Background="{Binding SwatchBrush, RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                            <Path x:Name="InvalidMark" Data="M0,0 L1,1" Stretch="Fill" Stroke="{StaticResource DangerBrush}" StrokeThickness="2" Visibility="Collapsed" />
+                            <Path x:Name="InvalidMark" Data="M0,0 L1,1" Stretch="Fill" Stroke="{DynamicResource DangerBrush}" StrokeThickness="2" Visibility="Collapsed" />
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Frame" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Frame" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            <Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                         </Trigger>
                         <DataTrigger Binding="{Binding IsTextValid, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
                             <Setter TargetName="InvalidMark" Property="Visibility" Value="Visible" />
@@ -48,7 +48,7 @@
 
         <Popup x:Name="PickerPopup" PlacementTarget="{Binding ElementName=SwatchButton}" Placement="Bottom" VerticalOffset="6"
                StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" Closed="PickerPopup_Closed">
-            <Border Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="10"
+            <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="10"
                     Padding="14" Margin="0,0,10,10" Width="300">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.45" />
@@ -66,7 +66,7 @@
                                 <Button Height="24" MinHeight="0" Padding="0" Margin="0,0,3,3" ToolTip="{Binding}" Click="PaletteColor_Click" Cursor="Hand">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="B" CornerRadius="4" BorderThickness="1" BorderBrush="#40FFFFFF" Background="{Binding}" />
+                                            <Border x:Name="B" CornerRadius="4" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" Background="{Binding}" />
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="B" Property="BorderBrush" Value="White" />

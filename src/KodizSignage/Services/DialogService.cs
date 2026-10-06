@@ -1,6 +1,7 @@
 using System.Windows;
 using Microsoft.Win32;
 using KodizSignage.Core.Media;
+using KodizSignage.Views;
 
 namespace KodizSignage.Services;
 
@@ -36,14 +37,13 @@ public sealed class DialogService : IDialogService
     }
 
     public bool Confirm(string message, string? title = null) =>
-        WithOwner(owner => MessageBox.Show(owner, message, title ?? _loc.Get("App_Name"),
-            MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)) == MessageBoxResult.Yes;
+        WithOwner(owner => MessageWindow.Show(owner, title ?? _loc.Get("App_Name"), message, MessageKind.Question, _loc.Get("Common_Yes"), _loc.Get("Common_No")));
 
     public void Info(string message, string? title = null) =>
-        WithOwner(owner => MessageBox.Show(owner, message, title ?? _loc.Get("App_Name"), MessageBoxButton.OK, MessageBoxImage.Information));
+        WithOwner(owner => MessageWindow.Show(owner, title ?? _loc.Get("App_Name"), message, MessageKind.Info, _loc.Get("Common_Ok")));
 
     public void Warning(string message, string? title = null) =>
-        WithOwner(owner => MessageBox.Show(owner, message, title ?? _loc.Get("App_Name"), MessageBoxButton.OK, MessageBoxImage.Warning));
+        WithOwner(owner => MessageWindow.Show(owner, title ?? _loc.Get("App_Name"), message, MessageKind.Warning, _loc.Get("Common_Ok")));
 
     public IReadOnlyList<string> PickMediaFiles()
     {

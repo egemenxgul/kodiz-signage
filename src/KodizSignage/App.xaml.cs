@@ -69,6 +69,10 @@ public partial class App : Application
         var settings = _services.GetRequiredService<ISettingsService>();
         settings.Load();
         _services.GetRequiredService<ILocalizationService>().Apply(settings.Current.Language);
+        _services.GetRequiredService<IThemeService>().Apply(settings.Current.Theme);
+        // Touch scrolling past the end would otherwise drag the whole window.
+        EventManager.RegisterClassHandler(typeof(Window), UIElement.ManipulationBoundaryFeedbackEvent,
+            new EventHandler<System.Windows.Input.ManipulationBoundaryFeedbackEventArgs>((_, e) => e.Handled = true));
 
         // ---- Installation / update / single instance ----
         _singleInstance = new SingleInstanceService(Log);
@@ -321,6 +325,7 @@ public partial class App : Application
         services.AddSingleton<IDuplicateResolver, DuplicateResolver>();
         services.AddSingleton<IUpdateService, UpdateService>();
         services.AddSingleton<ISlideService, SlideService>();
+        services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<WebPanelService>();
         services.AddSingleton<IWebPanelService>(sp => sp.GetRequiredService<WebPanelService>());
         services.AddSingleton<IPlayStatsService>(sp => new PlayStatsService(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<Serilog.ILogger>()));
@@ -343,6 +348,7 @@ public partial class App : Application
         // The key combinations come from the settings (Shortcuts tab) and are re-registered live.
         var shortcuts = _services!.GetRequiredService<IShortcutService>();
         shortcuts.SetHandler(HotkeyAction.ShowSettings, ShowSettings);
+        playback.SettingsRequested += (_, _) => ShowSettings();
         shortcuts.SetHandler(HotkeyAction.TogglePlayback, () => _ = TogglePlaybackAsync());
         shortcuts.SetHandler(HotkeyAction.NextItem, playback.Next);
         shortcuts.SetHandler(HotkeyAction.Exit, () => _ = ExitAsync(confirm: true));

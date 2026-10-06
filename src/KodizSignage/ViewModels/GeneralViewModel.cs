@@ -28,6 +28,7 @@ public sealed partial class GeneralViewModel : ObservableObject
     private readonly IUpdateService _updates;
     private readonly IPlayStatsService _stats;
     private readonly IWebPanelService _web;
+    private readonly IThemeService _themeService;
     private readonly ILogger _log;
     private bool _syncing;
 
@@ -46,8 +47,10 @@ public sealed partial class GeneralViewModel : ObservableObject
         IUpdateService updates,
         IPlayStatsService stats,
         IWebPanelService web,
+        IThemeService theme,
         ILogger log)
     {
+        _themeService = theme;
         _web = web;
         _web.StateChanged += (_, _) => SyncWebState();
         _stats = stats;
@@ -77,6 +80,12 @@ public sealed partial class GeneralViewModel : ObservableObject
                 },
             }));
 
+        Themes = new[]
+        {
+            new OptionItem<AppTheme>(AppTheme.System, "AppTheme_System", loc),
+            new OptionItem<AppTheme>(AppTheme.Light, "AppTheme_Light", loc),
+            new OptionItem<AppTheme>(AppTheme.Dark, "AppTheme_Dark", loc),
+        };
         Languages = new[]
         {
             new OptionItem<AppLanguage>(AppLanguage.Auto, "Language_Auto", loc),
@@ -110,6 +119,7 @@ public sealed partial class GeneralViewModel : ObservableObject
         _loc.LanguageChanged += (_, _) =>
         {
             foreach (var o in Languages) o.Refresh(_loc);
+            foreach (var o in Themes) o.Refresh(_loc);
             foreach (var o in Transitions) o.Refresh(_loc);
             foreach (var o in Motions) o.Refresh(_loc);
             foreach (var o in ScalingModes) o.Refresh(_loc);
@@ -123,6 +133,20 @@ public sealed partial class GeneralViewModel : ObservableObject
     }
 
     public IReadOnlyList<OptionItem<AppLanguage>> Languages { get; }
+
+    public IReadOnlyList<OptionItem<AppTheme>> Themes { get; }
+
+    [ObservableProperty] private AppTheme _theme;
+
+    [ObservableProperty] private bool _longPressOpensSettings;
+
+    partial void OnThemeChanged(AppTheme value)
+    {
+        Save(s => s with { Theme = value });
+        _themeService.Apply(value);
+    }
+
+    partial void OnLongPressOpensSettingsChanged(bool value) => Save(s => s with { LongPressOpensSettings = value });
     public IReadOnlyList<OptionItem<TransitionType>> Transitions { get; }
     public IReadOnlyList<OptionItem<ImageMotion>> Motions { get; }
 
@@ -192,6 +216,8 @@ public sealed partial class GeneralViewModel : ObservableObject
         try
         {
             Language = s.Language;
+            Theme = s.Theme;
+            LongPressOpensSettings = s.LongPressOpensSettings;
             StartWithWindows = s.StartWithWindows;
             AutoPlayOnLaunch = s.AutoPlayOnLaunch;
             DefaultImageDuration = s.DefaultImageDurationSeconds;
@@ -353,7 +379,13 @@ public sealed partial class GeneralViewModel : ObservableObject
             UpdateState.Downloading => _loc.Format("Update_Downloading", version),
             UpdateState.Ready => _loc.Format(AutoInstallUpdates ? "Update_ReadyAuto" : "Update_Ready", version),
             UpdateState.UpToDate => _loc.Format("Update_UpToDate", Version) + " · " + last,
-            UpdateState.Failed => _loc.Format("Update_Failed", _updates.Error == "network" ? _loc.Get("Update_NoNetwork") : _updates.Error ?? string.Empty),
+            UpdateState.Failed => _loc.Format("Update_Failed", _updates.Error switch
+            {
+                "network" => _loc.Get("Update_NoNetwork"),
+                "rate-limit" => _loc.Get("Update_RateLimit"),
+                "not-found" => _loc.Get("Update_NotFound"),
+                var other => other ?? string.Empty,
+            }),
             _ => last,
         };
     }

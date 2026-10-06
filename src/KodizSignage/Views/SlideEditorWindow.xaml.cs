@@ -13,6 +13,7 @@ public partial class SlideEditorWindow : Window
     private SlideEditorWindow(SlideDefinition? existing, ILocalizationService loc)
     {
         InitializeComponent();
+        WindowSizing.FitToWorkArea(this);
         _vm = new SlideEditorViewModel(existing, loc);
         DataContext = _vm;
         SaveText.Text = loc.Get(existing is null ? "Slide_Create" : "Slide_Update");

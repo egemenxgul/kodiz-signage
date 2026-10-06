@@ -30,6 +30,7 @@ public partial class PlayerWindow : Window
         IsPreview = preview;
         ScreenNumber = screenNumber;
         _overlays = new OverlayLayer(OverlayHost, _log);
+        LongPress = new LongPressDetector(Root, TouchLayer) { IsEnabled = !preview };
         Closed += (_, _) => _overlays.Stop();
 
         var layerA = new MediaLayer("A", LayerA, ImageA, VideoA, _log) { ForceMute = preview };
@@ -58,6 +59,9 @@ public partial class PlayerWindow : Window
     internal PlaybackEngine Engine { get; }
 
     public bool IsPreview { get; }
+
+    /// <summary>Hold on the screen to open the settings (touch screens have no keyboard or tray).</summary>
+    internal LongPressDetector LongPress { get; }
 
     /// <summary>The screen this window plays; null for the "all media" preview.</summary>
     public int? ScreenNumber { get; }

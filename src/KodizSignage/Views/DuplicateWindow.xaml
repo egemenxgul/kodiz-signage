@@ -3,12 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Width="640" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen" Topmost="True" ShowInTaskbar="True"
-        Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextBrush}"
+        Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource TextBrush}"
         FontFamily="{StaticResource UiFont}" FontSize="13"
         Icon="pack://application:,,,/Assets/app.ico">
     <StackPanel Margin="24">
         <StackPanel Orientation="Horizontal">
-            <TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;" FontSize="22" Foreground="{StaticResource WarningBrush}" Margin="0,0,12,0" />
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;" FontSize="22" Foreground="{DynamicResource WarningBrush}" Margin="0,0,12,0" />
             <TextBlock x:Name="HeaderText" Style="{StaticResource H1}" TextWrapping="Wrap" MaxWidth="540" />
         </StackPanel>
         <TextBlock x:Name="ExplanationText" Style="{StaticResource Secondary}" Margin="0,8,0,16" />
@@ -22,27 +22,27 @@
             <Border Style="{StaticResource Card}" Padding="12">
                 <StackPanel>
                     <TextBlock Text="{DynamicResource Duplicate_New}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
-                    <Border Height="140" CornerRadius="6" Background="#0B0D12" ClipToBounds="True">
+                    <Border Height="140" CornerRadius="6" Background="{DynamicResource MediaBgBrush}" ClipToBounds="True">
                         <Grid>
-                            <TextBlock Style="{StaticResource Icon}" Text="&#xE714;" FontSize="32" Foreground="{StaticResource TextMutedBrush}" />
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE714;" FontSize="32" Foreground="{DynamicResource TextMutedBrush}" />
                             <Image x:Name="NewImage" Stretch="Uniform" />
                         </Grid>
                     </Border>
                     <TextBlock x:Name="NewName" FontWeight="SemiBold" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="NewDetails" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
+                    <TextBlock x:Name="NewDetails" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
             <Border Grid.Column="2" Style="{StaticResource Card}" Padding="12">
                 <StackPanel>
                     <TextBlock Text="{DynamicResource Duplicate_Existing}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
-                    <Border Height="140" CornerRadius="6" Background="#0B0D12" ClipToBounds="True">
+                    <Border Height="140" CornerRadius="6" Background="{DynamicResource MediaBgBrush}" ClipToBounds="True">
                         <Grid>
-                            <TextBlock Style="{StaticResource Icon}" Text="&#xE714;" FontSize="32" Foreground="{StaticResource TextMutedBrush}" />
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE714;" FontSize="32" Foreground="{DynamicResource TextMutedBrush}" />
                             <Image x:Name="ExistingImage" Stretch="Uniform" />
                         </Grid>
                     </Border>
                     <TextBlock x:Name="ExistingName" FontWeight="SemiBold" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="ExistingDetails" FontSize="12" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
+                    <TextBlock x:Name="ExistingDetails" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
         </Grid>

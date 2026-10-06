@@ -5,7 +5,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Themes/Dark.xaml" />
+                <ResourceDictionary Source="Themes/Colors.Dark.xaml" />
+                <ResourceDictionary Source="Themes/Controls.xaml" />
                 <!-- Replaced at runtime by LocalizationService according to the selected language. -->
                 <ResourceDictionary Source="Localization/Strings.en.xaml" />
             </ResourceDictionary.MergedDictionaries>

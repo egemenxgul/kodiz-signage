@@ -44,6 +44,14 @@ public enum ScalingMode
     Stretch,
 }
 
+public enum AppTheme
+{
+    /// <summary>Follow the Windows app mode (light/dark).</summary>
+    System,
+    Light,
+    Dark,
+}
+
 public enum AppLanguage
 {
     /// <summary>Follow the operating system UI language.</summary>

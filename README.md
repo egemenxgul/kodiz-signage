@@ -7,6 +7,7 @@ kendi medyasını oynatabilir. İnternet gerektirmez.
 
 - .NET 8 / WPF, MVVM (CommunityToolkit.Mvvm), tek dosya self-contained `.exe`
 - Türkçe / İngilizce arayüz (varsayılan: işletim sistemi dili, ayarlardan canlı değiştirilebilir)
+- **Aydınlık ve koyu tema** (veya Windows ile aynı), **dokunmatik ekran** desteği
 - Windows 10 (1809+) / 11, x64; Windows 11 on ARM da çalışır – **Windows 7, 8 ve 8.1 desteklenmez** (bkz. [Sistem gereksinimleri](#sistem-gereksinimleri))
 
 ---
@@ -21,6 +22,7 @@ kendi medyasını oynatabilir. İnternet gerektirmez.
 | Ekran üstü | Ekran başına **saat/tarih**, **kayan yazı** ve **logo** (konum, boyut, saydamlık, renk) |
 | Kütüphane | Her dosya diskte **bir kez** saklanır, ekranlar paylaşır; arama, **filtre** (resim/video/slayt/hiçbir ekranda olmayan/uyarılı/şu an oynamayan), **sıralama** (ad, en yeni, en büyük), görünen ad, varsayılan süre/plan, 10 sn içinde geri alınabilir silme |
 | İstatistik | Hangi medyanın hangi ekranda kaç kez ve ne kadar gösterildiği (90 gün); **CSV** (Excel) dışa aktarma |
+| Arayüz | Aydınlık / koyu / Windows ile aynı tema (başlık çubuğu dahil, anında değişir); dokunmatik için büyük dokunma alanları, parmakla kaydırma, ekran üstü PIN tuş takımı, **ekrana 2 sn basılı tutunca ayarlar** |
 | Telefondan yönetim | Aynı Wi-Fi'daki telefondan PIN ile giriş: gösterimi başlat/durdur, ekranları aç/kapat, sonraki öğe, medya yükle, aktif/pasif, ekran ataması, silme. QR kodla açılır; internet gerekmez |
 | Ekran listeleri | Her ekranın **kendi oynatma listesi**: bağımsız sıra, süre, aktif/pasif, geçiş, tarih ve gün/saat planı; aynı medya bir listede birden çok kez; başka ekrandan kopyala, listeyi bağla, **senkron oynat** |
 | Kopya kontrolü | Birebir aynı dosya (SHA-256), görsel olarak aynı resim (algısal parmak izi), muhtemelen aynı video ve aynı ad/yeni sürüm tespit edilir; ne yapılacağı sorulur |
@@ -97,6 +99,16 @@ Her ekran için ayrı ayrı, tüm içeriklerin üstünde sürekli görünen:
 - **Logo** (kütüphanedeki bir resim; köşe, genişlik ve saydamlık). Şeffaf PNG en iyi sonucu verir.
 
 Çalışma saatleri dışındaki siyah ekranda gösterilmezler.
+
+### Tema ve dokunmatik ekran (Genel sekmesi › Sistem)
+
+- **Tema:** Aydınlık, Koyu veya Windows ile aynı. Windows'ta mod değişince uygulama da anında değişir.
+  Telefon paneli de telefonun aydınlık/koyu ayarını izler.
+- **Dokunmatik:** Tüm butonlar, anahtarlar ve kaydırıcılar parmakla rahat kullanılacak boyuttadır;
+  listeler parmakla kaydırılır. PIN penceresinde ekran üstü tuş takımı vardır.
+- **Ekrana 2 saniye basılı tutun:** Gösterim sırasında (klavye, fare ve görev çubuğu olmayan dokunmatik
+  ekranlarda) ayarları açar; dolan bir halka görünür. PIN varsa sorulur. Genel › Sistem'den kapatılabilir.
+- Listelerde sıralama dokunmatikte **yukarı/aşağı** butonlarıyla yapılır (sürükleme fareyle).
 
 ### Telefondan yönetim (Genel sekmesi)
 
@@ -214,6 +226,8 @@ göster"** seçilebilir; ana ekran başka bir ekrana atanmamışsa kullanılır.
 - Kurulumdan önce mevcut sürüm, ayarlar ve liste yedeklenir. Yeni sürüm ilk 30 dakikada art arda
   çökerse önceki sürüm ve veriler kendiliğinden geri yüklenir; o sürüm bir daha önerilmez.
 - İnternet yoksa kontrol sessizce atlanır; gösterim etkilenmez.
+- Sürüm kontrolü GitHub'ın "latest release" sayfasından yapılır (API sınırına takılmaz); hata olursa
+  nedeni açıkça yazılır (ör. "GitHub geçici olarak sınırladı").
 
 ## Sistem gereksinimleri
 

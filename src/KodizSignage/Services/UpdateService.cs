@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Windows;
@@ -124,10 +125,8 @@ public sealed class UpdateService : IUpdateService
         try
         {
             SetState(UpdateState.Checking);
-            using var http = CreateClient(TimeSpan.FromSeconds(30));
-            var json = await http.GetStringAsync($"https://api.github.com/repos/{Repository}/releases/latest");
+            var release = await FindLatestAsync();
             _settings.Update(s => s with { LastUpdateCheck = DateTime.Now });
-            var release = ReleaseInfo.Parse(json);
             var skipped = manual ? null : ReadSkipped();
 
             if (release is null || !release.IsNewerThan(InstallService.CurrentVersion, skipped))
@@ -145,7 +144,7 @@ public sealed class UpdateService : IUpdateService
         catch (Exception ex)
         {
             _log.Warning(ex, "Update check failed");
-            Error = ex is HttpRequestException ? "network" : ex.Message;
+            Error = Describe(ex);
             SetState(UpdateState.Failed);
         }
         finally
@@ -153,6 +152,44 @@ public sealed class UpdateService : IUpdateService
             Interlocked.Exchange(ref _checking, 0);
         }
     }
+
+    /// <summary>
+    /// The "latest release" web page redirect first (not rate-limited: 60 API calls per hour are shared
+    /// by everyone behind the same internet connection), the API as a fallback.
+    /// </summary>
+    private async Task<ReleaseInfo?> FindLatestAsync()
+    {
+        try
+        {
+            using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+            using var web = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) };
+            web.DefaultRequestHeaders.UserAgent.ParseAdd($"KodizSignage/{InstallService.CurrentVersion}");
+            using var response = await web.GetAsync($"https://github.com/{Repository}/releases/latest", HttpCompletionOption.ResponseHeadersRead);
+            var location = response.Headers.Location is { } l ? (l.IsAbsoluteUri ? l.AbsoluteUri : "https://github.com" + l.OriginalString) : null;
+            if (ReleaseInfo.FromTagUrl(Repository, location) is { } fromPage)
+            {
+                return fromPage;
+            }
+
+            _log.Information("Release page gave no redirect ({Status}); asking the API", (int)response.StatusCode);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _log.Information(ex, "Release page not reachable; asking the API");
+        }
+
+        using var http = CreateClient(TimeSpan.FromSeconds(30));
+        return ReleaseInfo.Parse(await http.GetStringAsync($"https://api.github.com/repos/{Repository}/releases/latest"));
+    }
+
+    private static string Describe(Exception ex) => ex switch
+    {
+        HttpRequestException { StatusCode: HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests } => "rate-limit",
+        HttpRequestException { StatusCode: HttpStatusCode.NotFound } => "not-found",
+        HttpRequestException { StatusCode: { } code } => $"GitHub HTTP {(int)code}",
+        HttpRequestException or TaskCanceledException => "network",
+        _ => ex.Message,
+    };
 
     private async Task DownloadAsync(ReleaseInfo release)
     {
