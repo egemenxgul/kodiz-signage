@@ -62,6 +62,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         MotionChoices = new[] { O(0, "ScreenOverride_General"), O(1, "Motion_None"), O(2, "Motion_KenBurns") };
         RotationChoices = new[] { O(0, "Rotation_0"), O(1, "Rotation_90"), O(2, "Rotation_180"), O(3, "Rotation_270") };
         BulkSchedule = new ScheduleEditor(loc, autoCommit: false);
+        DaypartSchedule = new ScheduleEditor(loc, autoCommit: true, CommitDaypartSchedule);
         Overlays = new OverlayEditorViewModel(loc, change => UpdateConfig(c => c with { Overlays = change(c.Overlays) }));
 
         _playlist.Changed += (_, _) => Application.Current.Dispatcher.BeginInvoke(SyncEntries);
@@ -206,6 +207,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         }
 
         Number = number;
+        _listKey = 0;
         SelectedEntry = null;
         SelectedEntries = Array.Empty<EntryViewModel>();
         Entries.Clear();
@@ -298,13 +300,14 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         var playlist = _playlist.GetScreenPlaylist(Number);
         var source = _playlist.ResolveSource(Number);
         IsLinked = source != Number;
+        SyncLists();
         LinkedText = IsLinked && _settings.Current.GetScreen(source) is { } src
             ? _loc.Format(Synchronized ? "Editor_LinkedSync" : "Editor_Linked", ScreenLabel(src))
             : string.Empty;
 
-        var sourcePlaylist = _playlist.GetScreenPlaylist(source) ?? playlist;
+        var sourcePlaylist = _playlist.GetScreenPlaylist(TargetScreen) ?? playlist;
         var entries = sourcePlaylist?.Entries ?? EquatableList<ScreenEntry>.Empty;
-        var resolved = _playlist.GetScreenItems(Number).ToDictionary(i => i.Id);
+        var resolved = _playlist.ResolveList(TargetScreen).ToDictionary(i => i.Id);
         var library = _playlist.Items.ToDictionary(i => i.Id);
         var defaultDuration = ScreenDefaultDuration;
         var existing = Entries.ToDictionary(e => e.Id);
@@ -366,6 +369,11 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
     /// <summary>Called every second while the window is visible.</summary>
     public void Tick()
     {
+        if (Number > 0 && DateTime.Now.Second == 0)
+        {
+            SyncLists(); // The playing time-of-day list may have changed.
+        }
+
         var state = _playback.Screens.FirstOrDefault(s => s.Number == Number);
         foreach (var entry in Entries)
         {
@@ -399,9 +407,139 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
 
     // ---- Entry edits -------------------------------------------------------------------------
 
-    private void CommitEntry(ScreenEntry entry) => _playlist.UpdateEntries(_playlist.ResolveSource(Number), new[] { entry });
+    private void CommitEntry(ScreenEntry entry) => _playlist.UpdateEntries(TargetScreen, new[] { entry });
 
-    private int TargetScreen => _playlist.ResolveSource(Number);
+    /// <summary>The list being edited: a time-of-day list, or the screen's own (or followed) main list.</summary>
+    private int TargetScreen => _listKey != 0 && _playlist.GetScreenPlaylist(_listKey) is { IsDaypart: true } ? _listKey : _playlist.ResolveSource(Number);
+
+    // ---- Time-of-day lists ----------------------------------------------------------------------
+
+    private int _listKey;
+
+    /// <summary>"Main list" + the screen's time-of-day lists, as tabs above the entries.</summary>
+    public ObservableCollection<DaypartOption> Lists { get; } = new();
+
+    [ObservableProperty] private bool _isDaypartSelected;
+    [ObservableProperty] private string _daypartName = string.Empty;
+    [ObservableProperty] private string _activeListText = string.Empty;
+
+    public ScheduleEditor DaypartSchedule { get; }
+
+    private void SyncLists()
+    {
+        var dayparts = IsLinked || Number == 0 ? Array.Empty<ScreenPlaylist>() : _playlist.GetDayparts(Number);
+        if (_listKey != 0 && dayparts.All(d => d.Screen != _listKey))
+        {
+            _listKey = 0; // Removed (or the screen now follows another one).
+        }
+
+        var active = _playlist.GetActiveDaypart(Number, DateTime.Now);
+        var options = new List<DaypartOption> { new(0, _loc.Get("Daypart_Main"), _loc.Get("Daypart_MainHint"), active is null, _listKey == 0) };
+        options.AddRange(dayparts.Select(d => new DaypartOption(d.Screen, d.Name ?? "?", DaypartTime(d), active?.Screen == d.Screen, _listKey == d.Screen)));
+        if (!options.SequenceEqual(Lists))
+        {
+            Lists.Clear();
+            foreach (var option in options)
+            {
+                Lists.Add(option);
+            }
+        }
+
+        ActiveListText = _loc.Format("Daypart_PlayingNow", active?.Name ?? _loc.Get("Daypart_Main"));
+        var selected = dayparts.FirstOrDefault(d => d.Screen == _listKey);
+        IsDaypartSelected = selected is not null;
+        if (selected is not null)
+        {
+            _syncingDaypart = true;
+            try
+            {
+                if (DaypartName.Trim() != (selected.Name ?? string.Empty))
+                {
+                    DaypartName = selected.Name ?? string.Empty;
+                }
+
+                DaypartSchedule.Load(selected.Days, selected.Start, selected.End);
+            }
+            finally
+            {
+                _syncingDaypart = false;
+            }
+        }
+    }
+
+    private bool _syncingDaypart;
+
+    private string DaypartTime(ScreenPlaylist list) =>
+        $"{ScheduleText.Days(list.Days, _loc)} {list.Start:HH:mm}–{list.End:HH:mm}";
+
+    [RelayCommand]
+    private void SelectList(int key)
+    {
+        if (_listKey == key)
+        {
+            return;
+        }
+
+        _listKey = key;
+        SelectedEntry = null;
+        SelectedEntries = Array.Empty<EntryViewModel>();
+        Entries.Clear();
+        SyncEntries();
+    }
+
+    [RelayCommand]
+    private void AddDaypart()
+    {
+        var key = _playlist.AddDaypart(Number, _loc.Get("Daypart_NewName"), WeekDays.All, new TimeOnly(8, 0), new TimeOnly(12, 0), copyMainList: false);
+        if (key == 0)
+        {
+            _dialogs.Warning(_loc.Format("Daypart_TooMany", ScreenPlaylist.MaxDayparts));
+            return;
+        }
+
+        SelectList(key);
+    }
+
+    [RelayCommand]
+    private void RemoveDaypart()
+    {
+        if (_listKey == 0 || _playlist.GetScreenPlaylist(_listKey) is not { IsDaypart: true } list)
+        {
+            return;
+        }
+
+        if (_dialogs.Confirm(_loc.Format("Daypart_RemoveConfirm", list.Name ?? string.Empty)))
+        {
+            var key = _listKey;
+            SelectList(0);
+            _playlist.RemoveDaypart(key);
+        }
+    }
+
+    [RelayCommand]
+    private void CopyMainToDaypart()
+    {
+        if (_listKey != 0 && (Entries.Count == 0 || _dialogs.Confirm(_loc.Get("Daypart_CopyConfirm"))))
+        {
+            _playlist.CopyEntries(_playlist.ResolveSource(Number), _listKey, replace: true);
+        }
+    }
+
+    partial void OnDaypartNameChanged(string value)
+    {
+        if (!_syncingDaypart && _listKey != 0 && _playlist.GetScreenPlaylist(_listKey) is { IsDaypart: true } list && !string.IsNullOrWhiteSpace(value))
+        {
+            _playlist.UpdateDaypart(_listKey, value, list.Days, list.Start, list.End);
+        }
+    }
+
+    private void CommitDaypartSchedule(WeekDays days, TimeOnly? start, TimeOnly? end)
+    {
+        if (!_syncingDaypart && _listKey != 0 && _playlist.GetScreenPlaylist(_listKey) is { IsDaypart: true } list)
+        {
+            _playlist.UpdateDaypart(_listKey, list.Name ?? string.Empty, days, start, end);
+        }
+    }
 
     [RelayCommand]
     private void AddFromLibrary()
@@ -417,7 +555,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
     [RelayCommand]
     private void CreateSlide()
     {
-        if (SlideEditorWindow.Edit(null, _loc) is { } slide)
+        if (SlideEditorWindow.Edit(null, _loc, _playlist, _slides) is { } slide)
         {
             _slides.Create(slide, new[] { TargetScreen });
         }
@@ -745,3 +883,6 @@ public sealed class ScreenScheduleHost
 
     public ScheduleEditor Editor { get; }
 }
+
+/// <summary>A tab above the screen's entries: the main list or a time-of-day list.</summary>
+public sealed record DaypartOption(int Key, string Name, string Detail, bool IsPlayingNow, bool IsSelected);

@@ -203,7 +203,7 @@
     <sys:String x:Key="Startup_Blocked" xml:space="preserve">Disabled in Task Manager → Startup apps; it will not start with Windows.</sys:String>
     <sys:String x:Key="Startup_Fix" xml:space="preserve">Enable again</sys:String>
     <sys:String x:Key="Pin_Section" xml:space="preserve">Security</sys:String>
-    <sys:String x:Key="Pin_Description" xml:space="preserve">With a PIN, opening the settings, stopping playback and exiting ask for it. If you forget it, delete the &quot;pinHash&quot; line in settings.json.</sys:String>
+    <sys:String x:Key="Pin_Description" xml:space="preserve">With a PIN, the PIN is asked to open the settings (tray, shortcut, holding the screen), stop playback, exit, switch a screen off from the tray and change/remove the PIN. While the settings window is open it is not asked again; the window locks when closed, minimized or idle for the chosen time. If you forget the PIN, delete the &quot;pinHash&quot; line in settings.json.</sys:String>
     <sys:String x:Key="Pin_On" xml:space="preserve">PIN protection is on</sys:String>
     <sys:String x:Key="Pin_Off" xml:space="preserve">PIN protection is off</sys:String>
     <sys:String x:Key="Pin_Set" xml:space="preserve">Set PIN</sys:String>
@@ -590,4 +590,119 @@
     <sys:String x:Key="AppTheme_Dark" xml:space="preserve">Dark</sys:String>
     <sys:String x:Key="Touch_LongPress" xml:space="preserve">Hold the screen for 2 seconds to open the settings</sys:String>
     <sys:String x:Key="Touch_LongPressHint" xml:space="preserve">For touch screens without a keyboard or taskbar. The PIN is asked if one is set.</sys:String>
+    <sys:String x:Key="Pin_LockNow" xml:space="preserve">Lock now (closes the settings; the PIN is asked next time)</sys:String>
+    <sys:String x:Key="Pin_SetInfo" xml:space="preserve">PIN saved. The settings lock when you close or minimize the window or leave it unused for a while; then the PIN is asked to open the settings, stop playback and exit. To try it now, press the lock icon at the top right.</sys:String>
+    <sys:String x:Key="Pin_AutoLock" xml:space="preserve">Lock when unused for:</sys:String>
+    <sys:String x:Key="Pin_AutoLock1" xml:space="preserve">1 minute</sys:String>
+    <sys:String x:Key="Pin_AutoLock5" xml:space="preserve">5 minutes</sys:String>
+    <sys:String x:Key="Pin_AutoLock15" xml:space="preserve">15 minutes</sys:String>
+    <sys:String x:Key="Pin_AutoLock60" xml:space="preserve">1 hour</sys:String>
+    <sys:String x:Key="Pin_AutoLockNever" xml:space="preserve">Only when closed</sys:String>
+    <sys:String x:Key="Daypart_Main" xml:space="preserve">Main list</sys:String>
+    <sys:String x:Key="Daypart_MainHint" xml:space="preserve">Plays whenever no time-of-day list is on</sys:String>
+    <sys:String x:Key="Daypart_Add" xml:space="preserve">Time-of-day list</sys:String>
+    <sys:String x:Key="Daypart_AddHint" xml:space="preserve">A separate list that replaces the main list on certain days and hours (e.g. Breakfast 08:00–12:00)</sys:String>
+    <sys:String x:Key="Daypart_NewName" xml:space="preserve">New list</sys:String>
+    <sys:String x:Key="Daypart_Name" xml:space="preserve">List name</sys:String>
+    <sys:String x:Key="Daypart_Explain" xml:space="preserve">On these days and hours the screen plays this list instead of the main one. If times overlap, the earlier start wins.</sys:String>
+    <sys:String x:Key="Daypart_CopyMain" xml:space="preserve">Copy the main list here</sys:String>
+    <sys:String x:Key="Daypart_CopyConfirm" xml:space="preserve">Replace this list with a copy of the main list?</sys:String>
+    <sys:String x:Key="Daypart_Remove" xml:space="preserve">Delete list</sys:String>
+    <sys:String x:Key="Daypart_RemoveConfirm" xml:space="preserve">Delete the time-of-day list &quot;{0}&quot;? The media stays in the library.</sys:String>
+    <sys:String x:Key="Daypart_TooMany" xml:space="preserve">A screen can have at most {0} time-of-day lists.</sys:String>
+    <sys:String x:Key="Daypart_PlayingNow" xml:space="preserve">Playing now: {0}</sys:String>
+    <sys:String x:Key="Music_Section" xml:space="preserve">Background music</sys:String>
+    <sys:String x:Key="Music_Description" xml:space="preserve">Plays MP3, M4A, AAC, WMA, WAV and FLAC files from a folder, independently of the screens. Add or remove songs in the folder; changes are picked up within minutes. Uses the PC's default audio output.</sys:String>
+    <sys:String x:Key="Music_Enabled" xml:space="preserve">Play background music</sys:String>
+    <sys:String x:Key="Music_PickFolder" xml:space="preserve">Choose the music folder</sys:String>
+    <sys:String x:Key="Music_ChangeFolder" xml:space="preserve">Choose folder</sys:String>
+    <sys:String x:Key="Music_Volume" xml:space="preserve">Volume</sys:String>
+    <sys:String x:Key="Music_During" xml:space="preserve">While a video with sound plays</sys:String>
+    <sys:String x:Key="Music_DuringLower" xml:space="preserve">Lower the music</sys:String>
+    <sys:String x:Key="Music_DuringPause" xml:space="preserve">Pause the music</sys:String>
+    <sys:String x:Key="Music_DuringIgnore" xml:space="preserve">Keep playing</sys:String>
+    <sys:String x:Key="Music_Shuffle" xml:space="preserve">Shuffle</sys:String>
+    <sys:String x:Key="Music_FollowHours" xml:space="preserve">Play only during opening hours</sys:String>
+    <sys:String x:Key="Music_Next" xml:space="preserve">Next song</sys:String>
+    <sys:String x:Key="Music_Playing" xml:space="preserve">Playing: {0} · {1} songs</sys:String>
+    <sys:String x:Key="Music_Off" xml:space="preserve">Off</sys:String>
+    <sys:String x:Key="Music_NoSongs" xml:space="preserve">No music files in the folder</sys:String>
+    <sys:String x:Key="Music_Waiting" xml:space="preserve">Plays when playback runs / during opening hours</sys:String>
+    <sys:String x:Key="Slide_TemplatePhoto" xml:space="preserve">Photo promo</sys:String>
+    <sys:String x:Key="Slide_TemplateHours" xml:space="preserve">Opening hours</sys:String>
+    <sys:String x:Key="Slide_TemplateCountdown" xml:space="preserve">Countdown / campaign</sys:String>
+    <sys:String x:Key="Slide_Photo" xml:space="preserve">Background photo (from the library)</sys:String>
+    <sys:String x:Key="Slide_NoPhoto" xml:space="preserve">No photo (colors only)</sys:String>
+    <sys:String x:Key="Slide_PhotoDim" xml:space="preserve">Darken the photo (for readable text)</sys:String>
+    <sys:String x:Key="Slide_CountdownTo" xml:space="preserve">Target day</sys:String>
+    <sys:String x:Key="Slide_CountdownHint" xml:space="preserve">The number of days left updates by itself every day. On the day it says &quot;Today!&quot;, afterwards &quot;Ended&quot;.</sys:String>
+    <sys:String x:Key="Slide_DaysLeft" xml:space="preserve">days left</sys:String>
+    <sys:String x:Key="Slide_DayLeft" xml:space="preserve">day left</sys:String>
+    <sys:String x:Key="Slide_Today" xml:space="preserve">Today!</sys:String>
+    <sys:String x:Key="Slide_Ended" xml:space="preserve">Ended</sys:String>
+    <sys:String x:Key="Slide_RowDay" xml:space="preserve">Day</sys:String>
+    <sys:String x:Key="Slide_RowHours" xml:space="preserve">Hours</sys:String>
+    <sys:String x:Key="Slide_HoursTitle" xml:space="preserve">Opening hours</sys:String>
+    <sys:String x:Key="Slide_HoursWeekdays" xml:space="preserve">Monday – Friday</sys:String>
+    <sys:String x:Key="Slide_HoursSaturday" xml:space="preserve">Saturday</sys:String>
+    <sys:String x:Key="Slide_HoursSunday" xml:space="preserve">Sunday</sys:String>
+    <sys:String x:Key="Alert_Button" xml:space="preserve">Notice</sys:String>
+    <sys:String x:Key="Alert_Tooltip" xml:space="preserve">Show a full-screen notice on all screens</sys:String>
+    <sys:String x:Key="Alert_Title" xml:space="preserve">Emergency notice</sys:String>
+    <sys:String x:Key="Alert_Description" xml:space="preserve">Shown full screen on every screen, above the content and the closed-hours screen. When the time is up, playback continues where it was.</sys:String>
+    <sys:String x:Key="Alert_Quick" xml:space="preserve">Quick texts</sys:String>
+    <sys:String x:Key="Alert_QuickClosed" xml:space="preserve">We are closed today</sys:String>
+    <sys:String x:Key="Alert_QuickBack" xml:space="preserve">Back in a few minutes</sys:String>
+    <sys:String x:Key="Alert_QuickOrder" xml:space="preserve">Your order is ready</sys:String>
+    <sys:String x:Key="Alert_QuickWifi" xml:space="preserve">Ask at the counter for Wi-Fi</sys:String>
+    <sys:String x:Key="Alert_Heading" xml:space="preserve">Heading</sys:String>
+    <sys:String x:Key="Alert_Message" xml:space="preserve">Text (optional)</sys:String>
+    <sys:String x:Key="Alert_Duration" xml:space="preserve">Duration</sys:String>
+    <sys:String x:Key="Alert_Style" xml:space="preserve">Look</sys:String>
+    <sys:String x:Key="Alert_StyleInfo" xml:space="preserve">Info (purple)</sys:String>
+    <sys:String x:Key="Alert_StyleUrgent" xml:space="preserve">Urgent (red)</sys:String>
+    <sys:String x:Key="Alert_5min" xml:space="preserve">5 minutes</sys:String>
+    <sys:String x:Key="Alert_15min" xml:space="preserve">15 minutes</sys:String>
+    <sys:String x:Key="Alert_30min" xml:space="preserve">30 minutes</sys:String>
+    <sys:String x:Key="Alert_60min" xml:space="preserve">1 hour</sys:String>
+    <sys:String x:Key="Alert_UntilRemoved" xml:space="preserve">Until removed</sys:String>
+    <sys:String x:Key="Alert_Show" xml:space="preserve">Show on screens</sys:String>
+    <sys:String x:Key="Alert_Clear" xml:space="preserve">Remove notice</sys:String>
+    <sys:String x:Key="Alert_Active" xml:space="preserve">Notice on screens: {0}</sys:String>
+    <sys:String x:Key="Alert_Until" xml:space="preserve">until {0}</sys:String>
+    <sys:String x:Key="Web_SlideCreated" xml:space="preserve">Slide created: {0}</sys:String>
+    <sys:String x:Key="Stats_Last30" xml:space="preserve">Last 30 days: {0} plays · {1}</sys:String>
+    <sys:String x:Key="Stats_Top" xml:space="preserve">Top 10 media</sys:String>
+    <sys:String x:Key="Stats_PerDay" xml:space="preserve">Plays per day</sys:String>
+    <sys:String x:Key="Stats_Refresh" xml:space="preserve">Refresh</sys:String>
+    <sys:String x:Key="Stats_Empty" xml:space="preserve">No plays recorded yet. The chart appears here once playback runs.</sys:String>
+    <sys:String x:Key="Common_Close" xml:space="preserve">Close</sys:String>
+    <sys:String x:Key="Slide_RemoveRow" xml:space="preserve">Remove row</sys:String>
+    <sys:String x:Key="AutoBackup_Enabled" xml:space="preserve">Back up automatically (to a folder or USB stick)</sys:String>
+    <sys:String x:Key="AutoBackup_PickFolder" xml:space="preserve">Choose the folder for automatic backups</sys:String>
+    <sys:String x:Key="AutoBackup_Daily" xml:space="preserve">Every day</sys:String>
+    <sys:String x:Key="AutoBackup_Weekly" xml:space="preserve">Every week</sys:String>
+    <sys:String x:Key="AutoBackup_Monthly" xml:space="preserve">Every month</sys:String>
+    <sys:String x:Key="AutoBackup_Keep2" xml:space="preserve">Keep the last 2</sys:String>
+    <sys:String x:Key="AutoBackup_Keep4" xml:space="preserve">Keep the last 4</sys:String>
+    <sys:String x:Key="AutoBackup_Keep8" xml:space="preserve">Keep the last 8</sys:String>
+    <sys:String x:Key="AutoBackup_Keep12" xml:space="preserve">Keep the last 12</sys:String>
+    <sys:String x:Key="AutoBackup_Now" xml:space="preserve">Back up now</sys:String>
+    <sys:String x:Key="AutoBackup_Running" xml:space="preserve">Backing up…</sys:String>
+    <sys:String x:Key="AutoBackup_Last" xml:space="preserve">Last automatic backup: {0}</sys:String>
+    <sys:String x:Key="AutoBackup_Never" xml:space="preserve">No automatic backup yet</sys:String>
+    <sys:String x:Key="AutoBackup_Done" xml:space="preserve">Backup written: {0}</sys:String>
+    <sys:String x:Key="AutoBackup_Failed" xml:space="preserve">Automatic backup failed: {0}</sys:String>
+    <sys:String x:Key="AutoBackup_FolderMissing" xml:space="preserve">Backup folder not found (USB stick plugged in?): {0}. Will try again later.</sys:String>
+    <sys:String x:Key="AutoBackup_Hint" xml:space="preserve">With opening hours set, backups run during closed hours. Backups you made by hand are never deleted.</sys:String>
+    <sys:String x:Key="Diagnostics_Create" xml:space="preserve">Create diagnostics package</sys:String>
+    <sys:String x:Key="Diagnostics_Hint" xml:space="preserve">Logs, settings and system info in one zip (PINs and Wi-Fi passwords hidden, no media). Send it when asking for help.</sys:String>
+    <sys:String x:Key="Diagnostics_FileType" xml:space="preserve">Diagnostics package</sys:String>
+    <sys:String x:Key="Diagnostics_Created" xml:space="preserve">Diagnostics package created:&#10;{0}</sys:String>
+    <sys:String x:Key="Diagnostics_Failed" xml:space="preserve">Diagnostics package failed: {0}</sys:String>
+    <sys:String x:Key="Update_WhatsNew" xml:space="preserve">What's new in this version</sys:String>
+    <sys:String x:Key="WhatsNew_Banner" xml:space="preserve">Kodiz Signage was updated to {0}.</sys:String>
+    <sys:String x:Key="WhatsNew_Show" xml:space="preserve">What's new</sys:String>
+    <sys:String x:Key="WhatsNew_Title" xml:space="preserve">What's new in {0}</sys:String>
+    <sys:String x:Key="WhatsNew_Text" xml:space="preserve">• Time-of-day lists: Screens › List › &quot;Time-of-day list&quot; (e.g. Breakfast 08–12).&#10;• Background music: General › Background music.&#10;• Photo slides and new templates: photo promo, opening hours, countdown.&#10;• Emergency notice: the &quot;Notice&quot; button at the top right (also from the phone).&#10;• Phone panel: notices, ticker, quick slides, music.&#10;• Statistics chart, automatic backups and a diagnostics package (General tab).&#10;• PIN: locks when minimized or idle; &quot;Lock now&quot; at the top right.&#10;• Touch: drag rows by their handle to reorder.</sys:String>
 </ResourceDictionary>

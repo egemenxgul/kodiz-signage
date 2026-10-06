@@ -51,6 +51,13 @@ input[type=password],input[type=tel]{width:100%;font:inherit;font-size:22px;lett
 .progress{height:6px;background:var(--btn);border-radius:3px;overflow:hidden;margin-top:8px;display:none}
 .progress div{height:100%;width:0;background:var(--accent)}
 .hidden{display:none!important}
+input[type=text],select,textarea{width:100%;font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input);color:var(--text);min-height:44px}
+textarea{min-height:70px;resize:vertical}
+.stack>*+*{margin-top:8px}
+.alert{background:linear-gradient(135deg,#991b1b,#dc2626);color:#fff;border:0}
+.alert .muted{color:#fde2e2}
+.thumb{width:96px;height:54px;object-fit:cover;border-radius:8px;background:#000;flex:none}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:20px;background:var(--chipon);color:var(--chiptext);margin-top:4px}
 </style>
 </head>
 <body>
@@ -69,8 +76,31 @@ input[type=password],input[type=tel]{width:100%;font:inherit;font-size:22px;lett
     <div class="grow"><div id="runText" style="font-weight:600"></div><div class="muted" id="summary"></div></div>
     <button class="primary" id="toggle"></button>
   </div>
+  <div id="alertActive" class="card alert hidden">
+    <div class="row"><div class="grow"><div style="font-weight:700" id="alertActiveTitle"></div><div class="muted" id="alertActiveText"></div></div>
+    <button id="alertClear" data-t="alertClear"></button></div>
+  </div>
+  <h2 data-t="alertTitle"></h2>
+  <div class="card stack" id="alertForm">
+    <div class="chips" id="alertQuick"></div>
+    <input type="text" id="alertText" maxlength="80">
+    <div class="row"><select id="alertMinutes" class="grow"></select>
+      <label class="row" style="gap:6px"><span class="muted" data-t="urgent"></span><span class="switch"><input type="checkbox" id="alertUrgent"><span></span></span></label></div>
+    <button class="primary" id="alertSend" data-t="alertSend"></button>
+  </div>
   <h2 data-t="screens"></h2>
   <div id="screens"></div>
+  <div id="musicCard" class="hidden">
+    <h2 data-t="music"></h2>
+    <div class="card row"><div class="grow"><div id="musicSong" class="ellipsis"></div></div>
+      <button id="musicNext" data-t="next"></button><span id="musicSwitch"></span></div>
+  </div>
+  <h2 data-t="quickSlide"></h2>
+  <div class="card stack">
+    <input type="text" id="slideTitle" maxlength="80">
+    <textarea id="slideBody" maxlength="300"></textarea>
+    <div class="row"><select id="slideTheme" class="grow"></select><button class="primary" id="slideCreate" data-t="create"></button></div>
+  </div>
   <h2 data-t="library"></h2>
   <div class="card">
     <div class="row"><div class="grow muted" data-t="uploadHint"></div>
@@ -83,16 +113,22 @@ input[type=password],input[type=tel]{width:100%;font:inherit;font-size:22px;lett
 </div>
 <div id="toast"></div>
 <script>
-const T={tr:{title:"Kodiz Signage",pinHint:"Bilgisayardaki Ayarlar › Genel › Telefondan yönetim bölümünde belirlediğiniz PIN'i girin.",signIn:"Giriş",signOut:"Çıkış",wrongPin:"PIN yanlış",locked:"Çok fazla deneme. {0} sn bekleyin.",screens:"Ekranlar",library:"Medya",playing:"Gösterim açık",stopped:"Gösterim durdu",start:"Başlat",stop:"Durdur",next:"Sonraki",onScreens:"{0} ekran · {1} medya",upload:"Yükle",uploadHint:"Telefondan resim, video veya PDF ekleyin. Yeni medya 'otomatik ekle' açık ekranlara gelir.",uploading:"Yükleniyor {0}/{1}: {2}",uploaded:"Yüklendi",deleteConfirm:"\"{0}\" silinsin mi? Tüm ekranlardan kaldırılır.",off:"Kapalı",active:"Etkin",notPlaying:"Şu an oynamıyor",empty:"Kütüphane boş",offline:"Bağlantı yok – yeniden deneniyor…",error:"İşlem başarısız"},
-en:{title:"Kodiz Signage",pinHint:"Enter the PIN set on the PC under Settings › General › Phone control.",signIn:"Sign in",signOut:"Sign out",wrongPin:"Wrong PIN",locked:"Too many attempts. Wait {0} s.",screens:"Screens",library:"Media",playing:"Playing",stopped:"Stopped",start:"Start",stop:"Stop",next:"Next",onScreens:"{0} screens · {1} media",upload:"Upload",uploadHint:"Add images, videos or PDFs from your phone. New media goes to screens with 'add automatically' on.",uploading:"Uploading {0}/{1}: {2}",uploaded:"Uploaded",deleteConfirm:"Delete \"{0}\"? It is removed from all screens.",off:"Off",active:"Active",notPlaying:"Not playing now",empty:"The library is empty",offline:"Offline – retrying…",error:"Action failed"}};
+const T={tr:{title:"Kodiz Signage",pinHint:"Bilgisayardaki Ayarlar › Genel › Telefondan yönetim bölümünde belirlediğiniz PIN'i girin.",signIn:"Giriş",signOut:"Çıkış",wrongPin:"PIN yanlış",locked:"Çok fazla deneme. {0} sn bekleyin.",screens:"Ekranlar",library:"Medya",playing:"Gösterim açık",stopped:"Gösterim durdu",start:"Başlat",stop:"Durdur",next:"Sonraki",onScreens:"{0} ekran · {1} medya",upload:"Yükle",uploadHint:"Telefondan resim, video veya PDF ekleyin. Yeni medya 'otomatik ekle' açık ekranlara gelir.",uploading:"Yükleniyor {0}/{1}: {2}",uploaded:"Yüklendi",deleteConfirm:"\"{0}\" silinsin mi? Tüm ekranlardan kaldırılır.",off:"Kapalı",active:"Etkin",notPlaying:"Şu an oynamıyor",empty:"Kütüphane boş",offline:"Bağlantı yok – yeniden deneniyor…",error:"İşlem başarısız",alertTitle:"Acil duyuru",alertPh:"Duyuru metni (ör. Bugün kapalıyız)",alertSend:"Tüm ekranlarda göster",alertClear:"Kaldır",urgent:"Acil (kırmızı)",until:"{0}'a kadar",untilRemoved:"Kaldırılana kadar",min:"{0} dakika",q1:"Bugün kapalıyız",q2:"Birazdan döneceğiz",q3:"Siparişiniz hazır",ticker:"Kayan yazı",save:"Kaydet",saved:"Kaydedildi",music:"Arka plan müziği",musicOff:"Müzik kapalı",quickSlide:"Hızlı slayt",slideTitlePh:"Başlık",slideBodyPh:"Metin (isteğe bağlı)",create:"Oluştur",list:"Liste: {0}",themes:["Gece","Kahve","Taze","Böğürtlen","Okyanus","Kağıt","Siyah"]},
+en:{title:"Kodiz Signage",pinHint:"Enter the PIN set on the PC under Settings › General › Phone control.",signIn:"Sign in",signOut:"Sign out",wrongPin:"Wrong PIN",locked:"Too many attempts. Wait {0} s.",screens:"Screens",library:"Media",playing:"Playing",stopped:"Stopped",start:"Start",stop:"Stop",next:"Next",onScreens:"{0} screens · {1} media",upload:"Upload",uploadHint:"Add images, videos or PDFs from your phone. New media goes to screens with 'add automatically' on.",uploading:"Uploading {0}/{1}: {2}",uploaded:"Uploaded",deleteConfirm:"Delete \"{0}\"? It is removed from all screens.",off:"Off",active:"Active",notPlaying:"Not playing now",empty:"The library is empty",offline:"Offline – retrying…",error:"Action failed",alertTitle:"Emergency notice",alertPh:"Notice text (e.g. We are closed today)",alertSend:"Show on all screens",alertClear:"Remove",urgent:"Urgent (red)",until:"until {0}",untilRemoved:"Until removed",min:"{0} minutes",q1:"We are closed today",q2:"Back in a few minutes",q3:"Your order is ready",ticker:"Ticker",save:"Save",saved:"Saved",music:"Background music",musicOff:"Music off",quickSlide:"Quick slide",slideTitlePh:"Title",slideBodyPh:"Text (optional)",create:"Create",list:"List: {0}",themes:["Night","Coffee","Fresh","Berry","Ocean","Paper","Black"]}};
 let lang=(navigator.language||"tr").toLowerCase().startsWith("tr")?"tr":"en";
 const $=id=>document.getElementById(id);
 const t=(k,...a)=>(T[lang][k]||k).replace(/\{(\d)\}/g,(_,i)=>a[i]);
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
-function applyTexts(){document.documentElement.lang=lang;document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t))}
+function applyTexts(){document.documentElement.lang=lang;document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));
+ $("alertText").placeholder=t("alertPh");$("slideTitle").placeholder=t("slideTitlePh");$("slideBody").placeholder=t("slideBodyPh");
+ const m=$("alertMinutes");m.replaceChildren();for(const v of [5,15,30,60,0]){const o=el("option",null,v?t("min",v):t("untilRemoved"));o.value=v;if(v===15)o.selected=true;m.append(o)}
+ const th=$("slideTheme");th.replaceChildren();T[lang].themes.forEach((n,i)=>{const o=el("option",null,n);o.value=i;th.append(o)});
+ const q=$("alertQuick");q.replaceChildren();for(const k of ["q1","q2","q3"]){const b=el("button","chip",t(k));b.onclick=()=>{$("alertText").value=t(k)};q.append(b)}}
 let toastTimer;function toast(m){const x=$("toast");x.textContent=m;x.style.display="block";clearTimeout(toastTimer);toastTimer=setTimeout(()=>x.style.display="none",3000)}
 async function api(path,opts={}){const r=await fetch(path,{credentials:"same-origin",...opts,headers:{"X-Kodiz":"1",...(opts.headers||{})}});
  if(r.status===401&&path!=="/api/login"){showLogin();throw new Error("auth")}return r}
+async function postJson(path,data,okMsg){try{const r=await api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!r.ok)throw 0;
+ const j=await r.json().catch(()=>({}));toast(j.message||okMsg||t("saved"));await refresh()}catch(e){if(e.message!=="auth")toast(t("error"))}}
 async function post(path){try{const r=await api(path,{method:"POST"});if(!r.ok)throw 0;await refresh()}catch(e){if(e.message!=="auth")toast(t("error"))}}
 function showLogin(){$("app").classList.add("hidden");$("login").classList.remove("hidden");$("pin").focus()}
 function showApp(){$("login").classList.add("hidden");$("app").classList.remove("hidden")}
@@ -101,18 +137,36 @@ $("loginForm").onsubmit=async e=>{e.preventDefault();$("loginError").textContent
  if(r.ok){$("pin").value="";showApp();refresh(true)}else{const j=await r.json().catch(()=>({}));$("loginError").textContent=j.error==="locked"?t("locked",j.wait):t("wrongPin")}};
 $("logout").onclick=async()=>{await api("/api/logout",{method:"POST"}).catch(()=>{});showLogin()};
 $("toggle").onclick=()=>post("/api/toggle");
+$("alertSend").onclick=()=>{const txt=$("alertText").value.trim();if(!txt){$("alertText").focus();return}
+ postJson("/api/alert",{title:txt,message:"",urgent:$("alertUrgent").checked,minutes:+$("alertMinutes").value});$("alertText").value=""};
+$("alertClear").onclick=()=>post("/api/alert/clear");
+$("musicNext").onclick=()=>post("/api/music/next");
+$("slideCreate").onclick=()=>{const ti=$("slideTitle").value.trim();if(!ti){$("slideTitle").focus();return}
+ postJson("/api/slide",{title:ti,body:$("slideBody").value,theme:+$("slideTheme").value});$("slideTitle").value="";$("slideBody").value=""};
 let status=null,library=[];
 function switchEl(checked,onchange){const l=el("label","switch"),i=el("input");i.type="checkbox";i.checked=checked;i.onchange=()=>onchange(i.checked);l.append(i,el("span"));return l}
 function renderStatus(){const s=status;if(!s)return;if(s.language&&T[s.language]&&lang!==s.language){lang=s.language;applyTexts()}
  $("runDot").className="dot"+(s.running?" on":"");$("runText").textContent=s.running?t("playing"):t("stopped");
  $("summary").textContent=t("onScreens",s.screens.filter(x=>x.enabled).length,s.mediaCount);
  $("toggle").textContent=s.running?t("stop"):t("start");
- const box=$("screens");box.replaceChildren();
+ const al=s.alert;$("alertActive").classList.toggle("hidden",!al);
+ if(al){$("alertActiveTitle").textContent=al.title||al.message;$("alertActiveText").textContent=al.until?t("until",new Date(al.until).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})):t("untilRemoved")}
+ const mu=s.music;$("musicCard").classList.toggle("hidden",!mu);
+ if(mu){$("musicSong").textContent=mu.playing&&mu.song?"♪ "+mu.song:(mu.enabled?"…":t("musicOff"));$("musicNext").disabled=!mu.playing;
+  $("musicSwitch").replaceChildren(switchEl(mu.enabled,on=>post("/api/music?on="+(on?1:0))))}
+ const box=$("screens");if(box.contains(document.activeElement)&&document.activeElement.tagName==="INPUT")return; // Don't wipe text being typed.
+ box.replaceChildren();
  for(const sc of s.screens){const c=el("div","card"),r=el("div","row");
   const d=el("div","dot"+(sc.enabled&&s.running?" on":""));const info=el("div","grow");
   info.append(el("div","ellipsis",sc.name),el("div","muted ellipsis",sc.enabled?(sc.nowPlaying||sc.status):t("off")));
   const nx=el("button",null,t("next"));nx.disabled=!s.running||!sc.enabled;nx.onclick=()=>post("/api/next?screen="+sc.number);
-  r.append(d,info,nx,switchEl(sc.enabled,on=>post(`/api/screen?n=${sc.number}&on=${on?1:0}`)));c.append(r);box.append(c)}}
+  if(sc.nowPlayingId&&sc.enabled&&s.running){const im=el("img","thumb");im.alt="";im.src="/api/thumb?id="+sc.nowPlayingId;r.prepend(im)}else{r.prepend(d)}
+  if(sc.activeList)info.append(el("span","pill",t("list",sc.activeList)));
+  r.append(info,nx,switchEl(sc.enabled,on=>post(`/api/screen?n=${sc.number}&on=${on?1:0}`)));c.append(r);
+  const tk=el("div","row");tk.style.marginTop="10px";const ti=el("input");ti.type="text";ti.maxLength=200;ti.value=sc.ticker||"";ti.placeholder=t("ticker");ti.className="grow";
+  let tickerOn=sc.tickerOn;const sw=switchEl(sc.tickerOn,on=>{tickerOn=on;postJson("/api/ticker?n="+sc.number,{text:ti.value,on})});
+  const sv=el("button",null,t("save"));sv.onclick=()=>postJson("/api/ticker?n="+sc.number,{text:ti.value,on:tickerOn||ti.value.trim().length>0});
+  tk.append(ti,sv,sw);c.append(tk);box.append(c)}}
 function renderLibrary(){const box=$("library");box.replaceChildren();if(!library.length){box.append(el("div","muted",t("empty")));return}
  const screens=status?status.screens:[];
  for(const m of library){const row=el("div","media"),img=el("img");img.loading="lazy";img.alt="";img.src="/api/thumb?id="+m.id;

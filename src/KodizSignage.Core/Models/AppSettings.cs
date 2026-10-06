@@ -60,6 +60,9 @@ public sealed record AppSettings
     /// <summary>"salt:hash" of the settings PIN, null when no PIN is set.</summary>
     public string? PinHash { get; init; }
 
+    /// <summary>With a PIN: lock the settings after this many minutes without input (0 = only when closed).</summary>
+    public int PinAutoLockMinutes { get; init; } = 5;
+
     /// <summary>The "still running in the background" notification was shown once.</summary>
     public bool TrayHintShown { get; init; }
 
@@ -83,6 +86,10 @@ public sealed record AppSettings
 
     public DateTime? LastUpdateCheck { get; init; }
 
+    public MusicSettings Music { get; init; } = new();
+
+    public AutoBackupSettings AutoBackup { get; init; } = new();
+
     public const int DefaultWebPanelPort = 8787;
 
     /// <summary>Phone control over the local network (needs <see cref="WebPanelPinHash"/>).</summary>
@@ -92,6 +99,9 @@ public sealed record AppSettings
 
     /// <summary>"salt:hash" of the phone panel PIN.</summary>
     public string? WebPanelPinHash { get; init; }
+
+    /// <summary>The version whose "what's new" the user has seen (shown once after an update).</summary>
+    public string? LastSeenVersion { get; init; }
 
     /// <summary>The first-run wizard was completed or skipped.</summary>
     public bool WizardDone { get; init; }
@@ -114,6 +124,9 @@ public sealed record AppSettings
         Scaling = Enum.IsDefined(Scaling) ? Scaling : ScalingMode.Fit,
         Language = Enum.IsDefined(Language) ? Language : AppLanguage.Auto,
         Theme = Enum.IsDefined(Theme) ? Theme : AppTheme.System,
+        PinAutoLockMinutes = Math.Clamp(PinAutoLockMinutes, 0, 240),
+        Music = (Music ?? new MusicSettings()).Normalize(),
+        AutoBackup = (AutoBackup ?? new AutoBackupSettings()).Normalize(),
         Hotkeys = (Hotkeys ?? HotkeySettings.Defaults).Normalize(),
         DisplayFallback = Enum.IsDefined(DisplayFallback) ? DisplayFallback : DisplayFallback.Hide,
         OperatingHours = (OperatingHours ?? new OperatingHours()).Normalize(),

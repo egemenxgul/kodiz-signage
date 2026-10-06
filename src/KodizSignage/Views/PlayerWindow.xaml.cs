@@ -20,6 +20,7 @@ public partial class PlayerWindow : Window
 {
     private readonly ILogger _log;
     private readonly OverlayLayer _overlays;
+    private readonly AlertLayer _alert;
     private DisplayInfo? _target;
     private int _rotation;
 
@@ -31,6 +32,7 @@ public partial class PlayerWindow : Window
         ScreenNumber = screenNumber;
         _overlays = new OverlayLayer(OverlayHost, _log);
         LongPress = new LongPressDetector(Root, TouchLayer) { IsEnabled = !preview };
+        _alert = new AlertLayer(AlertHost);
         Closed += (_, _) => _overlays.Stop();
 
         var layerA = new MediaLayer("A", LayerA, ImageA, VideoA, _log) { ForceMute = preview };
@@ -86,6 +88,8 @@ public partial class PlayerWindow : Window
             Background = Brushes.Black;
         }
     }
+
+    public void ShowAlert(ScreenAlert? alert) => _alert.Show(alert);
 
     /// <summary>Clock / ticker / logo on top of the content.</summary>
     public void ApplyOverlays(ScreenOverlays overlays, string? logoPath, CultureInfo culture) =>

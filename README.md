@@ -21,9 +21,12 @@ kendi medyasını oynatabilir. İnternet gerektirmez.
 | Slayt oluşturucu | Dosya olmadan **duyuru, fiyat listesi/menü ve QR kod** (bağlantı, metin, Wi-Fi) slaytları; hazır temalar, renk seçici, dikey ekran, canlı önizleme; sonradan düzenlenebilir |
 | Ekran üstü | Ekran başına **saat/tarih**, **kayan yazı** ve **logo** (konum, boyut, saydamlık, renk) |
 | Kütüphane | Her dosya diskte **bir kez** saklanır, ekranlar paylaşır; arama, **filtre** (resim/video/slayt/hiçbir ekranda olmayan/uyarılı/şu an oynamayan), **sıralama** (ad, en yeni, en büyük), görünen ad, varsayılan süre/plan, 10 sn içinde geri alınabilir silme |
-| İstatistik | Hangi medyanın hangi ekranda kaç kez ve ne kadar gösterildiği (90 gün); **CSV** (Excel) dışa aktarma |
+| İstatistik | Hangi medyanın hangi ekranda kaç kez ve ne kadar gösterildiği (90 gün); son 30 gün **grafiği**; **CSV** (Excel) dışa aktarma |
 | Arayüz | Aydınlık / koyu / Windows ile aynı tema (başlık çubuğu dahil, anında değişir); dokunmatik için büyük dokunma alanları, parmakla kaydırma, ekran üstü PIN tuş takımı, **ekrana 2 sn basılı tutunca ayarlar** |
 | Telefondan yönetim | Aynı Wi-Fi'daki telefondan PIN ile giriş: gösterimi başlat/durdur, ekranları aç/kapat, sonraki öğe, medya yükle, aktif/pasif, ekran ataması, silme. QR kodla açılır; internet gerekmez |
+| Saate göre listeler | Ekran başına "Kahvaltı 08–12", "Öğle 12–17" gibi **saat listeleri**; gün/saatinde ana listenin yerine kendiliğinden oynar |
+| Arka plan müziği | Klasörden müzik; sesli videoda kısılır/duraklar, istenirse yalnızca çalışma saatlerinde |
+| Acil duyuru | Tek tuşla (veya telefondan) tüm ekranlarda tam ekran duyuru; süre dolunca gösterim devam eder |
 | Ekran listeleri | Her ekranın **kendi oynatma listesi**: bağımsız sıra, süre, aktif/pasif, geçiş, tarih ve gün/saat planı; aynı medya bir listede birden çok kez; başka ekrandan kopyala, listeyi bağla, **senkron oynat** |
 | Kopya kontrolü | Birebir aynı dosya (SHA-256), görsel olarak aynı resim (algısal parmak izi), muhtemelen aynı video ve aynı ad/yeni sürüm tespit edilir; ne yapılacağı sorulur |
 | Planlama | Öğe başına tarih aralığı + gün + saat (gece yarısını geçebilir); genel **çalışma saatleri** (dışında siyah ekran) |
@@ -77,6 +80,27 @@ bunu anlatan bir Windows bildirimi gösterilir.
   LibreOffice varsa otomatik PDF'e çevrilip sayfa sayfa eklenir; yoksa sunumu PDF olarak kaydedip ekleyin.
   **Video:** H.264 MP4/MOV önerilir. HEVC, 4K ve eksik HEIC/WEBP/AVIF codec'i için uyarı verilir.
 
+### Saate göre listeler (Ekranlar › Liste)
+
+Ekran listesinin üstündeki **Ana liste | Saat listesi** sekmeleriyle her ekrana ayrı saat listeleri
+eklenir (ör. "Kahvaltı" Pzt–Cum 08:00–12:00). Liste adı, günleri ve saatleri sekmenin altında
+düzenlenir; **Ana listeyi buraya kopyala** ile hızlı başlanır. O saatlerde ekran ana liste yerine bu
+listeyi oynatır, diğer saatlerde ana liste oynar. Saatler gece yarısını geçebilir; çakışırsa önce
+başlayan geçerlidir. Başka bir ekranın listesini oynatan (bağlı) ekranlar onun saat listelerini de izler.
+Yeşil nokta şu an oynayan listeyi gösterir.
+
+### Arka plan müziği (Genel sekmesi)
+
+Bir klasördeki MP3, M4A, AAC, WMA, WAV ve FLAC dosyalarını çalar (alt klasörler dahil, karışık veya
+sıralı). Sesli bir video oynarken müzik **kısılır**, **duraklar** veya değişmez (seçilebilir). Gösterim
+durunca ve istenirse çalışma saatleri dışında susar. Klasöre şarkı eklemek yeterlidir.
+
+### Acil duyuru
+
+Ayarların sağ üstündeki **Duyuru** butonu (veya telefon paneli) tüm ekranlarda, içeriğin ve kapalı saat
+ekranının üstünde tam ekran bir mesaj gösterir ("Bugün kapalıyız", "Siparişiniz hazır"). Süre
+(5 dk – 1 saat ya da kaldırılana kadar) dolunca gösterim kaldığı yerden devam eder.
+
 ### Slayt oluşturucu
 
 **Slayt oluştur** butonu (Kütüphane ve ekran listeleri) dosya gerektirmeyen slaytlar hazırlar:
@@ -85,6 +109,10 @@ bunu anlatan bir Windows bildirimi gösterilir.
 - **Fiyat listesi / menü:** Ürün, fiyat ve isteğe bağlı açıklama satırları; 7'den fazla satırda iki sütun.
 - **QR kod:** Bağlantı (menü, Instagram, Google yorum), serbest metin veya **Wi-Fi ağı** (misafir telefonu
   okutunca şifresiz bağlanır).
+- **Fotoğraflı tanıtım:** Tam ekran ürün fotoğrafı, altta başlık ve metin.
+- **Çalışma saatleri:** Gün / saat satırları.
+- **Geri sayım / kampanya:** "12 gün kaldı"; her gün kendiliğinden yeniden çizilir, günü gelince "Bugün!".
+- Her şablona kütüphaneden **arka plan fotoğrafı** (okunabilirlik için karartma ayarıyla) eklenebilir.
 
 Hazır temalar ve renk seçici (palet + detaylı seçim + HEX), dikey ekran (1080 × 1920) ve yazı boyutu
 ayarlanabilir. Slayt 1920 × 1080 PNG olarak kaydedilir; **Slaytı düzenle** ile değiştirildiğinde ekranlardaki
@@ -209,7 +237,13 @@ göster"** seçilebilir; ana ekran başka bir ekrana atanmamışsa kullanılır.
 
 ### Güvenlik ve yedekleme (Genel sekmesi)
 
-- **PIN:** Ayarları açmak, gösterimi durdurmak ve uygulamadan çıkmak PIN ister. 5 yanlış denemeden sonra 30 saniye beklenir.
+- **PIN:** Ayarları açmak (tepsi, kısayol, ekrana basılı tutma), gösterimi durdurmak, uygulamadan çıkmak,
+  tepsiden ekran kapatmak ve PIN'i değiştirmek/kaldırmak PIN ister. Ayarlar penceresi açıkken tekrar
+  sorulmaz; pencere **kapatılınca, küçültülünce veya seçilen süre (varsayılan 5 dk) kullanılmayınca**
+  kilitlenir. Sağ üstteki kilit simgesi hemen kilitler. 5 yanlış denemeden sonra 30 saniye beklenir.
+- **Otomatik yedek:** Günlük, haftalık veya aylık olarak bir klasöre/USB belleğe; son 2–12 yedek saklanır,
+  elle alınan yedeklere dokunulmaz. Çalışma saatleri varsa kapalı saatlerde alınır.
+- **Tanı paketi:** Loglar, ayarlar ve sistem bilgisi tek zip'te (PIN'ler ve Wi-Fi şifreleri gizlenir).
   PIN unutulursa `settings.json` dosyasındaki `"pinHash"` satırı silinir.
 - **Yedekle / geri yükle:** Ayarlar, liste ve tüm medya tek bir `.zip` dosyasına yazılır. Yeni PC'ye geçişte geri yüklenir; uygulama ardından kendini yeniden başlatır.
 

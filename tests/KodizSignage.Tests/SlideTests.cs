@@ -61,3 +61,37 @@ public class SlideTests
         Assert.Null(themed.BackgroundColor2);
     }
 }
+
+public class SlideCountdownTests
+{
+    [Fact]
+    public void Days_left_counts_calendar_days()
+    {
+        var slide = new KodizSignage.Core.Models.SlideDefinition
+        {
+            Template = KodizSignage.Core.Models.SlideTemplate.Countdown,
+            CountdownTo = new DateTime(2026, 10, 20),
+        };
+        Assert.Equal(14, slide.DaysLeft(new DateTime(2026, 10, 6, 23, 59, 0)));
+        Assert.Equal(0, slide.DaysLeft(new DateTime(2026, 10, 20, 8, 0, 0)));
+        Assert.Equal(-1, slide.DaysLeft(new DateTime(2026, 10, 21)));
+    }
+
+    [Fact]
+    public void Countdown_needs_a_new_image_each_day_other_templates_never()
+    {
+        var today = new DateTime(2026, 10, 6, 10, 0, 0);
+        var slide = new KodizSignage.Core.Models.SlideDefinition { Template = KodizSignage.Core.Models.SlideTemplate.Countdown, RenderedFor = today.Date };
+        Assert.False(slide.NeedsDailyRender(today));
+        Assert.True(slide.NeedsDailyRender(today.AddDays(1)));
+        Assert.False((slide with { Template = KodizSignage.Core.Models.SlideTemplate.Photo }).NeedsDailyRender(today.AddDays(1)));
+    }
+
+    [Fact]
+    public void Image_dim_is_clamped_and_empty_image_ids_dropped()
+    {
+        var slide = new KodizSignage.Core.Models.SlideDefinition { ImageDim = 3, BackgroundImageId = Guid.Empty }.Normalize();
+        Assert.Equal(0.85, slide.ImageDim);
+        Assert.Null(slide.BackgroundImageId);
+    }
+}

@@ -39,15 +39,31 @@
                 <TextBox Text="{Binding Body, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" VerticalContentAlignment="Top" />
 
                 <!-- Price rows -->
-                <StackPanel Visibility="{Binding IsPriceList, Converter={StaticResource BoolToVis}}">
+                <!-- Countdown -->
+                <StackPanel Visibility="{Binding IsCountdown, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{DynamicResource Slide_CountdownTo}" Style="{StaticResource FieldLabel}" />
+                    <DatePicker SelectedDate="{Binding CountdownTo}" />
+                    <TextBlock Text="{DynamicResource Slide_CountdownHint}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                </StackPanel>
+
+                <StackPanel Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="{DynamicResource Slide_Rows}" Style="{StaticResource FieldLabel}" />
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="36" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding RowNameLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding RowPriceLabel}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="6,0,0,0" />
+                    </Grid>
                     <ItemsControl ItemsSource="{Binding Rows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:PriceRowViewModel}">
                                 <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="120" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
@@ -56,7 +72,7 @@
                                     </Grid.RowDefinitions>
                                     <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource Slide_RowName}" />
                                     <TextBox Grid.Column="1" Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Margin="6,0,0,0" ToolTip="{DynamicResource Slide_RowPrice}" />
-                                    <Button Grid.Column="2" Grid.RowSpan="2" Style="{StaticResource DangerIconButton}" Content="&#xE711;"
+                                    <Button Grid.Column="2" Grid.RowSpan="2" Style="{StaticResource DangerIconButton}" Content="&#xE711;" ToolTip="{DynamicResource Slide_RemoveRow}"
                                             Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
                                     <TextBox Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" FontSize="12"
                                              ToolTip="{DynamicResource Slide_RowNote}" />
@@ -84,6 +100,16 @@
                         <TextBlock Text="{DynamicResource Slide_WifiPassword}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding WifiPassword, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
+                </StackPanel>
+
+                <!-- Background photo -->
+                <TextBlock Text="{DynamicResource Slide_Photo}" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding Images}" DisplayMemberPath="Label" SelectedValuePath="Id" SelectedValue="{Binding BackgroundImageId}" />
+                <StackPanel Visibility="{Binding HasPhoto, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource FieldLabel}">
+                        <Run Text="{DynamicResource Slide_PhotoDim}" /><Run Text=": %" /><Run Text="{Binding ImageDimPercent, Mode=OneWay}" />
+                    </TextBlock>
+                    <Slider Minimum="0" Maximum="85" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding ImageDimPercent}" />
                 </StackPanel>
 
                 <!-- Look -->

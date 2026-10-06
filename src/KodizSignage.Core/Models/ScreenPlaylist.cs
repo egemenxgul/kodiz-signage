@@ -60,10 +60,41 @@ public sealed record ScreenEntry
     };
 }
 
-/// <summary>The playlist of one screen.</summary>
+/// <summary>
+/// The playlist of one screen, or one of its time-of-day lists ("Breakfast 08–12"). A time-of-day
+/// list has <see cref="ParentScreen"/> set and the key <c>screen × 100 + n</c>; while its day/time
+/// window is open the screen plays it instead of its main list.
+/// </summary>
 public sealed record ScreenPlaylist
 {
+    public const int DaypartFactor = 100;
+    public const int MaxDayparts = 20;
+
+    /// <summary>Screen number (1–16) or, for a time-of-day list, its key (screen × 100 + n).</summary>
     public int Screen { get; init; }
+
+    /// <summary>Set for time-of-day lists: the screen they belong to.</summary>
+    public int? ParentScreen { get; init; }
+
+    public string? Name { get; init; }
+
+    public WeekDays Days { get; init; } = WeekDays.All;
+
+    public TimeOnly? Start { get; init; }
+
+    public TimeOnly? End { get; init; }
+
+    [JsonIgnore]
+    public bool IsDaypart => ParentScreen is not null;
+
+    /// <summary>For time-of-day lists: open at <paramref name="now"/> (windows may cross midnight).</summary>
+    public bool IsActiveAt(DateTime now) => IsDaypart && Playback.ScheduleRules.IsInWindow(Days, Start, End, now);
+
+    public static int DaypartKey(int screen, int slot) => screen * DaypartFactor + slot;
+
+    /// <summary>The screen a list belongs to (itself for main lists).</summary>
+    [JsonIgnore]
+    public int OwnerScreen => ParentScreen ?? Screen;
 
     public EquatableList<ScreenEntry> Entries { get; init; } = EquatableList<ScreenEntry>.Empty;
 

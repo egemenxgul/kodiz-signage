@@ -15,10 +15,11 @@ public static class SlideRenderer
     private static readonly FontFamily Font = new("Segoe UI Variable Display, Segoe UI");
 
     /// <summary>Renders at full size (1920×1080 or 1080×1920), or scaled down for previews.</summary>
-    public static BitmapSource Render(SlideDefinition slide, double scale = 1.0)
+    /// <param name="imagePath">Resolves <see cref="SlideDefinition.BackgroundImageId"/> to a file.</param>
+    public static BitmapSource Render(SlideDefinition slide, double scale = 1.0, Func<Guid, string?>? imagePath = null)
     {
         slide = slide.Normalize();
-        var visual = Build(slide);
+        var visual = Build(slide, LoadBackground(slide, imagePath));
         var size = new Size(slide.PixelWidth, slide.PixelHeight);
         visual.Measure(size);
         visual.Arrange(new Rect(size));
@@ -32,16 +33,43 @@ public static class SlideRenderer
         return bitmap;
     }
 
-    public static byte[] RenderPng(SlideDefinition slide)
+    public static byte[] RenderPng(SlideDefinition slide, Func<Guid, string?>? imagePath = null)
     {
         var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(Render(slide)));
+        encoder.Frames.Add(BitmapFrame.Create(Render(slide, 1.0, imagePath)));
         using var stream = new System.IO.MemoryStream();
         encoder.Save(stream);
         return stream.ToArray();
     }
 
-    private static FrameworkElement Build(SlideDefinition slide)
+    private static BitmapSource? LoadBackground(SlideDefinition slide, Func<Guid, string?>? imagePath)
+    {
+        if (slide.BackgroundImageId is not { } id || imagePath?.Invoke(id) is not { } path || !System.IO.File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.UriSource = new Uri(path);
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.DecodePixelWidth = slide.PixelWidth;
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
+        catch (Exception)
+        {
+            return null; // Unreadable image: colors only.
+        }
+    }
+
+    private static string Text(string key, string fallback) =>
+        Application.Current?.TryFindResource(key) as string ?? fallback;
+
+    private static FrameworkElement Build(SlideDefinition slide, BitmapSource? photo)
     {
         var text = Brush(slide.TextColor);
         var accent = Brush(slide.AccentColor);
@@ -58,10 +86,29 @@ public static class SlideRenderer
             Background = background,
         };
 
+        if (photo is not null)
+        {
+            root.Children.Add(new Image { Source = photo, Stretch = Stretch.UniformToFill, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+            // Darken for readability; the photo template darkens mostly behind the text at the bottom.
+            root.Children.Add(new Rectangle
+            {
+                Fill = slide.Template == SlideTemplate.Photo
+                    ? new LinearGradientBrush(new GradientStopCollection
+                    {
+                        new(System.Windows.Media.Color.FromArgb((byte)(slide.ImageDim * 80), 0, 0, 0), 0),
+                        new(System.Windows.Media.Color.FromArgb((byte)(slide.ImageDim * 120), 0, 0, 0), 0.45),
+                        new(System.Windows.Media.Color.FromArgb((byte)Math.Min(255, slide.ImageDim * 255 + 60), 0, 0, 0), 1),
+                    }, new Point(0, 0), new Point(0, 1))
+                    : new SolidColorBrush(System.Windows.Media.Color.FromArgb((byte)(slide.ImageDim * 255), 0, 0, 0)),
+            });
+        }
+
         var content = slide.Template switch
         {
-            SlideTemplate.PriceList => BuildPriceList(slide, text, accent, k),
+            SlideTemplate.PriceList or SlideTemplate.OpeningHours => BuildPriceList(slide, text, accent, k),
             SlideTemplate.QrCode => BuildQr(slide, text, accent, k),
+            SlideTemplate.Photo => BuildPhoto(slide, text, accent, k),
+            SlideTemplate.Countdown => BuildCountdown(slide, text, accent, k),
             _ => BuildAnnouncement(slide, text, accent, k),
         };
 
@@ -86,6 +133,74 @@ public static class SlideRenderer
         }
 
         return panel;
+    }
+
+    private static FrameworkElement BuildPhoto(SlideDefinition slide, Brush text, Brush accent, double k)
+    {
+        var panel = new StackPanel { VerticalAlignment = VerticalAlignment.Bottom };
+        if (!string.IsNullOrWhiteSpace(slide.Subtitle))
+        {
+            panel.Children.Add(new Border
+            {
+                Background = accent,
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(22 * k, 8 * k, 22 * k, 8 * k),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Child = Text(slide.Subtitle.ToUpperInvariant(), 38 * k, Brush(Contrast(slide.AccentColor)), FontWeights.Bold, TextAlignment.Left, spacing: 4),
+            });
+        }
+
+        panel.Children.Add(Text(slide.Title, 120 * k, text, FontWeights.Bold, TextAlignment.Left, margin: new Thickness(0, 20, 0, 0)));
+        if (!string.IsNullOrWhiteSpace(slide.Body))
+        {
+            panel.Children.Add(Text(slide.Body, 52 * k, text, FontWeights.Normal, TextAlignment.Left, margin: new Thickness(0, 16, 0, 0), opacity: 0.95));
+        }
+
+        return panel;
+    }
+
+    private static FrameworkElement BuildCountdown(SlideDefinition slide, Brush text, Brush accent, double k)
+    {
+        var days = slide.DaysLeft(DateTime.Today);
+        var panel = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        if (!string.IsNullOrWhiteSpace(slide.Subtitle))
+        {
+            panel.Children.Add(Text(slide.Subtitle.ToUpperInvariant(), 44 * k, accent, FontWeights.SemiBold, TextAlignment.Center, spacing: 6));
+        }
+
+        panel.Children.Add(Text(slide.Title, 104 * k, text, FontWeights.Bold, TextAlignment.Center, margin: new Thickness(0, 12, 0, 24)));
+        var (big, label) = days switch
+        {
+            null => ("–", string.Empty),
+            > 0 => (days.Value.ToString(System.Globalization.CultureInfo.CurrentCulture), Text(days == 1 ? "Slide_DayLeft" : "Slide_DaysLeft", days == 1 ? "day left" : "days left")),
+            0 => (Text("Slide_Today", "Today!"), string.Empty),
+            _ => (Text("Slide_Ended", "Ended"), string.Empty),
+        };
+        panel.Children.Add(Text(big, (days > 0 ? 300 : 150) * k, accent, FontWeights.Black, TextAlignment.Center));
+        if (label.Length > 0)
+        {
+            panel.Children.Add(Text(label, 64 * k, text, FontWeights.SemiBold, TextAlignment.Center, margin: new Thickness(0, -10, 0, 0)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(slide.Body))
+        {
+            panel.Children.Add(Text(slide.Body, 48 * k, text, FontWeights.Normal, TextAlignment.Center, margin: new Thickness(0, 30, 0, 0), opacity: 0.9));
+        }
+
+        if (slide.CountdownTo is { } date)
+        {
+            panel.Children.Add(Text(date.ToString("D", System.Globalization.CultureInfo.CurrentUICulture), 38 * k, text, FontWeights.Normal, TextAlignment.Center,
+                margin: new Thickness(0, 18, 0, 0), opacity: 0.75));
+        }
+
+        return panel;
+    }
+
+    /// <summary>Black or white, whichever reads better on <paramref name="hex"/>.</summary>
+    private static string Contrast(string hex)
+    {
+        var c = Color(hex);
+        return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B > 160 ? "#111111" : "#FFFFFF";
     }
 
     private static FrameworkElement BuildPriceList(SlideDefinition slide, Brush text, Brush accent, double k)

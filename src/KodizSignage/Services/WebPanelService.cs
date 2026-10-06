@@ -42,6 +42,9 @@ public sealed class WebPanelService : IWebPanelService, IWebPanelBackend, IDispo
     private readonly ILogger _log;
     private readonly WebPanelServer _server;
     private readonly SemaphoreSlim _importLock = new(1, 1);
+    private readonly IAlertService _alerts;
+    private readonly ISlideService _slides;
+    private readonly IMusicService _music;
     private int _port;
 
     public WebPanelService(
@@ -52,8 +55,14 @@ public sealed class WebPanelService : IWebPanelService, IWebPanelBackend, IDispo
         IThumbnailService thumbnails,
         ILocalizationService loc,
         AppPaths paths,
+        IAlertService alerts,
+        ISlideService slides,
+        IMusicService music,
         ILogger log)
     {
+        _alerts = alerts;
+        _slides = slides;
+        _music = music;
         _settings = settings;
         _playlist = playlist;
         _playback = playback;
@@ -183,9 +192,15 @@ public sealed class WebPanelService : IWebPanelService, IWebPanelBackend, IDispo
                 ScreenStatus.Off => _loc.Get("Tray_ScreenOff"),
                 _ => _loc.Get("Status_Stopped"),
             };
-            return new WebScreen(s.Number, name, s.Enabled, status, state?.NowPlaying?.Item.Title);
+            return new WebScreen(s.Number, name, s.Enabled, status, state?.NowPlaying?.Item.Title,
+                state?.NowPlaying?.Item.LibraryId,
+                _playlist.GetActiveDaypart(s.Number, DateTime.Now)?.Name,
+                s.Overlays.TickerText,
+                s.Overlays.TickerEnabled);
         }).ToList();
-        return new WebStatus(_playback.IsRunning, _loc.CurrentCode, InstallService.CurrentVersion.ToString(3), screens, _playlist.Items.Count);
+        var alert = _alerts.Current is { } a ? new WebAlert(a.Title, a.Message, a.Style == AlertStyle.Urgent, a.Until) : null;
+        var music = new WebMusic(settings.Music.Enabled && settings.Music.Folder is not null, _music.IsPlaying, _music.CurrentSong);
+        return new WebStatus(_playback.IsRunning, _loc.CurrentCode, InstallService.CurrentVersion.ToString(3), screens, _playlist.Items.Count, alert, music);
     });
 
     public Task<IReadOnlyList<WebMedia>> GetLibraryAsync() => OnUi<IReadOnlyList<WebMedia>>(() =>
@@ -283,6 +298,30 @@ public sealed class WebPanelService : IWebPanelService, IWebPanelBackend, IDispo
         _log.Information("Web panel: deleting {Id}", id);
         _playlist.Remove(id);
     });
+
+    public Task ShowAlertAsync(string title, string message, bool urgent, int minutes) => OnUi(() =>
+        _alerts.Show(title, message, urgent ? AlertStyle.Urgent : AlertStyle.Info, minutes > 0 ? TimeSpan.FromMinutes(Math.Min(minutes, 24 * 60)) : null));
+
+    public Task ClearAlertAsync() => OnUi(_alerts.Clear);
+
+    public Task SetTickerAsync(int screen, string text, bool on) => OnUi(() =>
+        _settings.Update(s => s.GetScreen(screen) is { } config
+            ? s.WithScreen(config with { Overlays = config.Overlays with { TickerText = text, TickerEnabled = on } })
+            : s));
+
+    public Task<string> CreateSlideAsync(string title, string body, int theme) => OnUi(() =>
+    {
+        var themes = SlideThemes.All;
+        var slide = SlideThemes.Apply(new SlideDefinition { Title = title.Trim(), Body = body.Trim() }, themes[Math.Abs(theme) % themes.Count]);
+        var item = _slides.Create(slide);
+        _log.Information("Web panel: slide {Title} created", item.Title);
+        return _loc.Format("Web_SlideCreated", item.Title);
+    });
+
+    public Task SetMusicAsync(bool enabled) => OnUi(() =>
+        _settings.Update(s => s.Music.Folder is null ? s : s with { Music = s.Music with { Enabled = enabled } }));
+
+    public Task NextSongAsync() => OnUi(_music.Next);
 
     public async Task<WebUploadResult> ImportAsync(string path)
     {

@@ -10,6 +10,12 @@ public enum SlideTemplate
     PriceList,
     /// <summary>Title, text and a QR code (link, text or Wi-Fi).</summary>
     QrCode,
+    /// <summary>A full-screen photo with the title and text at the bottom.</summary>
+    Photo,
+    /// <summary>Days and hours as rows (uses <see cref="SlideDefinition.Rows"/>: day / hours).</summary>
+    OpeningHours,
+    /// <summary>"12 days left" until <see cref="SlideDefinition.CountdownTo"/>; re-rendered every day.</summary>
+    Countdown,
 }
 
 public enum QrContentKind
@@ -45,6 +51,24 @@ public sealed record SlideDefinition
     public string TextColor { get; init; } = "#FFFFFF";
     public string AccentColor { get; init; } = "#FBBF24";
 
+    /// <summary>Library image drawn behind the content (any template); null = colors only.</summary>
+    public Guid? BackgroundImageId { get; init; }
+
+    /// <summary>0–0.85: how much the background photo is darkened so the text stays readable.</summary>
+    public double ImageDim { get; init; } = 0.45;
+
+    /// <summary>Target day of the countdown template.</summary>
+    public DateTime? CountdownTo { get; init; }
+
+    /// <summary>The day the countdown image was drawn for (it is redrawn when the day changes).</summary>
+    public DateTime? RenderedFor { get; init; }
+
+    /// <summary>Whole days from <paramref name="today"/> to <see cref="CountdownTo"/> (negative = passed).</summary>
+    public int? DaysLeft(DateTime today) => CountdownTo is { } target ? (int)(target.Date - today.Date).TotalDays : null;
+
+    /// <summary>The countdown image is out of date.</summary>
+    public bool NeedsDailyRender(DateTime today) => Template == SlideTemplate.Countdown && RenderedFor?.Date != today.Date;
+
     /// <summary>1080×1920 instead of 1920×1080 (for portrait TVs).</summary>
     public bool Portrait { get; init; }
 
@@ -68,6 +92,8 @@ public sealed record SlideDefinition
         Template = Enum.IsDefined(Template) ? Template : SlideTemplate.Announcement,
         QrKind = Enum.IsDefined(QrKind) ? QrKind : QrContentKind.Link,
         TextScale = double.IsFinite(TextScale) ? Math.Clamp(TextScale, 0.6, 1.6) : 1.0,
+        ImageDim = double.IsFinite(ImageDim) ? Math.Clamp(ImageDim, 0, 0.85) : 0.45,
+        BackgroundImageId = BackgroundImageId == Guid.Empty ? null : BackgroundImageId,
         BackgroundColor = AppSettings.IsValidColor(BackgroundColor) ? BackgroundColor : "#1E1B4B",
         BackgroundColor2 = AppSettings.IsValidColor(BackgroundColor2) ? BackgroundColor2 : null,
         TextColor = AppSettings.IsValidColor(TextColor) ? TextColor : "#FFFFFF",

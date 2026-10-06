@@ -9,9 +9,15 @@ using Serilog;
 
 namespace KodizSignage.Core.Web;
 
-public sealed record WebScreen(int Number, string Name, bool Enabled, string Status, string? NowPlaying);
+public sealed record WebScreen(int Number, string Name, bool Enabled, string Status, string? NowPlaying,
+    Guid? NowPlayingId = null, string? ActiveList = null, string Ticker = "", bool TickerOn = false);
 
-public sealed record WebStatus(bool Running, string Language, string Version, IReadOnlyList<WebScreen> Screens, int MediaCount);
+public sealed record WebAlert(string Title, string Message, bool Urgent, DateTime? Until);
+
+public sealed record WebMusic(bool Enabled, bool Playing, string? Song);
+
+public sealed record WebStatus(bool Running, string Language, string Version, IReadOnlyList<WebScreen> Screens, int MediaCount,
+    WebAlert? Alert = null, WebMusic? Music = null);
 
 public sealed record WebMedia(Guid Id, string Title, string Type, bool Active, bool PlayableNow, bool HasWarning, IReadOnlyList<int> Screens);
 
@@ -30,6 +36,16 @@ public interface IWebPanelBackend
     Task SetActiveAsync(Guid id, bool active);
     Task SetOnScreenAsync(Guid id, int screen, bool on);
     Task DeleteAsync(Guid id);
+
+    Task ShowAlertAsync(string title, string message, bool urgent, int minutes);
+    Task ClearAlertAsync();
+    Task SetTickerAsync(int screen, string text, bool on);
+
+    /// <summary>Creates an announcement slide; returns its title.</summary>
+    Task<string> CreateSlideAsync(string title, string body, int theme);
+
+    Task SetMusicAsync(bool enabled);
+    Task NextSongAsync();
 
     /// <summary>Folder for incoming uploads (emptied by the app after import).</summary>
     string UploadFolder { get; }
@@ -572,6 +588,24 @@ public sealed class WebPanelServer : IDisposable
                 case ("POST", "/api/media/delete") when Id(request) is { } id:
                     await _backend.DeleteAsync(id).ConfigureAwait(false);
                     return Ok;
+                case ("POST", "/api/alert") when JsonBody(request) is { } alert:
+                    await _backend.ShowAlertAsync(Str(alert, "title"), Str(alert, "message"), Flag(alert, "urgent"), Num(alert, "minutes")).ConfigureAwait(false);
+                    return Ok;
+                case ("POST", "/api/alert/clear"):
+                    await _backend.ClearAlertAsync().ConfigureAwait(false);
+                    return Ok;
+                case ("POST", "/api/ticker") when Int("n", request) is { } tickerScreen && JsonBody(request) is { } ticker:
+                    await _backend.SetTickerAsync(tickerScreen, Str(ticker, "text"), Flag(ticker, "on")).ConfigureAwait(false);
+                    return Ok;
+                case ("POST", "/api/slide") when JsonBody(request) is { } slide:
+                    var created = await _backend.CreateSlideAsync(Str(slide, "title"), Str(slide, "body"), Num(slide, "theme")).ConfigureAwait(false);
+                    return JsonResponse(new WebUploadResult(true, created));
+                case ("POST", "/api/music") when Bool("on", request) is { } musicOn:
+                    await _backend.SetMusicAsync(musicOn).ConfigureAwait(false);
+                    return Ok;
+                case ("POST", "/api/music/next"):
+                    await _backend.NextSongAsync().ConfigureAwait(false);
+                    return Ok;
                 case ("POST", "/api/upload") when request.UploadPath is { } upload:
                     return JsonResponse(await _backend.ImportAsync(upload).ConfigureAwait(false));
                 default:
@@ -584,6 +618,32 @@ public sealed class WebPanelServer : IDisposable
             return new Response(500, "application/json; charset=utf-8", JsonSerializer.SerializeToUtf8Bytes(new { error = "server" }, Json));
         }
     }
+
+    /// <summary>The JSON object body, or null when missing / not an object.</summary>
+    private static JsonElement? JsonBody(Request request)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(request.Body);
+            return document.RootElement.ValueKind == JsonValueKind.Object ? document.RootElement.Clone() : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string Str(JsonElement? json, string name, int max = 300)
+    {
+        var value = json is { } j && j.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : string.Empty;
+        return value.Length > max ? value[..max] : value;
+    }
+
+    private static bool Flag(JsonElement? json, string name) =>
+        json is { } j && j.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.True;
+
+    private static int Num(JsonElement? json, string name) =>
+        json is { } j && j.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var n) ? n : 0;
 
     private static Guid? Id(Request request) => Guid.TryParse(request.Query.GetValueOrDefault("id"), out var id) ? id : null;
 

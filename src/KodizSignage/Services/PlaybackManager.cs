@@ -79,6 +79,7 @@ public sealed class PlaybackManager : IPlaybackManager
     private readonly ISettingsService _settings;
     private readonly IPlaylistService _playlist;
     private readonly IPlayStatsService _stats;
+    private readonly IAlertService _alerts;
 
     public event EventHandler? SettingsRequested;
     private readonly Dictionary<int, Views.Player.NowPlaying?> _lastShown = new();
@@ -99,15 +100,24 @@ public sealed class PlaybackManager : IPlaybackManager
         IDisplayService displays,
         IPowerService power,
         IPlayStatsService stats,
+        IAlertService alerts,
         ILogger log)
     {
         _stats = stats;
+        _alerts = alerts;
         _settings = settings;
         _playlist = playlist;
         _displays = displays;
         _power = power;
         _log = log.ForContext<PlaybackManager>();
         _dispatcher = Application.Current.Dispatcher;
+        _alerts.Changed += (_, _) => _dispatcher.BeginInvoke(() =>
+        {
+            foreach (var window in AllWindows())
+            {
+                window.ShowAlert(_alerts.Current);
+            }
+        });
 
         _retryTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher) { Interval = RetryInterval };
         _retryTimer.Tick += (_, _) => PlaceAll();
@@ -293,6 +303,7 @@ public sealed class PlaybackManager : IPlaybackManager
             window.ApplyBackground(window.Engine.Settings.BackgroundColor);
             window.SetSettingsShortcut(HotkeyDisplay.Format(_settings.Current.Hotkeys.ShowSettings));
             ApplyOverlays(window);
+            window.ShowAlert(_alerts.Current);
             window.LongPress.IsEnabled = _settings.Current.LongPressOpensSettings;
             window.LongPress.Completed += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
             _players[number] = new ScreenPlayer(number, window, _log);

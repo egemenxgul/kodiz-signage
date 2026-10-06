@@ -79,6 +79,23 @@ public interface IPlaylistService
     /// <summary>The screen whose entries <paramref name="screen"/> actually plays (follows links).</summary>
     int ResolveSource(int screen);
 
+    /// <summary>The entries of exactly this list (main or time-of-day) resolved against the library.</summary>
+    IReadOnlyList<PlaylistItem> ResolveList(int key);
+
+    /// <summary>Time-of-day lists of a screen, ordered by start time.</summary>
+    IReadOnlyList<ScreenPlaylist> GetDayparts(int screen);
+
+    /// <summary>The time-of-day list a screen (or the screen it follows) plays at <paramref name="now"/>; null = main list.</summary>
+    ScreenPlaylist? GetActiveDaypart(int screen, DateTime now);
+
+    /// <summary>Creates a time-of-day list; returns its key (0 when the screen has too many).</summary>
+    int AddDaypart(int screen, string name, WeekDays days, TimeOnly start, TimeOnly end, bool copyMainList);
+
+    /// <summary>Renames / reschedules a time-of-day list.</summary>
+    void UpdateDaypart(int key, string name, WeekDays days, TimeOnly? start, TimeOnly? end);
+
+    void RemoveDaypart(int key);
+
     void AddEntries(int screen, IEnumerable<Guid> mediaIds, int? index = null);
 
     /// <summary>Appends media to the given screens (or auto-add screens) where it is not in the playlist yet.</summary>
@@ -113,7 +130,8 @@ public sealed class PlaylistService : IPlaylistService
     private IReadOnlyList<PlaylistItem> _items = Array.Empty<PlaylistItem>();
     private IReadOnlyList<ScreenPlaylist> _screens = Array.Empty<ScreenPlaylist>();
     private readonly Dictionary<Guid, List<(int Screen, int Index, ScreenEntry Entry)>> _removedEntries = new();
-    private readonly Dictionary<int, (int Version, IReadOnlyList<PlaylistItem> Items)> _resolvedCache = new();
+    private readonly Dictionary<int, (int Version, int Source, IReadOnlyList<PlaylistItem> Items)> _resolvedCache = new();
+
     private bool _migrateLegacy;
     private int _version;
 
@@ -123,6 +141,11 @@ public sealed class PlaylistService : IPlaylistService
         _log = log.ForContext<PlaylistService>();
         _store = new JsonStore<PlaylistDocument>(paths.PlaylistFile, _log);
     }
+
+    /// <summary>Clock for time-of-day lists (tests replace it).</summary>
+    internal Func<DateTime> Clock { get; set; } = () => DateTime.Now;
+
+    private DateTime _now() => Clock();
 
     /// <summary>Retry delays used when a media file is still locked (e.g. by the video player).</summary>
     internal TimeSpan[] DeleteRetryDelays { get; set; } =
@@ -177,7 +200,8 @@ public sealed class PlaylistService : IPlaylistService
             _items = Renumber(PlaylistScheduler.Sort(items));
             var ids = _items.Select(i => i.Id).ToHashSet();
             _screens = (document.Screens ?? new List<ScreenPlaylist>())
-                .Where(p => p is not null && p.Screen is >= 1 and <= ScreenConfig.MaxScreens)
+                .Where(p => p is not null && (p.Screen is >= 1 and <= ScreenConfig.MaxScreens ||
+                             p.ParentScreen is { } parent && parent is >= 1 and <= ScreenConfig.MaxScreens && p.Screen / ScreenPlaylist.DaypartFactor == parent))
                 .GroupBy(p => p.Screen)
                 .Select(g => CleanPlaylist(g.First(), ids))
                 .OrderBy(p => p.Screen)
@@ -535,12 +559,13 @@ public sealed class PlaylistService : IPlaylistService
     {
         lock (_gate)
         {
-            if (_resolvedCache.TryGetValue(screen, out var cached) && cached.Version == _version)
+            var main = ResolveSourceLocked(screen);
+            var source = ActiveDaypartLocked(main, _now())?.Screen ?? main;
+            if (_resolvedCache.TryGetValue(screen, out var cached) && cached.Version == _version && cached.Source == source)
             {
                 return cached.Items;
             }
 
-            var source = ResolveSourceLocked(screen);
             var library = _items.ToDictionary(i => i.Id);
             var resolved = new List<PlaylistItem>();
             if (_screens.FirstOrDefault(p => p.Screen == source) is { } playlist)
@@ -554,9 +579,104 @@ public sealed class PlaylistService : IPlaylistService
                 }
             }
 
-            _resolvedCache[screen] = (_version, resolved);
+            _resolvedCache[screen] = (_version, source, resolved);
             return resolved;
         }
+    }
+
+    public IReadOnlyList<PlaylistItem> ResolveList(int key)
+    {
+        lock (_gate)
+        {
+            var library = _items.ToDictionary(i => i.Id);
+            var resolved = new List<PlaylistItem>();
+            foreach (var entry in _screens.FirstOrDefault(p => p.Screen == key)?.Entries ?? EquatableList<ScreenEntry>.Empty)
+            {
+                if (library.TryGetValue(entry.MediaId, out var media))
+                {
+                    resolved.Add(entry.Resolve(media, resolved.Count));
+                }
+            }
+
+            return resolved;
+        }
+    }
+
+    public IReadOnlyList<ScreenPlaylist> GetDayparts(int screen)
+    {
+        lock (_gate)
+        {
+            return _screens.Where(p => p.ParentScreen == screen).OrderBy(p => p.Start ?? TimeOnly.MinValue).ThenBy(p => p.Screen).ToList();
+        }
+    }
+
+    public ScreenPlaylist? GetActiveDaypart(int screen, DateTime now)
+    {
+        lock (_gate)
+        {
+            return ActiveDaypartLocked(ResolveSourceLocked(screen), now);
+        }
+    }
+
+    /// <summary>The first open time-of-day list (by start time) of <paramref name="screen"/>.</summary>
+    private ScreenPlaylist? ActiveDaypartLocked(int screen, DateTime now) =>
+        _screens.Where(p => p.ParentScreen == screen && p.IsActiveAt(now))
+                .OrderBy(p => p.Start ?? TimeOnly.MinValue).ThenBy(p => p.Screen)
+                .FirstOrDefault();
+
+    public int AddDaypart(int screen, string name, WeekDays days, TimeOnly start, TimeOnly end, bool copyMainList)
+    {
+        var key = 0;
+        Mutate(state =>
+        {
+            if (state.Find(screen) is not { IsDaypart: false } main)
+            {
+                return;
+            }
+
+            var slot = Enumerable.Range(1, ScreenPlaylist.MaxDayparts)
+                .FirstOrDefault(n => state.Screens.All(p => p.Screen != ScreenPlaylist.DaypartKey(screen, n)));
+            if (slot == 0)
+            {
+                return;
+            }
+
+            key = ScreenPlaylist.DaypartKey(screen, slot);
+            state.Screens.Add(new ScreenPlaylist
+            {
+                Screen = key,
+                ParentScreen = screen,
+                Name = string.IsNullOrWhiteSpace(name) ? $"#{slot}" : name.Trim(),
+                Days = days & WeekDays.All,
+                Start = start,
+                End = end,
+                Entries = copyMainList ? main.Entries.Select(e => e with { Id = Guid.NewGuid() }).ToEquatableList() : EquatableList<ScreenEntry>.Empty,
+            });
+        });
+        _log.Information("Time-of-day list {Key} ({Name}) added to screen {Screen}", key, name, screen);
+        return key;
+    }
+
+    public void UpdateDaypart(int key, string name, WeekDays days, TimeOnly? start, TimeOnly? end)
+    {
+        Mutate(state =>
+        {
+            if (state.Find(key) is { IsDaypart: true } list)
+            {
+                state.Replace(list with
+                {
+                    Name = string.IsNullOrWhiteSpace(name) ? list.Name : name.Trim(),
+                    Days = days & WeekDays.All,
+                    Start = start,
+                    End = end,
+                });
+            }
+        });
+    }
+
+    public void RemoveDaypart(int key)
+    {
+        Mutate(state => state.Screens.RemoveAll(p => p.Screen == key && p.IsDaypart));
     }
 
     public void AddEntries(int screen, IEnumerable<Guid> mediaIds, int? index = null)
@@ -686,6 +806,12 @@ public sealed class PlaylistService : IPlaylistService
                 return;
             }
 
+            if (current.IsDaypart)
+            {
+                state.Replace(current with { AutoAddNewMedia = playlist.AutoAddNewMedia });
+                return;
+            }
+
             var linked = playlist.LinkedTo is { } target && target != playlist.Screen ? target : (int?)null;
             state.Replace(current with
             {
@@ -700,7 +826,7 @@ public sealed class PlaylistService : IPlaylistService
     {
         Mutate(state =>
         {
-            state.Screens.RemoveAll(p => p.Screen == screen);
+            state.Screens.RemoveAll(p => p.Screen == screen || p.ParentScreen == screen);
             foreach (var other in state.Screens.Where(p => p.LinkedTo == screen).ToList())
             {
                 state.Replace(other with { LinkedTo = null, Synchronized = false });

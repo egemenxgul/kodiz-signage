@@ -22,7 +22,7 @@ public sealed class ThumbnailService : IThumbnailService
     private readonly AppPaths _paths;
     private readonly IPlaylistService _playlist;
     private readonly ILogger _log;
-    private readonly ConcurrentDictionary<Guid, ImageSource> _cache = new();
+    private readonly ConcurrentDictionary<(Guid Id, string File), ImageSource> _cache = new();
     private readonly SemaphoreSlim _videoGate = new(1, 1);
 
     public ThumbnailService(AppPaths paths, IPlaylistService playlist, ILogger log)
@@ -35,7 +35,7 @@ public sealed class ThumbnailService : IThumbnailService
 
     public async Task<ImageSource?> GetAsync(PlaylistItem item)
     {
-        if (_cache.TryGetValue(item.Id, out var cached))
+        if (_cache.TryGetValue((item.Id, item.FilePath), out var cached))
         {
             return cached;
         }
@@ -60,7 +60,7 @@ public sealed class ThumbnailService : IThumbnailService
 
         if (result is not null)
         {
-            _cache[item.Id] = result;
+            _cache[(item.Id, item.FilePath)] = result;
         }
 
         return result;
@@ -104,8 +104,9 @@ public sealed class ThumbnailService : IThumbnailService
 
     private void PruneCache()
     {
-        var ids = _playlist.Items.Select(i => i.Id).ToHashSet();
-        foreach (var key in _cache.Keys.Where(k => !ids.Contains(k)).ToList())
+        // Drop removed items and replaced files (same item, new file).
+        var current = _playlist.Items.Select(i => (i.Id, i.FilePath)).ToHashSet();
+        foreach (var key in _cache.Keys.Where(k => !current.Contains(k)).ToList())
         {
             _cache.TryRemove(key, out _);
         }

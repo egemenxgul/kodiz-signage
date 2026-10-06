@@ -204,27 +204,8 @@ public sealed partial class MediaViewModel : ObservableObject
         }
     }
 
-    private bool Matches(MediaItemViewModel vm)
-    {
-        var search = SearchText.Trim();
-        if (search.Length > 0 &&
-            !vm.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase) &&
-            !vm.OriginalName.Contains(search, StringComparison.CurrentCultureIgnoreCase))
-        {
-            return false;
-        }
-
-        return Filter switch
-        {
-            1 => vm.IsImage && !vm.IsSlide,
-            2 => vm.IsVideo,
-            3 => vm.IsSlide,
-            4 => !_usedIds.Contains(vm.Id),
-            5 => vm.HasWarning,
-            6 => !vm.IsPlayableNow,
-            _ => true,
-        };
-    }
+    private bool Matches(MediaItemViewModel vm) =>
+        LibraryFilter.Matches(vm.Item, SearchText, (LibraryFilterKind)Filter, _usedIds.Contains(vm.Id), DateTime.Now);
 
     // ---- Screens -----------------------------------------------------------------------------
 
@@ -244,7 +225,9 @@ public sealed partial class MediaViewModel : ObservableObject
             vm.UpdateScreens(screens, ScreenLabel, n => membership.TryGetValue(n, out var set) && set.Contains(vm.Id), IsLinked);
         }
 
-        _usedIds = membership.Where(m => screens.Any(s => s.Number == m.Key)).SelectMany(m => m.Value).ToHashSet();
+        // Time-of-day lists count for their screen.
+        _usedIds = playlists.Values.Where(p => screens.Any(s => s.Number == p.OwnerScreen))
+            .SelectMany(p => p.Entries.Select(e => e.MediaId)).ToHashSet();
 
         // Auto-add toggles.
         if (!AutoAddChips.Select(c => c.Number).SequenceEqual(screens.Select(s => s.Number)))
@@ -325,7 +308,7 @@ public sealed partial class MediaViewModel : ObservableObject
     [RelayCommand]
     private void CreateSlide()
     {
-        if (SlideEditorWindow.Edit(null, _loc) is { } slide)
+        if (SlideEditorWindow.Edit(null, _loc, _playlist, _slides) is { } slide)
         {
             var item = _slides.Create(slide);
             SelectedItem = Items.FirstOrDefault(i => i.Id == item.Id) ?? SelectedItem;
@@ -340,7 +323,7 @@ public sealed partial class MediaViewModel : ObservableObject
             return;
         }
 
-        if (SlideEditorWindow.Edit(current, _loc) is { } slide)
+        if (SlideEditorWindow.Edit(current, _loc, _playlist, _slides) is { } slide)
         {
             var item = _slides.Update(existing, slide);
             Sync();
@@ -479,7 +462,7 @@ public sealed partial class MediaViewModel : ObservableObject
         }
 
         var ids = targets.Select(t => t.Id).ToHashSet();
-        var screens = _playlist.ScreenPlaylists.Count(p => p.Entries.Any(e => ids.Contains(e.MediaId)));
+        var screens = _playlist.ScreenPlaylists.Where(p => p.Entries.Any(e => ids.Contains(e.MediaId))).Select(p => p.OwnerScreen).Distinct().Count();
         var removed = _playlist.RemoveRange(ids);
         var text = removed.Count == 1 ? _loc.Format("Media_DeletedOne", removed[0].Title) : _loc.Format("Media_DeletedMany", removed.Count);
         if (screens > 0)

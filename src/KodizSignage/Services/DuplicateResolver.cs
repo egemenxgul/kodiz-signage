@@ -39,7 +39,8 @@ public sealed class DuplicateResolver : IDuplicateResolver
             {
                 var usedOn = _playlist.ScreenPlaylists
                     .Where(p => p.Entries.Any(e => e.MediaId == question.Existing.Id))
-                    .Select(p => p.Screen)
+                    .Select(p => p.OwnerScreen)
+                    .Distinct()
                     .ToList();
                 return DuplicateWindow.Ask(question, usedOn, _thumbnails, _loc);
             }).Task.Unwrap();

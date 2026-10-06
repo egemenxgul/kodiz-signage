@@ -6,6 +6,7 @@
         xmlns:vm="clr-namespace:KodizSignage.ViewModels"
         xmlns:conv="clr-namespace:KodizSignage.Converters"
         xmlns:ctl="clr-namespace:KodizSignage.Controls"
+        xmlns:tabs="clr-namespace:KodizSignage.Views.Tabs"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
         Title="{DynamicResource Settings_Title}"
@@ -19,51 +20,6 @@
         AllowDrop="True"
         UseLayoutRounding="True">
 
-    <Window.Resources>
-        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
-        <conv:BoolToVisibilityConverter x:Key="InvBoolToVis" Invert="True" />
-        <conv:NullToVisibilityConverter x:Key="NullToVis" />
-        <conv:NullToVisibilityConverter x:Key="InvNullToVis" Invert="True" />
-        <conv:ColorToBrushConverter x:Key="ColorToBrush" />
-        <conv:InverseBoolConverter x:Key="InvBool" />
-        <conv:PlusOneConverter x:Key="PlusOne" />
-
-        <!-- Days + from/to editor, shared by items, bulk edit and opening hours. -->
-        <DataTemplate x:Key="ScheduleEditorTemplate" DataType="{x:Type vm:ScheduleEditor}">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <ToggleButton Style="{StaticResource DayToggle}" Content="{DynamicResource Day_Mon}" IsChecked="{Binding Monday}" />
-                    <ToggleButton Style="{StaticResource DayToggle}" Content="{DynamicResource Day_Tue}" IsChecked="{Binding Tuesday}" />
-                    <ToggleButton Style="{StaticResource DayToggle}" Content="{DynamicResource Day_Wed}" IsChecked="{Binding Wednesday}" />
-                    <ToggleButton Style="{StaticResource DayToggle}" Content="{DynamicResource Day_Thu}" IsChecked="{Binding Thursday}" />
-                    <ToggleButton Style="{StaticResource DayToggle}" Content="{DynamicResource Day_Fri}" IsChecked="{Binding Friday}" />
-                    <ToggleButton Style="{StaticResource DayToggle}" Content="{DynamicResource Day_Sat}" IsChecked="{Binding Saturday}" />
-                    <ToggleButton Style="{StaticResource DayToggle}" Content="{DynamicResource Day_Sun}" IsChecked="{Binding Sunday}" />
-                </StackPanel>
-                <WrapPanel Margin="0,6,0,0">
-                    <Button Style="{StaticResource SmallButton}" Margin="0,0,4,4" Content="{DynamicResource Schedule_EveryDay}" Command="{Binding PresetCommand}" CommandParameter="all" />
-                    <Button Style="{StaticResource SmallButton}" Margin="0,0,4,4" Content="{DynamicResource Schedule_Weekdays}" Command="{Binding PresetCommand}" CommandParameter="weekdays" />
-                    <Button Style="{StaticResource SmallButton}" Margin="0,0,4,4" Content="{DynamicResource Schedule_Weekend}" Command="{Binding PresetCommand}" CommandParameter="weekend" />
-                    <Button Style="{StaticResource SmallButton}" Margin="0,0,4,4" Content="{DynamicResource Schedule_AllDay}" Command="{Binding PresetCommand}" CommandParameter="allday" />
-                </WrapPanel>
-                <Grid Margin="0,6,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBox Text="{Binding StartTimeText, UpdateSourceTrigger=PropertyChanged, Delay=700}"
-                             ToolTip="{DynamicResource Schedule_TimeHint}" HorizontalContentAlignment="Center" />
-                    <TextBlock Grid.Column="1" Text="–" Margin="8,0" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    <TextBox Grid.Column="2" Text="{Binding EndTimeText, UpdateSourceTrigger=PropertyChanged, Delay=700}"
-                             ToolTip="{DynamicResource Schedule_TimeHint}" HorizontalContentAlignment="Center" />
-                </Grid>
-                <TextBlock Text="{DynamicResource Schedule_TimeHint}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
-                <TextBlock Text="{Binding Error}" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"
-                           Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" />
-            </StackPanel>
-        </DataTemplate>
-    </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -123,6 +79,14 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Style="{StaticResource IconButton}" Content="&#xE72E;" Click="Lock_Click" Margin="0,0,8,0" Width="38" Height="38"
+                            ToolTip="{DynamicResource Pin_LockNow}" Visibility="{Binding General.HasPin, Converter={StaticResource BoolToVis}}" />
+                    <Button Command="{Binding OpenAlertCommand}" Margin="0,0,8,0" ToolTip="{DynamicResource Alert_Tooltip}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE789;" Margin="0,0,8,0" />
+                            <TextBlock Text="{DynamicResource Alert_Button}" />
+                        </StackPanel>
+                    </Button>
                     <Button Command="{Binding Media.PreviewCommand}" Margin="0,0,8,0" ToolTip="{DynamicResource Preview_Tooltip}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icon}" Text="&#xE7B3;" Margin="0,0,8,0" />
@@ -168,8 +132,29 @@
             </Grid>
         </Border>
 
+        <StackPanel Grid.Row="1">
+        <!-- ===== Updated: what's new ===== -->
+        <Border Background="{DynamicResource AccentSoftBrush}" Padding="24,10"
+                Visibility="{Binding WhatsNewText, Converter={StaticResource NullToVis}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding DismissWhatsNewCommand}" ToolTip="{DynamicResource Common_Close}" />
+                <Button DockPanel.Dock="Right" Content="{DynamicResource WhatsNew_Show}" Command="{Binding ShowWhatsNewCommand}" Margin="0,0,8,0" />
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE789;" Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0" />
+                <TextBlock Text="{Binding WhatsNewText}" TextWrapping="Wrap" VerticalAlignment="Center" FontWeight="SemiBold" />
+            </DockPanel>
+        </Border>
+        <!-- ===== Active emergency notice ===== -->
+        <Border Background="{DynamicResource DangerSoftBrush}" Padding="24,10"
+                Visibility="{Binding AlertText, Converter={StaticResource NullToVis}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="{DynamicResource Alert_Clear}" Command="{Binding ClearAlertCommand}" />
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE789;" Foreground="{DynamicResource DangerBrush}" Margin="0,0,10,0" />
+                <TextBlock Text="{Binding AlertText}" TextWrapping="Wrap" VerticalAlignment="Center" FontWeight="SemiBold" />
+            </DockPanel>
+        </Border>
+
         <!-- ===== Safe mode banner ===== -->
-        <Border Grid.Row="1" Background="{DynamicResource WarningSoftBrush}" Padding="24,10"
+        <Border Background="{DynamicResource WarningSoftBrush}" Padding="24,10"
                 Visibility="{Binding SafeModeText, Converter={StaticResource NullToVis}}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -179,9 +164,10 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Style="{StaticResource Icon}" Text="&#xE7BA;" Foreground="{DynamicResource WarningBrush}" Margin="0,0,10,0" />
                 <TextBlock Grid.Column="1" Text="{Binding SafeModeText}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding DismissSafeModeCommand}" />
+                <Button Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding DismissSafeModeCommand}" ToolTip="{DynamicResource Common_Close}" />
             </Grid>
         </Border>
+        </StackPanel>
 
         <TabControl x:Name="Tabs" Grid.Row="2" Margin="0,4,0,0" SelectedIndex="{Binding SelectedTab}">
 
@@ -338,7 +324,7 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Tag="DragHandle" Style="{StaticResource Icon}" Text="&#xE76F;" Foreground="{DynamicResource TextMutedBrush}"
+                                        <TextBlock Tag="DragHandle" Style="{StaticResource Icon}" Background="Transparent" Padding="2,14" IsManipulationEnabled="True" Text="&#xE76F;" Foreground="{DynamicResource TextMutedBrush}"
                                                    Cursor="SizeAll" ToolTip="{DynamicResource Media_DragToReorder}"
                                                    Visibility="{Binding DataContext.CanReorder, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={StaticResource BoolToVis}}" />
                                         <Border Grid.Column="1" Width="96" Height="54" CornerRadius="4" Background="{DynamicResource MediaBgBrush}" ClipToBounds="True">
@@ -758,8 +744,9 @@
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- Playlist source / options -->
-                                    <WrapPanel Grid.ColumnSpan="2" Margin="0,0,0,8">
+                                    <!-- Playlist source / options + time-of-day lists -->
+                                    <StackPanel Grid.ColumnSpan="2">
+                                    <WrapPanel Margin="0,0,0,8">
                                         <ComboBox ItemsSource="{Binding LinkOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding LinkChoice}"
                                                   MinWidth="230" Margin="0,0,10,6" ToolTip="{DynamicResource Editor_LinkHint}" />
                                         <CheckBox Content="{DynamicResource Editor_Synchronized}" IsChecked="{Binding Synchronized}" Margin="0,6,16,6"
@@ -767,6 +754,82 @@
                                         <CheckBox Content="{DynamicResource Editor_AutoAdd}" IsChecked="{Binding AutoAddNewMedia}" Margin="0,6,16,6"
                                                   Visibility="{Binding IsLinked, Converter={StaticResource InvBoolToVis}}" />
                                     </WrapPanel>
+
+                                    <!-- Time-of-day lists: Main | Breakfast 08–12 | Lunch 12–17 | + -->
+                                    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8"
+                                            Padding="10,8" Margin="0,0,0,10" Visibility="{Binding IsLinked, Converter={StaticResource InvBoolToVis}}">
+                                        <StackPanel>
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding ActiveListText}" VerticalAlignment="Center" FontSize="12"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="8,0,0,0" />
+                                                <WrapPanel>
+                                                    <ItemsControl ItemsSource="{Binding Lists}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate DataType="{x:Type vm:DaypartOption}">
+                                                                <Button Margin="0,0,6,6" Padding="12,5" MinHeight="38" ToolTip="{Binding Detail}"
+                                                                        Command="{Binding DataContext.SelectListCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                        CommandParameter="{Binding Key}">
+                                                                    <Button.Style>
+                                                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                                                    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Button.Style>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <Ellipse Width="8" Height="8" Fill="{DynamicResource SuccessBrush}" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                                                 Visibility="{Binding IsPlayingNow, Converter={StaticResource BoolToVis}}" />
+                                                                        <StackPanel>
+                                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                                            <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+                                                                        </StackPanel>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <Button Command="{Binding AddDaypartCommand}" Margin="0,0,6,6" MinHeight="38" ToolTip="{DynamicResource Daypart_AddHint}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE710;" Margin="0,0,8,0" />
+                                                            <TextBlock Text="{DynamicResource Daypart_Add}" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </WrapPanel>
+                                            </DockPanel>
+                                            <!-- Selected time-of-day list: name, days, hours -->
+                                            <Grid Margin="0,6,0,0" Visibility="{Binding IsDaypartSelected, Converter={StaticResource BoolToVis}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="220" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Margin="0,0,16,0">
+                                                    <TextBlock Text="{DynamicResource Daypart_Name}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                                                    <TextBox Text="{Binding DaypartName, UpdateSourceTrigger=PropertyChanged, Delay=700}" />
+                                                    <TextBlock Text="{DynamicResource Daypart_Explain}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                                </StackPanel>
+                                                <ContentControl Grid.Column="1" Content="{Binding DaypartSchedule}" ContentTemplate="{StaticResource ScheduleEditorTemplate}" />
+                                                <StackPanel Grid.Column="2" Margin="12,0,0,0">
+                                                    <Button Command="{Binding CopyMainToDaypartCommand}" Content="{DynamicResource Daypart_CopyMain}" Margin="0,0,0,6" />
+                                                    <Button Command="{Binding RemoveDaypartCommand}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" Foreground="{DynamicResource DangerBrush}" Margin="0,0,8,0" />
+                                                            <TextBlock Text="{DynamicResource Daypart_Remove}" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                    </StackPanel>
 
                                     <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,0,10">
                                         <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="6" Padding="10,8"
@@ -818,7 +881,7 @@
                                                             <ColumnDefinition Width="Auto" />
                                                             <ColumnDefinition Width="Auto" />
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Tag="DragHandle" Style="{StaticResource Icon}" Text="&#xE76F;" Foreground="{DynamicResource TextMutedBrush}" Cursor="SizeAll"
+                                                        <TextBlock Tag="DragHandle" Style="{StaticResource Icon}" Background="Transparent" Padding="2,14" IsManipulationEnabled="True" Text="&#xE76F;" Foreground="{DynamicResource TextMutedBrush}" Cursor="SizeAll"
                                                                    ToolTip="{DynamicResource Media_DragToReorder}" />
                                                         <TextBlock Grid.Column="1" Text="{Binding Position, Converter={StaticResource PlusOne}}" Foreground="{DynamicResource TextMutedBrush}"
                                                                    VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="12" />
@@ -1253,556 +1316,12 @@
 
             <!-- ===================== GENERAL ===================== -->
             <TabItem Header="{DynamicResource Tab_General}" DataContext="{Binding General}">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="24,20" MaxWidth="780" HorizontalAlignment="Left">
-                        <TextBlock Text="{DynamicResource Settings_AutoSaved}" Style="{StaticResource Secondary}" Margin="0,0,0,16" />
-
-                        <!-- Playback -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource General_SectionPlayback}" Style="{StaticResource H2}" />
-                                <Grid Margin="0,4,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="160" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource General_DefaultDuration}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                                    <TextBox Grid.Column="1" Text="{Binding DefaultImageDuration, UpdateSourceTrigger=PropertyChanged, Delay=700}" />
-                                </Grid>
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="260" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource General_Transition}" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" ItemsSource="{Binding Transitions}" DisplayMemberPath="Label"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Transition}" />
-                                </Grid>
-                                <Grid IsEnabled="{Binding IsFade}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="60" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource General_TransitionDuration}" VerticalAlignment="Center" />
-                                    <Slider Grid.Column="1" Minimum="0.1" Maximum="3" TickFrequency="0.1" IsSnapToTickEnabled="True"
-                                            Value="{Binding TransitionDuration}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2" Text="{Binding TransitionDuration, StringFormat={}{0:0.0} s}"
-                                               HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                </Grid>
-                                <Grid Margin="0,12,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="260" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource Motion_Title}" />
-                                        <TextBlock Text="{DynamicResource Motion_Hint}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" />
-                                    </StackPanel>
-                                    <ComboBox Grid.Column="1" ItemsSource="{Binding Motions}" DisplayMemberPath="Label"
-                                              SelectedValuePath="Value" SelectedValue="{Binding ImageMotion}" VerticalAlignment="Top" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Opening hours -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Hours_Title}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{DynamicResource Hours_Description}" Style="{StaticResource Secondary}" Margin="0,0,0,12" />
-                                <CheckBox Content="{DynamicResource Hours_Enabled}" IsChecked="{Binding OperatingHoursEnabled}" Margin="0,0,0,12" />
-                                <StackPanel IsEnabled="{Binding OperatingHoursEnabled}">
-                                    <ContentControl Content="{Binding OpeningHours}" ContentTemplate="{StaticResource ScheduleEditorTemplate}" MaxWidth="420" HorizontalAlignment="Left" />
-                                    <CheckBox Content="{DynamicResource Hours_AllowDisplaySleep}" IsChecked="{Binding AllowDisplaySleep}" Margin="0,12,0,0" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Appearance -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource General_SectionAppearance}" Style="{StaticResource H2}" />
-                                <Grid Margin="0,4,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="260" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource General_Scaling}" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" ItemsSource="{Binding ScalingModes}" DisplayMemberPath="Label"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Scaling}" />
-                                </Grid>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{DynamicResource General_Background}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{DynamicResource General_InvalidColor}" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,4,0,0"
-                                                   Visibility="{Binding IsBackgroundColorValid, Converter={StaticResource InvBoolToVis}}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <ItemsControl ItemsSource="{Binding ColorPresets}" VerticalAlignment="Center">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Button Width="26" Height="26" MinHeight="0" Padding="0" Margin="0,0,6,0" ToolTip="{Binding}"
-                                                            Background="{Binding Converter={StaticResource ColorToBrush}}" BorderBrush="{DynamicResource TextMutedBrush}"
-                                                            Command="{Binding DataContext.PickColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                            CommandParameter="{Binding}" />
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        <ctl:ColorPicker Color="{Binding BackgroundColor}" Margin="6,0,0,0" />
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Audio -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource General_SectionAudio}" Style="{StaticResource H2}" />
-                                <CheckBox Content="{DynamicResource General_VideoSound}" IsChecked="{Binding VideoSoundEnabled}" Margin="0,4,0,12" />
-                                <Grid IsEnabled="{Binding VideoSoundEnabled}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="60" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource General_Volume}" VerticalAlignment="Center" />
-                                    <Slider Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
-                                            Value="{Binding VolumePercent}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2" Text="{Binding VolumePercent, StringFormat={}{0:0} %}"
-                                               HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Watched folder -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Folder_Title}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{DynamicResource Folder_Description}" Style="{StaticResource Secondary}" Margin="0,0,0,12" />
-                                <CheckBox Content="{DynamicResource Folder_Enabled}" IsChecked="{Binding WatchFolderEnabled}" Margin="0,0,0,12" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Text="{Binding WatchFolderPath, Mode=OneWay}" IsReadOnly="True" />
-                                    <Button Grid.Column="1" Content="{DynamicResource Folder_Choose}" Command="{Binding ChooseWatchFolderCommand}" Margin="8,0,0,0" />
-                                    <Button Grid.Column="2" Content="{DynamicResource Folder_SyncNow}" Command="{Binding SyncFolderNowCommand}" Margin="8,0,0,0"
-                                            IsEnabled="{Binding WatchFolderEnabled}" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- System -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource General_SectionSystem}" Style="{StaticResource H2}" />
-                                <Grid Margin="0,4,0,14">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="260" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource General_Language}" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" ItemsSource="{Binding Languages}" DisplayMemberPath="Label"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Language}" />
-                                </Grid>
-                                <Grid Margin="0,0,0,14">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="260" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource AppTheme_Title}" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1" ItemsSource="{Binding Themes}" DisplayMemberPath="Label"
-                                              SelectedValuePath="Value" SelectedValue="{Binding Theme}" />
-                                </Grid>
-                                <CheckBox Content="{DynamicResource Touch_LongPress}" IsChecked="{Binding LongPressOpensSettings}" Margin="0,0,0,4" />
-                                <TextBlock Text="{DynamicResource Touch_LongPressHint}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
-                                <CheckBox Content="{DynamicResource General_StartWithWindows}" IsChecked="{Binding StartWithWindows}" Margin="0,0,0,8" />
-                                <Border Background="{DynamicResource WarningSoftBrush}" CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
-                                        Visibility="{Binding IsStartupBlocked, Converter={StaticResource BoolToVis}}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{DynamicResource Startup_Blocked}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                        <Button Grid.Column="1" Style="{StaticResource SmallButton}" Content="{DynamicResource Startup_Fix}"
-                                                Command="{Binding FixStartupCommand}" Margin="10,0,0,0" />
-                                    </Grid>
-                                </Border>
-                                <CheckBox Content="{DynamicResource General_AutoPlay}" IsChecked="{Binding AutoPlayOnLaunch}" />
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Security -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Pin_Section}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{DynamicResource Pin_Description}" Style="{StaticResource Secondary}" Margin="0,0,0,12" />
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Margin="0,0,8,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
-                                                <Setter Property="Text" Value="&#xE785;" />
-                                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasPin}" Value="True">
-                                                        <Setter Property="Text" Value="&#xE72E;" />
-                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock VerticalAlignment="Center" Margin="0,0,16,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="{DynamicResource Pin_Off}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasPin}" Value="True">
-                                                        <Setter Property="Text" Value="{DynamicResource Pin_On}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <Button Command="{Binding SetPinCommand}" Margin="0,0,8,0">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                                <Setter Property="Content" Value="{DynamicResource Pin_Set}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding HasPin}" Value="True">
-                                                        <Setter Property="Content" Value="{DynamicResource Pin_Change}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                    <Button Content="{DynamicResource Pin_Remove}" Command="{Binding RemovePinCommand}"
-                                            Visibility="{Binding HasPin, Converter={StaticResource BoolToVis}}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Backup -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Stats_Section}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{DynamicResource Stats_Description}" Style="{StaticResource Secondary}" TextWrapping="Wrap" Margin="0,0,0,12" />
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Command="{Binding ExportStatsCommand}" Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE9F9;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource Stats_Export}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Command="{Binding ResetStatsCommand}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" Foreground="{DynamicResource DangerBrush}" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource Stats_Reset}" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Backup_Section}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{DynamicResource Backup_Description}" Style="{StaticResource Secondary}" Margin="0,0,0,12" />
-                                <StackPanel Orientation="Horizontal" IsEnabled="{Binding IsBusy, Converter={StaticResource InvBool}}">
-                                    <Button Command="{Binding CreateBackupCommand}" Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource Backup_Create}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Command="{Binding RestoreBackupCommand}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE777;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource Backup_Restore}" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                                <StackPanel Margin="0,12,0,0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{Binding BusyText}" Margin="0,0,0,6" />
-                                    <ProgressBar Value="{Binding BusyProgress}" Maximum="100" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Phone panel -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Web_Section}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{DynamicResource Web_Description}" Style="{StaticResource Secondary}" TextWrapping="Wrap" Margin="0,0,0,12" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource Web_Pin}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBox Width="120" Text="{Binding NewWebPin, UpdateSourceTrigger=PropertyChanged}" MaxLength="12" Margin="0,0,8,0" />
-                                            <Button Command="{Binding SaveWebPinCommand}" Content="{DynamicResource Web_SavePin}" />
-                                        </StackPanel>
-                                        <TextBlock FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="{DynamicResource Web_PinNotSet}" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding HasWebPin}" Value="True">
-                                                            <Setter Property="Text" Value="{DynamicResource Web_PinSet}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                        <CheckBox Content="{DynamicResource Web_Enabled}" IsChecked="{Binding WebPanelEnabled}" Margin="0,12,0,0" />
-                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                            <TextBlock Text="{DynamicResource Web_Port}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                            <TextBox Width="80" Text="{Binding WebPanelPort, UpdateSourceTrigger=PropertyChanged, Delay=800}" />
-                                        </StackPanel>
-                                        <TextBlock Text="{Binding WebStatusText}" FontWeight="SemiBold" Margin="0,12,0,4" TextWrapping="Wrap" />
-                                        <ItemsControl ItemsSource="{Binding WebUrls}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBox Text="{Binding Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas, Segoe UI" FontSize="14" Margin="0,0,0,4" HorizontalAlignment="Left" MinWidth="220" />
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        <Button Style="{StaticResource SmallButton}" Command="{Binding CopyWebUrlCommand}" HorizontalAlignment="Left" Content="{DynamicResource Web_CopyUrl}"
-                                                Visibility="{Binding WebIsRunning, Converter={StaticResource BoolToVis}}" />
-                                        <TextBlock Text="{DynamicResource Web_FirewallNote}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
-                                    </StackPanel>
-                                    <Border Grid.Column="1" Width="150" Height="150" Background="White" CornerRadius="8" Padding="10" Margin="16,0,0,0" VerticalAlignment="Top"
-                                            Visibility="{Binding WebQr, Converter={StaticResource NullToVis}}" ToolTip="{DynamicResource Web_QrHint}">
-                                        <ContentControl Content="{Binding WebQr}" />
-                                    </Border>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Updates -->
-                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Update_Section}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{Binding VersionText}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding UpdateStatusText}" Style="{StaticResource Secondary}" Margin="0,4,0,8" />
-                                <ProgressBar Value="{Binding UpdateProgress}" Maximum="100" Margin="0,0,0,10"
-                                             Visibility="{Binding IsUpdateBusy, Converter={StaticResource BoolToVis}}" />
-                                <WrapPanel Margin="0,0,0,12">
-                                    <Button Command="{Binding CheckUpdatesNowCommand}" IsEnabled="{Binding IsUpdateBusy, Converter={StaticResource InvBool}}" Margin="0,0,8,6">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE895;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource Update_CheckNow}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Style="{StaticResource AccentButton}" Command="{Binding InstallUpdateCommand}" Margin="0,0,8,6"
-                                            Visibility="{Binding IsUpdateReady, Converter={StaticResource BoolToVis}}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource Update_InstallNow}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Command="{Binding OpenReleasePageCommand}" Margin="0,0,8,6">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8A7;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource Update_ReleaseNotes}" />
-                                        </StackPanel>
-                                    </Button>
-                                </WrapPanel>
-                                <CheckBox Content="{DynamicResource Update_AutoCheck}" IsChecked="{Binding CheckForUpdates}" Margin="0,0,0,10" />
-                                <CheckBox Content="{DynamicResource Update_AutoInstall}" IsChecked="{Binding AutoInstallUpdates}" IsEnabled="{Binding CheckForUpdates}" />
-                                <TextBlock Text="{DynamicResource Update_Hint}" FontSize="11.5" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="52,4,0,0" />
-                            </StackPanel>
-                        </Border>
-
-                        <!-- About / installation -->
-                        <Border Style="{StaticResource Card}">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource General_SectionAbout}" Style="{StaticResource H2}" />
-                                <TextBlock Text="{Binding VersionText}" />
-                                <TextBlock Text="{Binding LicenseText}" Style="{StaticResource Secondary}" Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding CopyrightText}" Style="{StaticResource Secondary}" Margin="0,2,0,0" />
-                                <WrapPanel Margin="0,8,0,0">
-                                    <Button Style="{StaticResource SmallButton}" Content="{DynamicResource License_View}" Command="{Binding ViewLicenseCommand}" Margin="0,0,6,6" />
-                                    <Button Style="{StaticResource SmallButton}" Content="{DynamicResource License_Notices}" Command="{Binding ViewNoticesCommand}" Margin="0,0,6,6" />
-                                    <Button Style="{StaticResource SmallButton}" Content="{DynamicResource License_Source}" Command="{Binding OpenSourceCodeCommand}" Margin="0,0,6,6" />
-                                </WrapPanel>
-                                <TextBlock Style="{StaticResource Secondary}" Margin="0,6,0,0">
-                                    <Run Text="{DynamicResource About_DataFolder}" /><Run Text=": " /><Run Text="{Binding DataFolder, Mode=OneWay}" />
-                                </TextBlock>
-                                <TextBlock Style="{StaticResource Secondary}" Margin="0,2,0,0">
-                                    <Run Text="{DynamicResource About_ExePath}" /><Run Text=": " /><Run Text="{Binding ExePath, Mode=OneWay}" />
-                                </TextBlock>
-                                <Border Background="{DynamicResource WarningSoftBrush}" CornerRadius="6" Padding="10,8" Margin="0,12,0,0"
-                                        Visibility="{Binding IsInstalled, Converter={StaticResource InvBoolToVis}}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{DynamicResource Install_NotInstalled}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                        <Button Grid.Column="1" Style="{StaticResource SmallButton}" Content="{DynamicResource Install_Button}"
-                                                Command="{Binding InstallCommand}" Margin="10,0,0,0" />
-                                    </Grid>
-                                </Border>
-                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button Command="{Binding OpenLogFolderCommand}" Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE9F9;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource General_OpenLogs}" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Command="{Binding OpenDataFolderCommand}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8B7;" Margin="0,0,8,0" />
-                                            <TextBlock Text="{DynamicResource General_OpenData}" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
+                <tabs:GeneralTab />
             </TabItem>
 
             <!-- ===================== SHORTCUTS ===================== -->
             <TabItem Header="{DynamicResource Tab_Shortcuts}" DataContext="{Binding Shortcuts}">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="24,20" MaxWidth="900" HorizontalAlignment="Left">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{DynamicResource Shortcuts_Title}" Style="{StaticResource H1}" VerticalAlignment="Center" />
-                            <Button Grid.Column="1" Command="{Binding ResetAllCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE777;" Margin="0,0,8,0" />
-                                    <TextBlock Text="{DynamicResource Shortcut_ResetAll}" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-                        <TextBlock Text="{DynamicResource Shortcuts_Description}" Style="{StaticResource Secondary}" Margin="0,8,0,4" MaxWidth="780" HorizontalAlignment="Left" />
-                        <TextBlock Text="{DynamicResource Shortcuts_Rules}" Style="{StaticResource Secondary}" Foreground="{DynamicResource TextMutedBrush}"
-                                   FontSize="12" Margin="0,0,0,18" MaxWidth="780" HorizontalAlignment="Left" />
-
-                        <ItemsControl ItemsSource="{Binding Items}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type vm:ShortcutItemViewModel}">
-                                    <Border Style="{StaticResource Card}" Padding="18,16" Margin="0,0,0,10">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="230" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
-
-                                            <!-- Icon -->
-                                            <Border Width="40" Height="40" CornerRadius="8" Background="{DynamicResource AccentSoftBrush}"
-                                                    VerticalAlignment="Top" Margin="0,0,16,0">
-                                                <TextBlock Style="{StaticResource Icon}" Text="{Binding Icon}" FontSize="17" Foreground="{DynamicResource AccentHoverBrush}" />
-                                            </Border>
-
-                                            <!-- What it does -->
-                                            <StackPanel Grid.Column="1" Margin="0,0,20,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" />
-                                                <TextBlock Text="{Binding Description}" Style="{StaticResource Secondary}" Margin="0,3,0,0" />
-                                                <TextBlock Text="{Binding DefaultText}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11.5" Margin="0,4,0,0" />
-                                            </StackPanel>
-
-                                            <!-- Recording box -->
-                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                <TextBox Text="{Binding BoxText, Mode=OneWay}" IsReadOnly="True" IsReadOnlyCaretVisible="False"
-                                                         Cursor="Hand" FontFamily="Consolas, Segoe UI" FontSize="14" HorizontalContentAlignment="Center"
-                                                         ToolTip="{DynamicResource Shortcut_ClickToChange}" ContextMenu="{x:Null}"
-                                                         GotKeyboardFocus="ShortcutBox_GotKeyboardFocus"
-                                                         LostKeyboardFocus="ShortcutBox_LostKeyboardFocus"
-                                                         PreviewKeyDown="ShortcutBox_PreviewKeyDown"
-                                                         PreviewKeyUp="ShortcutBox_PreviewKeyUp">
-                                                    <TextBox.Style>
-                                                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                                            <Setter Property="Padding" Value="8,8" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsAssigned}" Value="False">
-                                                                    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding IsRecording}" Value="True">
-                                                                    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
-                                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBox.Style>
-                                                </TextBox>
-                                                <TextBlock Text="{DynamicResource Shortcut_RecordHint}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
-                                                           HorizontalAlignment="Center" Margin="0,4,0,0"
-                                                           Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}" />
-                                            </StackPanel>
-
-                                            <!-- Row actions -->
-                                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
-                                                <Button Style="{StaticResource IconButton}" Content="&#xE777;" ToolTip="{DynamicResource Shortcut_Reset}"
-                                                        Command="{Binding ResetCommand}"
-                                                        IsEnabled="{Binding IsDefault, Converter={StaticResource InvBool}}" />
-                                                <Button Style="{StaticResource DangerIconButton}" Content="&#xE711;" ToolTip="{DynamicResource Shortcut_Clear}"
-                                                        Command="{Binding ClearCommand}" IsEnabled="{Binding IsAssigned}" />
-                                            </StackPanel>
-
-                                            <!-- Status / error -->
-                                            <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,10,0,0">
-                                                <StackPanel Orientation="Horizontal" Visibility="{Binding HasError, Converter={StaticResource InvBoolToVis}}">
-                                                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,8,0">
-                                                        <Ellipse.Style>
-                                                            <Style TargetType="Ellipse">
-                                                                <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Active">
-                                                                        <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="InUse">
-                                                                        <Setter Property="Fill" Value="{DynamicResource WarningBrush}" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Invalid">
-                                                                        <Setter Property="Fill" Value="{DynamicResource DangerBrush}" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Ellipse.Style>
-                                                    </Ellipse>
-                                                    <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" />
-                                                </StackPanel>
-                                                <StackPanel Orientation="Horizontal" Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE783;" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,0,8,0" />
-                                                    <TextBlock Text="{Binding ErrorText}" FontSize="12" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" />
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ScrollViewer>
+                <tabs:ShortcutsTab />
             </TabItem>
         </TabControl>
 
@@ -1817,7 +1336,7 @@
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Undo.Text}" VerticalAlignment="Center" Margin="0,0,16,0" MaxWidth="520" TextTrimming="CharacterEllipsis" />
                 <Button Style="{StaticResource AccentButton}" Content="{DynamicResource Media_Undo}" Command="{Binding Undo.UndoCommand}" MinHeight="30" Padding="12,4" />
-                <Button Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding Undo.CommitCommand}" Margin="6,0,0,0" />
+                <Button Style="{StaticResource IconButton}" Content="&#xE711;" Command="{Binding Undo.CommitCommand}" Margin="6,0,0,0" ToolTip="{DynamicResource Common_Close}" />
             </StackPanel>
         </Border>
     </Grid>

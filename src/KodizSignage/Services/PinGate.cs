@@ -14,13 +14,17 @@ public interface IPinGate
     /// </summary>
     bool Unlock();
 
-    /// <summary>Requires the PIN again for the next protected action (settings window hidden).</summary>
+    /// <summary>Requires the PIN again for the next protected action (settings closed, minimized or idle).</summary>
     void Lock();
 
-    /// <summary>Asks for a new PIN and stores it. Returns false when cancelled.</summary>
+    /// <summary>Asks for the PIN even inside an unlocked session (changing or removing the PIN).</summary>
+    bool Confirm();
+
+    /// <summary>Asks for a new PIN and stores it (the current one first, if any). Returns false when cancelled.</summary>
     bool SetPin();
 
-    void RemovePin();
+    /// <summary>Removes the PIN after the current one was entered. Returns false when cancelled.</summary>
+    bool RemovePin();
 }
 
 /// <summary>Optional PIN protection for settings, stopping playback and exiting.</summary>
@@ -47,13 +51,12 @@ public sealed class PinGate : IPinGate
 
     public bool HasPin => !string.IsNullOrEmpty(_settings.Current.PinHash);
 
-    public bool Unlock()
-    {
-        if (!HasPin || _unlocked)
-        {
-            return true;
-        }
+    public bool Unlock() => !HasPin || _unlocked || Ask();
 
+    public bool Confirm() => !HasPin || Ask();
+
+    private bool Ask()
+    {
         if (DateTime.UtcNow < _lockedUntil)
         {
             _dialogs.Warning(_loc.Format("Pin_LockedOut", (int)Math.Ceiling((_lockedUntil - DateTime.UtcNow).TotalSeconds)));
@@ -70,10 +73,23 @@ public sealed class PinGate : IPinGate
         return ok;
     }
 
-    public void Lock() => _unlocked = false;
+    public void Lock()
+    {
+        if (_unlocked && HasPin)
+        {
+            _log.Information("Settings locked");
+        }
+
+        _unlocked = false;
+    }
 
     public bool SetPin()
     {
+        if (HasPin && !Confirm())
+        {
+            return false;
+        }
+
         var pin = PinWindow.AskNew(_loc.Get("Pin_New"), _loc.Get);
         if (pin is null)
         {
@@ -86,10 +102,16 @@ public sealed class PinGate : IPinGate
         return true;
     }
 
-    public void RemovePin()
+    public bool RemovePin()
     {
+        if (!Confirm())
+        {
+            return false;
+        }
+
         _settings.Update(s => s with { PinHash = null });
         _log.Information("Settings PIN removed");
+        return true;
     }
 
     private bool Verify(string pin)

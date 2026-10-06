@@ -55,10 +55,20 @@ jobs:
           Copy-Item LICENSE publish/LICENSE.txt
           Copy-Item THIRD-PARTY-NOTICES.txt publish/THIRD-PARTY-NOTICES.txt
 
+      - name: Release notes
+        id: notes
+        shell: pwsh
+        run: |
+          # Hand-written notes (notes/vX.Y.Z.md) if present, otherwise GitHub's generated list.
+          $path = "notes/${{ github.ref_name }}.md"
+          if (Test-Path $path) { "path=$path" >> $env:GITHUB_OUTPUT; "generate=false" >> $env:GITHUB_OUTPUT }
+          else { "path=" >> $env:GITHUB_OUTPUT; "generate=true" >> $env:GITHUB_OUTPUT }
+
       - uses: softprops/action-gh-release@v2
         with:
           name: Kodiz Signage ${{ steps.version.outputs.version }}
-          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.path }}
+          generate_release_notes: ${{ steps.notes.outputs.generate == 'true' }}
           files: |
             publish/KodizSignage.exe
             publish/KodizSignage.exe.sha256

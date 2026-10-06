@@ -30,6 +30,9 @@
         <!-- Clock, ticker, logo (above content and the empty state, below "closed"). -->
         <Grid x:Name="OverlayHost" Panel.ZIndex="15" IsHitTestVisible="False" />
 
+        <!-- Emergency notice: above content and the "closed" screen. -->
+        <Grid x:Name="AlertHost" Panel.ZIndex="25" IsHitTestVisible="False" />
+
         <!-- Long-press feedback ring (above everything). -->
         <Canvas x:Name="TouchLayer" Panel.ZIndex="30" IsHitTestVisible="False" />
 

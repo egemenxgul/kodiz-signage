@@ -1,0 +1,55 @@
+<Window x:Class="KodizSignage.Views.AlertWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Alert_Title}"
+        Width="560" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" Topmost="True" ShowInTaskbar="False"
+        Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource TextBrush}"
+        FontFamily="{StaticResource UiFont}" FontSize="14"
+        Icon="pack://application:,,,/Assets/app.ico">
+    <StackPanel Margin="24">
+        <TextBlock Text="{DynamicResource Alert_Title}" Style="{StaticResource H1}" />
+        <TextBlock Text="{DynamicResource Alert_Description}" Style="{StaticResource Secondary}" Margin="0,6,0,8" />
+
+        <TextBlock Text="{DynamicResource Alert_Quick}" Style="{StaticResource FieldLabel}" />
+        <WrapPanel x:Name="QuickPanel" />
+
+        <TextBlock Text="{DynamicResource Alert_Heading}" Style="{StaticResource FieldLabel}" />
+        <TextBox x:Name="TitleBox" MaxLength="80" FontSize="18" />
+        <TextBlock Text="{DynamicResource Alert_Message}" Style="{StaticResource FieldLabel}" />
+        <TextBox x:Name="MessageBox" MaxLength="300" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" VerticalContentAlignment="Top" />
+
+        <Grid Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Alert_Duration}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                <ComboBox x:Name="DurationBox" DisplayMemberPath="Label" SelectedValuePath="Value" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="{DynamicResource Alert_Style}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4" />
+                <ComboBox x:Name="StyleBox" DisplayMemberPath="Label" SelectedValuePath="Value" />
+            </StackPanel>
+        </Grid>
+
+        <Border x:Name="ActiveBanner" Background="{DynamicResource WarningSoftBrush}" CornerRadius="6" Padding="12,10" Margin="0,16,0,0" Visibility="Collapsed">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="{DynamicResource Alert_Clear}" Click="Clear_Click" />
+                <TextBlock x:Name="ActiveText" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
+            </DockPanel>
+        </Border>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="{DynamicResource Common_Cancel}" IsCancel="True" MinWidth="110" Margin="0,0,8,0" />
+            <Button Style="{StaticResource AccentButton}" MinWidth="160" Click="Show_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE789;" Margin="0,0,8,0" />
+                    <TextBlock Text="{DynamicResource Alert_Show}" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</Window>

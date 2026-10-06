@@ -203,7 +203,7 @@
     <sys:String x:Key="Startup_Blocked" xml:space="preserve">Windows Görev Yöneticisi'nde başlangıçta devre dışı bırakılmış; bilgisayar açılınca başlamayacak.</sys:String>
     <sys:String x:Key="Startup_Fix" xml:space="preserve">Yeniden etkinleştir</sys:String>
     <sys:String x:Key="Pin_Section" xml:space="preserve">Güvenlik</sys:String>
-    <sys:String x:Key="Pin_Description" xml:space="preserve">PIN belirlerseniz ayarları açmak, gösterimi durdurmak ve uygulamadan çıkmak için PIN sorulur. PIN'i unutursanız settings.json dosyasındaki &quot;pinHash&quot; satırını silin.</sys:String>
+    <sys:String x:Key="Pin_Description" xml:space="preserve">PIN belirlerseniz şunlar için PIN sorulur: ayarları açmak (tepsi, kısayol, ekrana basılı tutma), gösterimi durdurmak, uygulamadan çıkmak, tepsiden ekran kapatmak, PIN'i değiştirmek/kaldırmak. Ayarlar penceresi açıkken tekrar sorulmaz; pencere kapatılınca, küçültülünce veya seçilen süre boyunca işlem yapılmayınca kilitlenir. PIN'i unutursanız settings.json dosyasındaki &quot;pinHash&quot; satırını silin.</sys:String>
     <sys:String x:Key="Pin_On" xml:space="preserve">PIN koruması açık</sys:String>
     <sys:String x:Key="Pin_Off" xml:space="preserve">PIN koruması kapalı</sys:String>
     <sys:String x:Key="Pin_Set" xml:space="preserve">PIN belirle</sys:String>
@@ -590,4 +590,119 @@
     <sys:String x:Key="AppTheme_Dark" xml:space="preserve">Koyu</sys:String>
     <sys:String x:Key="Touch_LongPress" xml:space="preserve">Ekrana 2 saniye basılı tutunca ayarlar açılsın</sys:String>
     <sys:String x:Key="Touch_LongPressHint" xml:space="preserve">Dokunmatik ekranlarda klavye ve görev çubuğu olmadan ayarlara ulaşmak için. PIN varsa sorulur.</sys:String>
+    <sys:String x:Key="Pin_LockNow" xml:space="preserve">Şimdi kilitle (ayarlar kapanır, sonraki işlemde PIN sorulur)</sys:String>
+    <sys:String x:Key="Pin_SetInfo" xml:space="preserve">PIN kaydedildi. Ayarlar penceresini kapattığınızda, küçülttüğünüzde veya bir süre kullanmadığınızda kilitlenir; sonrasında ayarları açmak, gösterimi durdurmak ve çıkmak için PIN sorulur. Hemen denemek için sağ üstteki kilit simgesine basın.</sys:String>
+    <sys:String x:Key="Pin_AutoLock" xml:space="preserve">Kullanılmayınca kilitle:</sys:String>
+    <sys:String x:Key="Pin_AutoLock1" xml:space="preserve">1 dakika</sys:String>
+    <sys:String x:Key="Pin_AutoLock5" xml:space="preserve">5 dakika</sys:String>
+    <sys:String x:Key="Pin_AutoLock15" xml:space="preserve">15 dakika</sys:String>
+    <sys:String x:Key="Pin_AutoLock60" xml:space="preserve">1 saat</sys:String>
+    <sys:String x:Key="Pin_AutoLockNever" xml:space="preserve">Yalnızca kapatınca</sys:String>
+    <sys:String x:Key="Daypart_Main" xml:space="preserve">Ana liste</sys:String>
+    <sys:String x:Key="Daypart_MainHint" xml:space="preserve">Saat listesi olmayan zamanlarda oynar</sys:String>
+    <sys:String x:Key="Daypart_Add" xml:space="preserve">Saat listesi</sys:String>
+    <sys:String x:Key="Daypart_AddHint" xml:space="preserve">Belirli gün ve saatlerde ana listenin yerine oynayan ayrı bir liste (ör. Kahvaltı 08:00–12:00)</sys:String>
+    <sys:String x:Key="Daypart_NewName" xml:space="preserve">Yeni liste</sys:String>
+    <sys:String x:Key="Daypart_Name" xml:space="preserve">Liste adı</sys:String>
+    <sys:String x:Key="Daypart_Explain" xml:space="preserve">Bu gün ve saatlerde ekran ana liste yerine bu listeyi oynatır. Saatler çakışırsa önce başlayan geçerlidir.</sys:String>
+    <sys:String x:Key="Daypart_CopyMain" xml:space="preserve">Ana listeyi buraya kopyala</sys:String>
+    <sys:String x:Key="Daypart_CopyConfirm" xml:space="preserve">Bu listenin içeriği ana listenin kopyasıyla değiştirilsin mi?</sys:String>
+    <sys:String x:Key="Daypart_Remove" xml:space="preserve">Listeyi sil</sys:String>
+    <sys:String x:Key="Daypart_RemoveConfirm" xml:space="preserve">&quot;{0}&quot; saat listesi silinsin mi? Medya kütüphanede kalır.</sys:String>
+    <sys:String x:Key="Daypart_TooMany" xml:space="preserve">Bir ekranda en fazla {0} saat listesi olabilir.</sys:String>
+    <sys:String x:Key="Daypart_PlayingNow" xml:space="preserve">Şu an oynayan: {0}</sys:String>
+    <sys:String x:Key="Music_Section" xml:space="preserve">Arka plan müziği</sys:String>
+    <sys:String x:Key="Music_Description" xml:space="preserve">Bir klasördeki MP3, M4A, AAC, WMA, WAV ve FLAC dosyalarını ekranlardan bağımsız olarak çalar. Klasöre şarkı ekleyip silebilirsiniz; birkaç dakika içinde algılanır. Bilgisayarın varsayılan ses çıkışı kullanılır.</sys:String>
+    <sys:String x:Key="Music_Enabled" xml:space="preserve">Arka plan müziğini çal</sys:String>
+    <sys:String x:Key="Music_PickFolder" xml:space="preserve">Müzik klasörünü seçin</sys:String>
+    <sys:String x:Key="Music_ChangeFolder" xml:space="preserve">Klasör seç</sys:String>
+    <sys:String x:Key="Music_Volume" xml:space="preserve">Ses seviyesi</sys:String>
+    <sys:String x:Key="Music_During" xml:space="preserve">Sesli video oynarken</sys:String>
+    <sys:String x:Key="Music_DuringLower" xml:space="preserve">Müziği kıs</sys:String>
+    <sys:String x:Key="Music_DuringPause" xml:space="preserve">Müziği duraklat</sys:String>
+    <sys:String x:Key="Music_DuringIgnore" xml:space="preserve">Değiştirme</sys:String>
+    <sys:String x:Key="Music_Shuffle" xml:space="preserve">Karışık çal</sys:String>
+    <sys:String x:Key="Music_FollowHours" xml:space="preserve">Yalnızca çalışma saatlerinde çal</sys:String>
+    <sys:String x:Key="Music_Next" xml:space="preserve">Sonraki şarkı</sys:String>
+    <sys:String x:Key="Music_Playing" xml:space="preserve">Çalıyor: {0} · {1} şarkı</sys:String>
+    <sys:String x:Key="Music_Off" xml:space="preserve">Kapalı</sys:String>
+    <sys:String x:Key="Music_NoSongs" xml:space="preserve">Klasörde müzik dosyası yok</sys:String>
+    <sys:String x:Key="Music_Waiting" xml:space="preserve">Gösterim başlayınca / çalışma saatinde çalar</sys:String>
+    <sys:String x:Key="Slide_TemplatePhoto" xml:space="preserve">Fotoğraflı tanıtım</sys:String>
+    <sys:String x:Key="Slide_TemplateHours" xml:space="preserve">Çalışma saatleri</sys:String>
+    <sys:String x:Key="Slide_TemplateCountdown" xml:space="preserve">Geri sayım / kampanya</sys:String>
+    <sys:String x:Key="Slide_Photo" xml:space="preserve">Arka plan fotoğrafı (kütüphaneden)</sys:String>
+    <sys:String x:Key="Slide_NoPhoto" xml:space="preserve">Fotoğraf yok (yalnızca renk)</sys:String>
+    <sys:String x:Key="Slide_PhotoDim" xml:space="preserve">Fotoğrafı karart (yazı okunsun diye)</sys:String>
+    <sys:String x:Key="Slide_CountdownTo" xml:space="preserve">Hedef gün</sys:String>
+    <sys:String x:Key="Slide_CountdownHint" xml:space="preserve">Kalan gün sayısı her gün kendiliğinden güncellenir. Gün gelince &quot;Bugün!&quot;, geçince &quot;Sona erdi&quot; yazar.</sys:String>
+    <sys:String x:Key="Slide_DaysLeft" xml:space="preserve">gün kaldı</sys:String>
+    <sys:String x:Key="Slide_DayLeft" xml:space="preserve">gün kaldı</sys:String>
+    <sys:String x:Key="Slide_Today" xml:space="preserve">Bugün!</sys:String>
+    <sys:String x:Key="Slide_Ended" xml:space="preserve">Sona erdi</sys:String>
+    <sys:String x:Key="Slide_RowDay" xml:space="preserve">Gün</sys:String>
+    <sys:String x:Key="Slide_RowHours" xml:space="preserve">Saat</sys:String>
+    <sys:String x:Key="Slide_HoursTitle" xml:space="preserve">Çalışma saatleri</sys:String>
+    <sys:String x:Key="Slide_HoursWeekdays" xml:space="preserve">Pazartesi – Cuma</sys:String>
+    <sys:String x:Key="Slide_HoursSaturday" xml:space="preserve">Cumartesi</sys:String>
+    <sys:String x:Key="Slide_HoursSunday" xml:space="preserve">Pazar</sys:String>
+    <sys:String x:Key="Alert_Button" xml:space="preserve">Duyuru</sys:String>
+    <sys:String x:Key="Alert_Tooltip" xml:space="preserve">Tüm ekranlarda tam ekran acil duyuru gösterin</sys:String>
+    <sys:String x:Key="Alert_Title" xml:space="preserve">Acil duyuru</sys:String>
+    <sys:String x:Key="Alert_Description" xml:space="preserve">Tüm ekranlarda, içeriğin ve kapalı saat ekranının üstünde tam ekran gösterilir. Süre dolunca gösterim kaldığı yerden devam eder.</sys:String>
+    <sys:String x:Key="Alert_Quick" xml:space="preserve">Hazır metinler</sys:String>
+    <sys:String x:Key="Alert_QuickClosed" xml:space="preserve">Bugün kapalıyız</sys:String>
+    <sys:String x:Key="Alert_QuickBack" xml:space="preserve">Birazdan döneceğiz</sys:String>
+    <sys:String x:Key="Alert_QuickOrder" xml:space="preserve">Siparişiniz hazır</sys:String>
+    <sys:String x:Key="Alert_QuickWifi" xml:space="preserve">Wi-Fi şifresi kasada</sys:String>
+    <sys:String x:Key="Alert_Heading" xml:space="preserve">Başlık</sys:String>
+    <sys:String x:Key="Alert_Message" xml:space="preserve">Açıklama (isteğe bağlı)</sys:String>
+    <sys:String x:Key="Alert_Duration" xml:space="preserve">Süre</sys:String>
+    <sys:String x:Key="Alert_Style" xml:space="preserve">Görünüm</sys:String>
+    <sys:String x:Key="Alert_StyleInfo" xml:space="preserve">Bilgi (mor)</sys:String>
+    <sys:String x:Key="Alert_StyleUrgent" xml:space="preserve">Acil (kırmızı)</sys:String>
+    <sys:String x:Key="Alert_5min" xml:space="preserve">5 dakika</sys:String>
+    <sys:String x:Key="Alert_15min" xml:space="preserve">15 dakika</sys:String>
+    <sys:String x:Key="Alert_30min" xml:space="preserve">30 dakika</sys:String>
+    <sys:String x:Key="Alert_60min" xml:space="preserve">1 saat</sys:String>
+    <sys:String x:Key="Alert_UntilRemoved" xml:space="preserve">Kaldırılana kadar</sys:String>
+    <sys:String x:Key="Alert_Show" xml:space="preserve">Ekranlarda göster</sys:String>
+    <sys:String x:Key="Alert_Clear" xml:space="preserve">Duyuruyu kaldır</sys:String>
+    <sys:String x:Key="Alert_Active" xml:space="preserve">Ekranlarda duyuru gösteriliyor: {0}</sys:String>
+    <sys:String x:Key="Alert_Until" xml:space="preserve">{0}'a kadar</sys:String>
+    <sys:String x:Key="Web_SlideCreated" xml:space="preserve">Slayt oluşturuldu: {0}</sys:String>
+    <sys:String x:Key="Stats_Last30" xml:space="preserve">Son 30 gün: {0} gösterim · {1}</sys:String>
+    <sys:String x:Key="Stats_Top" xml:space="preserve">En çok gösterilen 10 medya</sys:String>
+    <sys:String x:Key="Stats_PerDay" xml:space="preserve">Günlük gösterim</sys:String>
+    <sys:String x:Key="Stats_Refresh" xml:space="preserve">Yenile</sys:String>
+    <sys:String x:Key="Stats_Empty" xml:space="preserve">Henüz gösterim kaydı yok. Gösterim başladıkça grafik burada oluşur.</sys:String>
+    <sys:String x:Key="Common_Close" xml:space="preserve">Kapat</sys:String>
+    <sys:String x:Key="Slide_RemoveRow" xml:space="preserve">Satırı sil</sys:String>
+    <sys:String x:Key="AutoBackup_Enabled" xml:space="preserve">Otomatik yedekle (bir klasöre veya USB belleğe)</sys:String>
+    <sys:String x:Key="AutoBackup_PickFolder" xml:space="preserve">Otomatik yedek klasörünü seçin</sys:String>
+    <sys:String x:Key="AutoBackup_Daily" xml:space="preserve">Her gün</sys:String>
+    <sys:String x:Key="AutoBackup_Weekly" xml:space="preserve">Haftada bir</sys:String>
+    <sys:String x:Key="AutoBackup_Monthly" xml:space="preserve">Ayda bir</sys:String>
+    <sys:String x:Key="AutoBackup_Keep2" xml:space="preserve">Son 2 yedeği sakla</sys:String>
+    <sys:String x:Key="AutoBackup_Keep4" xml:space="preserve">Son 4 yedeği sakla</sys:String>
+    <sys:String x:Key="AutoBackup_Keep8" xml:space="preserve">Son 8 yedeği sakla</sys:String>
+    <sys:String x:Key="AutoBackup_Keep12" xml:space="preserve">Son 12 yedeği sakla</sys:String>
+    <sys:String x:Key="AutoBackup_Now" xml:space="preserve">Şimdi yedekle</sys:String>
+    <sys:String x:Key="AutoBackup_Running" xml:space="preserve">Yedekleniyor…</sys:String>
+    <sys:String x:Key="AutoBackup_Last" xml:space="preserve">Son otomatik yedek: {0}</sys:String>
+    <sys:String x:Key="AutoBackup_Never" xml:space="preserve">Henüz otomatik yedek alınmadı</sys:String>
+    <sys:String x:Key="AutoBackup_Done" xml:space="preserve">Yedek alındı: {0}</sys:String>
+    <sys:String x:Key="AutoBackup_Failed" xml:space="preserve">Otomatik yedek alınamadı: {0}</sys:String>
+    <sys:String x:Key="AutoBackup_FolderMissing" xml:space="preserve">Yedek klasörü bulunamadı (USB takılı mı?): {0}. Daha sonra tekrar denenecek.</sys:String>
+    <sys:String x:Key="AutoBackup_Hint" xml:space="preserve">Çalışma saatleri tanımlıysa yedek kapalı saatlerde alınır. Elle aldığınız yedeklere dokunulmaz.</sys:String>
+    <sys:String x:Key="Diagnostics_Create" xml:space="preserve">Tanı paketi oluştur</sys:String>
+    <sys:String x:Key="Diagnostics_Hint" xml:space="preserve">Loglar, ayarlar ve sistem bilgisi tek zip dosyasında (PIN'ler ve Wi-Fi şifreleri gizlenir, medya eklenmez). Destek isterken gönderin.</sys:String>
+    <sys:String x:Key="Diagnostics_FileType" xml:space="preserve">Tanı paketi</sys:String>
+    <sys:String x:Key="Diagnostics_Created" xml:space="preserve">Tanı paketi oluşturuldu:&#10;{0}</sys:String>
+    <sys:String x:Key="Diagnostics_Failed" xml:space="preserve">Tanı paketi oluşturulamadı: {0}</sys:String>
+    <sys:String x:Key="Update_WhatsNew" xml:space="preserve">Bu sürümde neler yeni</sys:String>
+    <sys:String x:Key="WhatsNew_Banner" xml:space="preserve">Kodiz Signage {0} sürümüne güncellendi.</sys:String>
+    <sys:String x:Key="WhatsNew_Show" xml:space="preserve">Yenilikler</sys:String>
+    <sys:String x:Key="WhatsNew_Title" xml:space="preserve">{0} sürümünde neler yeni</sys:String>
+    <sys:String x:Key="WhatsNew_Text" xml:space="preserve">• Saate göre listeler: Ekranlar › Liste › &quot;Saat listesi&quot; (ör. Kahvaltı 08–12).&#10;• Arka plan müziği: Genel › Arka plan müziği.&#10;• Fotoğraflı slaytlar ve yeni şablonlar: fotoğraflı tanıtım, çalışma saatleri, geri sayım.&#10;• Acil duyuru: sağ üstteki &quot;Duyuru&quot; butonu (telefondan da).&#10;• Telefon paneli: duyuru, kayan yazı, hızlı slayt, müzik.&#10;• İstatistik grafiği, otomatik yedek ve tanı paketi (Genel sekmesi).&#10;• PIN: pencere küçültülünce veya kullanılmayınca kilitlenir; sağ üstte &quot;Şimdi kilitle&quot;.&#10;• Dokunmatikte tutamaktan sürükleyerek sıralama.</sys:String>
 </ResourceDictionary>

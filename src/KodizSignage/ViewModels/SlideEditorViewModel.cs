@@ -37,11 +37,22 @@ public sealed partial class SlideEditorViewModel : ObservableObject
     private readonly DispatcherTimer _previewTimer;
     private bool _loading;
 
-    public SlideEditorViewModel(SlideDefinition? existing, ILocalizationService loc)
+    private readonly ILocalizationService _loc;
+    private readonly Func<Guid, string?> _imagePath;
+
+    public SlideEditorViewModel(SlideDefinition? existing, ILocalizationService loc, IReadOnlyList<PlaylistItem> images, Func<Guid, string?> imagePath)
     {
         IsEditing = existing is not null;
+        _loc = loc;
+        _imagePath = imagePath;
         OptionItem<int> O(int value, string key) => new(value, key, loc);
-        Templates = new[] { O(0, "Slide_TemplateAnnouncement"), O(1, "Slide_TemplatePriceList"), O(2, "Slide_TemplateQr") };
+        Templates = new[]
+        {
+            O(0, "Slide_TemplateAnnouncement"), O(1, "Slide_TemplatePriceList"), O(2, "Slide_TemplateQr"),
+            O(3, "Slide_TemplatePhoto"), O(4, "Slide_TemplateHours"), O(5, "Slide_TemplateCountdown"),
+        };
+        Images = new[] { new LogoChoice(Guid.Empty, loc.Get("Slide_NoPhoto")) }
+            .Concat(images.Select(i => new LogoChoice(i.Id, i.Title))).ToList();
         QrKinds = new[] { O(0, "Slide_QrLink"), O(1, "Slide_QrText"), O(2, "Slide_QrWifi") };
         Themes = SlideThemes.All.Select(t => new ThemeOption(t, loc.Get("Theme_" + t.Key))).ToList();
 
@@ -49,20 +60,36 @@ public sealed partial class SlideEditorViewModel : ObservableObject
         _previewTimer.Tick += (_, _) =>
         {
             _previewTimer.Stop();
-            Preview = SlideRenderer.Render(ToDefinition(), Portrait ? 0.3 : 0.4);
+            Preview = SlideRenderer.Render(ToDefinition(), Portrait ? 0.3 : 0.4, _imagePath);
         };
 
         Load(existing ?? DefaultSlide(loc));
     }
 
     public bool IsEditing { get; }
+
+    /// <summary>Library photos for the background ("none" first).</summary>
+    public IReadOnlyList<LogoChoice> Images { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPhoto))]
+    private Guid? _backgroundImageId = Guid.Empty;
+
+    [ObservableProperty] private double _imageDimPercent = 45;
+    [ObservableProperty] private DateTime? _countdownTo;
+
+    public bool HasPhoto => BackgroundImageId is { } id && id != Guid.Empty;
+    public bool IsCountdown => Template == (int)SlideTemplate.Countdown;
+    public bool HasRows => Template is (int)SlideTemplate.PriceList or (int)SlideTemplate.OpeningHours;
+    public string RowNameLabel => _loc.Get(Template == (int)SlideTemplate.OpeningHours ? "Slide_RowDay" : "Slide_RowName");
+    public string RowPriceLabel => _loc.Get(Template == (int)SlideTemplate.OpeningHours ? "Slide_RowHours" : "Slide_RowPrice");
     public IReadOnlyList<OptionItem<int>> Templates { get; }
     public IReadOnlyList<OptionItem<int>> QrKinds { get; }
     public IReadOnlyList<ThemeOption> Themes { get; }
     public ObservableCollection<PriceRowViewModel> Rows { get; } = new();
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsPriceList), nameof(IsQr))]
+    [NotifyPropertyChangedFor(nameof(IsPriceList), nameof(IsQr), nameof(IsCountdown), nameof(HasRows), nameof(RowNameLabel), nameof(RowPriceLabel))]
     private int _template;
 
     [ObservableProperty] private string _title = string.Empty;
@@ -116,6 +143,9 @@ public sealed partial class SlideEditorViewModel : ObservableObject
             AccentColor = slide.AccentColor;
             Portrait = slide.Portrait;
             TextScale = slide.TextScale;
+            BackgroundImageId = slide.BackgroundImageId ?? Guid.Empty;
+            ImageDimPercent = Math.Round(slide.ImageDim * 100);
+            CountdownTo = slide.CountdownTo;
             Rows.Clear();
             foreach (var row in slide.Rows)
             {
@@ -147,7 +177,35 @@ public sealed partial class SlideEditorViewModel : ObservableObject
         AccentColor = AccentColor,
         Portrait = Portrait,
         TextScale = TextScale,
+        BackgroundImageId = HasPhoto ? BackgroundImageId : null,
+        ImageDim = ImageDimPercent / 100,
+        CountdownTo = CountdownTo,
     }.Normalize();
+
+    partial void OnTemplateChanged(int value)
+    {
+        if (_loading)
+        {
+            return;
+        }
+
+        // Sensible starting content for the new template (only replaces untouched defaults).
+        switch ((SlideTemplate)value)
+        {
+            case SlideTemplate.OpeningHours when Rows.All(r => r.Price.Contains('₺') || string.IsNullOrWhiteSpace(r.Price)):
+                Rows.Clear();
+                foreach (var (day, hours) in new[] { ("Slide_HoursWeekdays", "08:00 – 22:00"), ("Slide_HoursSaturday", "09:00 – 23:00"), ("Slide_HoursSunday", "10:00 – 20:00") })
+                {
+                    Rows.Add(new PriceRowViewModel(new PriceRow(_loc.Get(day), hours), SchedulePreview));
+                }
+
+                Title = _loc.Get("Slide_HoursTitle");
+                break;
+            case SlideTemplate.Countdown:
+                CountdownTo ??= DateTime.Today.AddDays(7);
+                break;
+        }
+    }
 
     private void SchedulePreview()
     {
@@ -163,7 +221,8 @@ public sealed partial class SlideEditorViewModel : ObservableObject
     protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);
-        if (e.PropertyName is not (nameof(Preview) or nameof(IsPriceList) or nameof(IsQr) or nameof(IsWifi)))
+        if (e.PropertyName is not (nameof(Preview) or nameof(IsPriceList) or nameof(IsQr) or nameof(IsWifi) or nameof(HasPhoto)
+            or nameof(IsCountdown) or nameof(HasRows) or nameof(RowNameLabel) or nameof(RowPriceLabel)))
         {
             SchedulePreview();
         }

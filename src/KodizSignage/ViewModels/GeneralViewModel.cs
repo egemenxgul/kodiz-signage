@@ -29,6 +29,9 @@ public sealed partial class GeneralViewModel : ObservableObject
     private readonly IPlayStatsService _stats;
     private readonly IWebPanelService _web;
     private readonly IThemeService _themeService;
+    private readonly IMusicService _music;
+    private readonly IAutoBackupService _autoBackup;
+    private readonly IPlaylistService _playlist;
     private readonly ILogger _log;
     private bool _syncing;
 
@@ -48,8 +51,16 @@ public sealed partial class GeneralViewModel : ObservableObject
         IPlayStatsService stats,
         IWebPanelService web,
         IThemeService theme,
+        IMusicService music,
+        IAutoBackupService autoBackup,
+        IPlaylistService playlist,
         ILogger log)
     {
+        _playlist = playlist;
+        _autoBackup = autoBackup;
+        _autoBackup.StateChanged += (_, _) => Application.Current.Dispatcher.BeginInvoke(SyncAutoBackupState);
+        _music = music;
+        _music.StateChanged += (_, _) => Application.Current.Dispatcher.BeginInvoke(SyncMusicState);
         _themeService = theme;
         _web = web;
         _web.StateChanged += (_, _) => SyncWebState();
@@ -80,6 +91,27 @@ public sealed partial class GeneralViewModel : ObservableObject
                 },
             }));
 
+        AutoBackupIntervals = new[]
+        {
+            new OptionItem<int>(1, "AutoBackup_Daily", loc),
+            new OptionItem<int>(7, "AutoBackup_Weekly", loc),
+            new OptionItem<int>(30, "AutoBackup_Monthly", loc),
+        };
+        AutoBackupKeepChoices = new[] { 2, 4, 8, 12 }.Select(n => new OptionItem<int>(n, "AutoBackup_Keep" + n, loc)).ToList();
+        MusicDuringChoices = new[]
+        {
+            new OptionItem<int>(0, "Music_DuringLower", loc),
+            new OptionItem<int>(1, "Music_DuringPause", loc),
+            new OptionItem<int>(2, "Music_DuringIgnore", loc),
+        };
+        AutoLockChoices = new[]
+        {
+            new OptionItem<int>(1, "Pin_AutoLock1", loc),
+            new OptionItem<int>(5, "Pin_AutoLock5", loc),
+            new OptionItem<int>(15, "Pin_AutoLock15", loc),
+            new OptionItem<int>(60, "Pin_AutoLock60", loc),
+            new OptionItem<int>(0, "Pin_AutoLockNever", loc),
+        };
         Themes = new[]
         {
             new OptionItem<AppTheme>(AppTheme.System, "AppTheme_System", loc),
@@ -120,6 +152,11 @@ public sealed partial class GeneralViewModel : ObservableObject
         {
             foreach (var o in Languages) o.Refresh(_loc);
             foreach (var o in Themes) o.Refresh(_loc);
+            foreach (var o in AutoLockChoices) o.Refresh(_loc);
+            foreach (var o in MusicDuringChoices) o.Refresh(_loc);
+            foreach (var o in AutoBackupIntervals.Concat(AutoBackupKeepChoices)) o.Refresh(_loc);
+            SyncAutoBackupState();
+            SyncMusicState();
             foreach (var o in Transitions) o.Refresh(_loc);
             foreach (var o in Motions) o.Refresh(_loc);
             foreach (var o in ScalingModes) o.Refresh(_loc);
@@ -139,6 +176,12 @@ public sealed partial class GeneralViewModel : ObservableObject
     [ObservableProperty] private AppTheme _theme;
 
     [ObservableProperty] private bool _longPressOpensSettings;
+
+    [ObservableProperty] private int _pinAutoLockMinutes;
+
+    public IReadOnlyList<OptionItem<int>> AutoLockChoices { get; private set; } = Array.Empty<OptionItem<int>>();
+
+    partial void OnPinAutoLockMinutesChanged(int value) => Save(s => s with { PinAutoLockMinutes = value });
 
     partial void OnThemeChanged(AppTheme value)
     {
@@ -218,6 +261,19 @@ public sealed partial class GeneralViewModel : ObservableObject
             Language = s.Language;
             Theme = s.Theme;
             LongPressOpensSettings = s.LongPressOpensSettings;
+            PinAutoLockMinutes = s.PinAutoLockMinutes;
+            MusicEnabled = s.Music.Enabled;
+            MusicFolder = s.Music.Folder;
+            MusicVolumePercent = Math.Round(s.Music.Volume * 100);
+            MusicShuffle = s.Music.Shuffle;
+            MusicDuring = (int)s.Music.DuringVideoSound;
+            MusicFollowHours = s.Music.FollowOpeningHours;
+            SyncMusicState();
+            AutoBackupEnabled = s.AutoBackup.Enabled;
+            AutoBackupFolder = s.AutoBackup.Folder;
+            AutoBackupInterval = s.AutoBackup.IntervalDays;
+            AutoBackupKeep = s.AutoBackup.Keep;
+            SyncAutoBackupState();
             StartWithWindows = s.StartWithWindows;
             AutoPlayOnLaunch = s.AutoPlayOnLaunch;
             DefaultImageDuration = s.DefaultImageDurationSeconds;
@@ -353,6 +409,15 @@ public sealed partial class GeneralViewModel : ObservableObject
         }
     }
 
+    /// <summary>"What's new" of an available update (Markdown simplified to plain text).</summary>
+    [ObservableProperty] private string? _releaseNotes;
+
+    private static string CleanNotes(string markdown) =>
+        string.Join('\n', markdown.Replace("\r", string.Empty).Split('\n')
+            .Select(l => l.TrimStart('#', ' ').Replace("**", string.Empty))
+            .Where(l => !l.StartsWith("Full Changelog", StringComparison.OrdinalIgnoreCase)))
+        .Trim();
+
     [RelayCommand]
     private void OpenReleasePage() => OpenUrl(_updates.Release?.PageUrl ?? $"https://github.com/{UpdateService.Repository}/releases");
 
@@ -373,6 +438,9 @@ public sealed partial class GeneralViewModel : ObservableObject
         IsUpdateBusy = _updates.State is UpdateState.Checking or UpdateState.Downloading;
         UpdateProgress = _updates.Progress * 100;
         HasReleasePage = _updates.Release is not null;
+        ReleaseNotes = _updates.Release is { } release && release.IsNewerThan(InstallService.CurrentVersion, null) && !string.IsNullOrWhiteSpace(release.Notes)
+            ? CleanNotes(release.Notes)
+            : null;
         UpdateStatusText = _updates.State switch
         {
             UpdateState.Checking => _loc.Get("Update_Checking"),
@@ -432,16 +500,18 @@ public sealed partial class GeneralViewModel : ObservableObject
     [RelayCommand]
     private void SetPin()
     {
-        _pin.SetPin();
-        OnPropertyChanged(nameof(HasPin));
+        if (_pin.SetPin())
+        {
+            OnPropertyChanged(nameof(HasPin));
+            _dialogs.Info(_loc.Get("Pin_SetInfo"));
+        }
     }
 
     [RelayCommand]
     private void RemovePin()
     {
-        if (_dialogs.Confirm(_loc.Get("Pin_RemoveConfirm")))
+        if (_dialogs.Confirm(_loc.Get("Pin_RemoveConfirm")) && _pin.RemovePin())
         {
-            _pin.RemovePin();
             OnPropertyChanged(nameof(HasPin));
         }
     }
@@ -461,6 +531,119 @@ public sealed partial class GeneralViewModel : ObservableObject
         {
             _dialogs.Info(_loc.Format("Backup_Created", path));
         }
+    }
+
+    // ---- Automatic backup ------------------------------------------------------------------------
+
+    public IReadOnlyList<OptionItem<int>> AutoBackupIntervals { get; }
+    public IReadOnlyList<OptionItem<int>> AutoBackupKeepChoices { get; }
+
+    [ObservableProperty] private bool _autoBackupEnabled;
+    [ObservableProperty] private string? _autoBackupFolder;
+    [ObservableProperty] private int _autoBackupInterval;
+    [ObservableProperty] private int _autoBackupKeep;
+    [ObservableProperty] private string _autoBackupStatus = string.Empty;
+    [ObservableProperty] private bool _autoBackupRunning;
+
+    private void SaveAutoBackup(Func<AutoBackupSettings, AutoBackupSettings> change) => Save(s => s with { AutoBackup = change(s.AutoBackup) });
+
+    partial void OnAutoBackupEnabledChanged(bool value)
+    {
+        if (value && string.IsNullOrEmpty(AutoBackupFolder) && !_syncing)
+        {
+            PickAutoBackupFolder();
+            if (string.IsNullOrEmpty(AutoBackupFolder))
+            {
+                Application.Current.Dispatcher.BeginInvoke(() => AutoBackupEnabled = false);
+                return;
+            }
+        }
+
+        SaveAutoBackup(a => a with { Enabled = value });
+    }
+
+    partial void OnAutoBackupIntervalChanged(int value) => SaveAutoBackup(a => a with { IntervalDays = value });
+    partial void OnAutoBackupKeepChanged(int value) => SaveAutoBackup(a => a with { Keep = value });
+
+    [RelayCommand]
+    private void PickAutoBackupFolder()
+    {
+        if (_dialogs.PickFolder(_loc.Get("AutoBackup_PickFolder")) is { } folder)
+        {
+            AutoBackupFolder = folder;
+            SaveAutoBackup(a => a with { Folder = folder });
+        }
+    }
+
+    [RelayCommand]
+    private Task BackupNowAsync() => _autoBackup.RunNowAsync();
+
+    private void SyncAutoBackupState()
+    {
+        AutoBackupRunning = _autoBackup.IsRunning;
+        var auto = _settings.Current.AutoBackup;
+        AutoBackupStatus = _autoBackup.IsRunning ? _loc.Get("AutoBackup_Running")
+            : _autoBackup.LastResult is { } result ? result
+            : auto.LastRun is { } last ? _loc.Format("AutoBackup_Last", last.ToString("g"))
+            : _loc.Get("AutoBackup_Never");
+    }
+
+    // ---- Background music ------------------------------------------------------------------------
+
+    public IReadOnlyList<OptionItem<int>> MusicDuringChoices { get; }
+
+    [ObservableProperty] private bool _musicEnabled;
+    [ObservableProperty] private string? _musicFolder;
+    [ObservableProperty] private double _musicVolumePercent;
+    [ObservableProperty] private bool _musicShuffle;
+    [ObservableProperty] private int _musicDuring;
+    [ObservableProperty] private bool _musicFollowHours;
+    [ObservableProperty] private string _musicStatus = string.Empty;
+    [ObservableProperty] private bool _musicIsPlaying;
+
+    private void SaveMusic(Func<MusicSettings, MusicSettings> change) => Save(s => s with { Music = change(s.Music) });
+
+    partial void OnMusicEnabledChanged(bool value)
+    {
+        if (value && string.IsNullOrEmpty(MusicFolder) && !_syncing)
+        {
+            PickMusicFolder();
+            if (string.IsNullOrEmpty(MusicFolder))
+            {
+                Application.Current.Dispatcher.BeginInvoke(() => MusicEnabled = false);
+                return;
+            }
+        }
+
+        SaveMusic(m => m with { Enabled = value });
+    }
+
+    partial void OnMusicVolumePercentChanged(double value) => SaveMusic(m => m with { Volume = Math.Round(value) / 100 });
+    partial void OnMusicShuffleChanged(bool value) => SaveMusic(m => m with { Shuffle = value });
+    partial void OnMusicDuringChanged(int value) => SaveMusic(m => m with { DuringVideoSound = (MusicDuring)Math.Clamp(value, 0, 2) });
+    partial void OnMusicFollowHoursChanged(bool value) => SaveMusic(m => m with { FollowOpeningHours = value });
+
+    [RelayCommand]
+    private void PickMusicFolder()
+    {
+        if (_dialogs.PickFolder(_loc.Get("Music_PickFolder")) is { } folder)
+        {
+            MusicFolder = folder;
+            SaveMusic(m => m with { Folder = folder });
+        }
+    }
+
+    [RelayCommand]
+    private void NextSong() => _music.Next();
+
+    private void SyncMusicState()
+    {
+        MusicIsPlaying = _music.IsPlaying;
+        MusicStatus = _music.IsPlaying && _music.CurrentSong is { } song
+            ? _loc.Format("Music_Playing", song, _music.SongCount)
+            : !_settings.Current.Music.Enabled ? _loc.Get("Music_Off")
+            : _music.SongCount == 0 && _settings.Current.Music.Folder is not null ? _loc.Get("Music_NoSongs")
+            : _loc.Get("Music_Waiting");
     }
 
     // ---- Phone panel ---------------------------------------------------------------------------
@@ -549,6 +732,50 @@ public sealed partial class GeneralViewModel : ObservableObject
         }
     }
 
+    // ---- Statistics chart -------------------------------------------------------------------------
+
+    public System.Collections.ObjectModel.ObservableCollection<StatBar> TopMedia { get; } = new();
+    public System.Collections.ObjectModel.ObservableCollection<StatBar> DailyBars { get; } = new();
+    [ObservableProperty] private string _statsSummaryText = string.Empty;
+    [ObservableProperty] private string _statsScreensText = string.Empty;
+    [ObservableProperty] private bool _hasStats;
+
+    private const double MaxBarWidth = 260;
+    private const double MaxColumnHeight = 80;
+
+    /// <summary>Recomputes the chart (window activated / refresh button).</summary>
+    [RelayCommand]
+    public void RefreshStats()
+    {
+        var summary = PlayStatsSummary.Build(_stats.Snapshot(), DateTime.Now);
+        HasStats = summary.TotalPlays > 0;
+        StatsSummaryText = _loc.Format("Stats_Last30", summary.TotalPlays, FormatDuration(TimeSpan.FromSeconds(summary.TotalSeconds)));
+
+        var maxPlays = Math.Max(1, summary.TopMedia.Select(m => m.Plays).DefaultIfEmpty().Max());
+        TopMedia.Clear();
+        foreach (var media in summary.TopMedia)
+        {
+            TopMedia.Add(new StatBar(media.Title, media.Plays.ToString(System.Globalization.CultureInfo.CurrentCulture),
+                MaxBarWidth * media.Plays / maxPlays, FormatDuration(TimeSpan.FromSeconds(media.Seconds))));
+        }
+
+        var maxDay = Math.Max(1, summary.Daily.Select(d => d.Plays).DefaultIfEmpty().Max());
+        DailyBars.Clear();
+        foreach (var day in summary.Daily)
+        {
+            DailyBars.Add(new StatBar(day.Day.ToString("d MMM ddd", System.Globalization.CultureInfo.CurrentUICulture), day.Plays.ToString(System.Globalization.CultureInfo.CurrentCulture),
+                Math.Max(2, MaxColumnHeight * day.Plays / maxDay), string.Empty));
+        }
+
+        StatsScreensText = string.Join("   ·   ", summary.Screens.Select(s =>
+            $"{(_settings.Current.GetScreen(s.Screen)?.Name is { } n ? $"{s.Screen} · {n}" : _loc.Format("Screen_Default", s.Screen))}: {s.Plays}"));
+    }
+
+    private string FormatDuration(TimeSpan time) =>
+        time.TotalHours >= 1 ? _loc.Format("Stats_Hours", (int)time.TotalHours, time.Minutes)
+        : time.TotalMinutes >= 1 ? _loc.Format("Stats_Minutes", (int)time.TotalMinutes)
+        : _loc.Format("Stats_Seconds", (int)time.TotalSeconds);
+
     [RelayCommand]
     private void ExportStats()
     {
@@ -579,6 +806,7 @@ public sealed partial class GeneralViewModel : ObservableObject
         if (_pin.Unlock() && _dialogs.Confirm(_loc.Get("Stats_ResetConfirm")))
         {
             _stats.Reset();
+            RefreshStats();
         }
     }
 
@@ -696,6 +924,51 @@ public sealed partial class GeneralViewModel : ObservableObject
     [RelayCommand]
     private void OpenLogFolder() => OpenFolder(_paths.LogFolder);
 
+    /// <summary>Zip with logs, settings and playlist (secrets removed) and a system summary, for support.</summary>
+    [RelayCommand]
+    private async Task CreateDiagnosticsAsync()
+    {
+        var path = _dialogs.PickSaveDiagnostics($"kodiz-signage-tani-{DateTime.Now:yyyy-MM-dd_HHmm}.zip");
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _playlist.FlushAsync();
+            await DiagnosticsPackage.CreateAsync(path, _paths, BuildSystemInfo(), TimeSpan.FromDays(7), CancellationToken.None);
+            _dialogs.Info(_loc.Format("Diagnostics_Created", path));
+            OpenFolder(System.IO.Path.GetDirectoryName(path)!);
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
+        {
+            _log.Warning(ex, "Diagnostics package failed");
+            _dialogs.Warning(_loc.Format("Diagnostics_Failed", ex.Message));
+        }
+    }
+
+    private string BuildSystemInfo()
+    {
+        var s = _settings.Current;
+        var text = new System.Text.StringBuilder();
+        text.AppendLine($"Kodiz Signage {InstallService.CurrentVersion}");
+        text.AppendLine($"Created: {DateTime.Now:O}");
+        text.AppendLine($"OS: {System.Runtime.InteropServices.RuntimeInformation.OSDescription} ({System.Runtime.InteropServices.RuntimeInformation.OSArchitecture}), process {System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}");
+        text.AppendLine($".NET: {Environment.Version}; culture {System.Globalization.CultureInfo.CurrentCulture.Name} / UI {System.Globalization.CultureInfo.CurrentUICulture.Name}");
+        text.AppendLine($"Uptime: {TimeSpan.FromMilliseconds(Environment.TickCount64):d\\.hh\\:mm}; memory {GC.GetTotalMemory(false) / (1024 * 1024)} MB managed, {Environment.WorkingSet / (1024 * 1024)} MB working set");
+        text.AppendLine($"Data folder: {_paths.Root}");
+        text.AppendLine($"Library: {_playlist.Items.Count} items; playing: {_playback.IsRunning}");
+        foreach (var screen in s.Screens)
+        {
+            var state = _playback.Screens.FirstOrDefault(x => x.Number == screen.Number);
+            text.AppendLine($"Screen {screen.Number}: enabled={screen.Enabled} rotation={screen.Rotation} status={state?.Status} display={state?.Display?.DeviceName} {state?.Display?.Width}x{state?.Display?.Height} now={state?.NowPlaying?.Item.OriginalName}");
+        }
+
+        text.AppendLine($"Theme={s.Theme} language={s.Language} transition={s.Transition} hours={s.OperatingHours.Enabled} webPanel={s.WebPanelEnabled} music={s.Music.Enabled} autoBackup={s.AutoBackup.Enabled}");
+        return text.ToString();
+    }
+
     [RelayCommand]
     private void OpenDataFolder() => OpenFolder(_paths.Root);
 
@@ -712,3 +985,6 @@ public sealed partial class GeneralViewModel : ObservableObject
         }
     }
 }
+
+/// <summary>One bar of the statistics chart (Size = width for media bars, height for day columns).</summary>
+public sealed record StatBar(string Label, string Value, double Size, string Detail);

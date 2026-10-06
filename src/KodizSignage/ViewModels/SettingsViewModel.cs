@@ -9,6 +9,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly IPlaybackManager _playback;
     private readonly ILocalizationService _loc;
+    private readonly Core.Services.IAlertService _alerts;
 
     public SettingsViewModel(
         MediaViewModel media,
@@ -17,8 +18,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShortcutsViewModel shortcuts,
         UndoBar undo,
         IPlaybackManager playback,
-        ILocalizationService loc)
+        ILocalizationService loc,
+        Core.Services.IAlertService alerts)
     {
+        _alerts = alerts;
+        _alerts.Changed += (_, _) => Application.Current.Dispatcher.BeginInvoke(UpdateAlert);
         Undo = undo;
         Media = media;
         Display = display;
@@ -68,6 +72,66 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [RelayCommand]
     private void DismissSafeMode() => SafeModeText = null;
+
+    // ---- What's new after an update ----
+
+    [ObservableProperty] private string? _whatsNewText;
+
+    /// <summary>Shown once per version after an update (fresh installs just remember the version).</summary>
+    public void CheckWhatsNew(Core.Services.ISettingsService settings)
+    {
+        var current = InstallService.CurrentVersion.ToString(3);
+        var seen = settings.Current.LastSeenVersion;
+        if (seen == current)
+        {
+            return;
+        }
+
+        if (seen is null && settings.IsFirstRun)
+        {
+            settings.Update(s => s with { LastSeenVersion = current });
+            return;
+        }
+
+        WhatsNewText = _loc.Format("WhatsNew_Banner", current);
+        _settingsForNotes = settings;
+    }
+
+    private Core.Services.ISettingsService? _settingsForNotes;
+
+    [RelayCommand]
+    private void ShowWhatsNew()
+    {
+        Views.MessageWindow.Show(Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive),
+            _loc.Format("WhatsNew_Title", InstallService.CurrentVersion.ToString(3)), _loc.Get("WhatsNew_Text"),
+            Views.MessageKind.Info, _loc.Get("Common_Ok"));
+        DismissWhatsNew();
+    }
+
+    [RelayCommand]
+    private void DismissWhatsNew()
+    {
+        WhatsNewText = null;
+        var current = InstallService.CurrentVersion.ToString(3);
+        _settingsForNotes?.Update(s => s with { LastSeenVersion = current });
+    }
+
+    // ---- Emergency notice ----
+
+    [ObservableProperty] private string? _alertText;
+
+    private void UpdateAlert() =>
+        AlertText = _alerts.Current is { } alert
+            ? _loc.Format("Alert_Active", alert.Title.Length > 0 ? alert.Title : alert.Message) +
+              (alert.Until is { } until ? " · " + _loc.Format("Alert_Until", until.ToString("HH:mm")) : string.Empty)
+            : null;
+
+    [RelayCommand]
+    private void OpenAlert() =>
+        Views.AlertWindow.Open(Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive), _alerts, _loc);
+
+    [RelayCommand]
+    private void ClearAlert() => _alerts.Clear();
 
     private void UpdateState()
     {

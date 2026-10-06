@@ -83,3 +83,48 @@ public class PlayStatsTests
         Assert.Empty(stats.Snapshot());
     }
 }
+
+public class PlayStatsSummaryTests
+{
+    private static PlayStat Row(int daysAgo, int screen, Guid media, string title, int plays, double seconds) => new()
+    {
+        Day = DateOnly.FromDateTime(new DateTime(2026, 10, 6)).AddDays(-daysAgo),
+        Screen = screen,
+        MediaId = media,
+        Title = title,
+        Plays = plays,
+        Seconds = seconds,
+    };
+
+    [Fact]
+    public void Summary_ranks_media_fills_empty_days_and_sums_screens()
+    {
+        var menu = Guid.NewGuid();
+        var promo = Guid.NewGuid();
+        var rows = new[]
+        {
+            Row(0, 1, menu, "Menü (yeni)", 10, 100),
+            Row(1, 2, menu, "Menü", 5, 50),
+            Row(2, 1, promo, "Kampanya", 12, 60),
+            Row(40, 1, promo, "Kampanya", 99, 999), // Older than 30 days.
+        };
+
+        var summary = PlayStatsSummary.Build(rows, new DateTime(2026, 10, 6, 15, 0, 0));
+
+        Assert.Equal(new[] { "Menü (yeni)", "Kampanya" }, summary.TopMedia.Select(m => m.Title)); // 15 plays beat 12; newest title.
+        Assert.Equal(30, summary.Daily.Count);
+        Assert.Equal(10, summary.Daily[^1].Plays);
+        Assert.Equal(0, summary.Daily[^4].Plays);
+        Assert.Equal(new[] { (1, 22), (2, 5) }, summary.Screens.Select(s => (s.Screen, s.Plays)));
+        Assert.Equal((27, 210d), (summary.TotalPlays, summary.TotalSeconds));
+    }
+
+    [Fact]
+    public void Empty_statistics_give_an_empty_summary()
+    {
+        var summary = PlayStatsSummary.Build(Array.Empty<PlayStat>(), DateTime.Today, days: 7);
+        Assert.Empty(summary.TopMedia);
+        Assert.Equal(7, summary.Daily.Count);
+        Assert.All(summary.Daily, d => Assert.Equal(0, d.Plays));
+    }
+}

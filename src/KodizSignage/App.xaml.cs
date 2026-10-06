@@ -145,11 +145,17 @@ public partial class App : Application
         _services.GetRequiredService<IWebPanelService>().Start();
         if (!isSmokeTest)
         {
+            _services.GetRequiredService<IMusicService>().Start();
+            _services.GetRequiredService<IAutoBackupService>().Start();
+        }
+        if (!isSmokeTest)
+        {
             StartUpdates(args.Contains(InstallService.AfterUpdateArgument));
         }
 
         SessionEnding += (_, _) => FlushData();
         StartMemoryLogging();
+        StartSlideRefresh();
         StartStabilityTimer();
 
         // ---- Go ----
@@ -168,6 +174,7 @@ public partial class App : Application
             return;
         }
 
+        _services.GetRequiredService<SettingsViewModel>().CheckWhatsNew(settings);
         WizardWindow.ShowIfNeeded(_services, settings);
         if (!settings.Current.AutoPlayOnLaunch || settings.IsFirstRun || (!launchedByWindows && playlist.Items.Count == 0))
         {
@@ -326,6 +333,9 @@ public partial class App : Application
         services.AddSingleton<IUpdateService, UpdateService>();
         services.AddSingleton<ISlideService, SlideService>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IMusicService, MusicService>();
+        services.AddSingleton<IAutoBackupService, AutoBackupService>();
+        services.AddSingleton<IAlertService>(sp => new AlertService(sp.GetRequiredService<Serilog.ILogger>()));
         services.AddSingleton<WebPanelService>();
         services.AddSingleton<IWebPanelService>(sp => sp.GetRequiredService<WebPanelService>());
         services.AddSingleton<IPlayStatsService>(sp => new PlayStatsService(sp.GetRequiredService<AppPaths>(), sp.GetRequiredService<Serilog.ILogger>()));
@@ -438,6 +448,7 @@ public partial class App : Application
         try
         {
             _services.GetRequiredService<UndoBar>().Commit();
+            _services.GetRequiredService<IMusicService>().Stop();
             await _services.GetRequiredService<IPlaybackManager>().ShutdownAsync();
             await _services.GetRequiredService<IPlayStatsService>().FlushAsync();
             _services.GetRequiredService<WebPanelService>().Dispose();
@@ -465,7 +476,15 @@ public partial class App : Application
         Log.Warning("Started in safe mode after repeated crashes; playback starts in {Delay}", SafeModeAutoPlayDelay);
         var vm = services.GetRequiredService<SettingsViewModel>();
         vm.SafeModeText = loc.Format("SafeMode_Text", (int)SafeModeAutoPlayDelay.TotalMinutes);
-        ShowSettingsWindow();
+        if (services.GetRequiredService<IPinGate>().HasPin)
+        {
+            // Never open the settings without the PIN; tell where to look instead.
+            services.GetRequiredService<TrayService>().ShowNotification(loc.Get("App_Name"), vm.SafeModeText);
+        }
+        else
+        {
+            ShowSettingsWindow();
+        }
 
         // Unattended PCs must recover by themselves: try again later.
         var timer = new DispatcherTimer { Interval = SafeModeAutoPlayDelay };
@@ -478,6 +497,16 @@ public partial class App : Application
                 playback.Start();
             }
         };
+        timer.Start();
+    }
+
+    /// <summary>Countdown slides show "N days left": redraw them when the day changes.</summary>
+    private void StartSlideRefresh()
+    {
+        var slides = _services!.GetRequiredService<ISlideService>();
+        slides.RefreshDaily();
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
+        timer.Tick += (_, _) => slides.RefreshDaily();
         timer.Start();
     }
 

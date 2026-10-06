@@ -168,7 +168,7 @@ public sealed class UpdateService : IUpdateService
             var location = response.Headers.Location is { } l ? (l.IsAbsoluteUri ? l.AbsoluteUri : "https://github.com" + l.OriginalString) : null;
             if (ReleaseInfo.FromTagUrl(Repository, location) is { } fromPage)
             {
-                return fromPage;
+                return fromPage.IsNewerThan(InstallService.CurrentVersion, null) ? await WithNotesAsync(fromPage) : fromPage;
             }
 
             _log.Information("Release page gave no redirect ({Status}); asking the API", (int)response.StatusCode);
@@ -180,6 +180,22 @@ public sealed class UpdateService : IUpdateService
 
         using var http = CreateClient(TimeSpan.FromSeconds(30));
         return ReleaseInfo.Parse(await http.GetStringAsync($"https://api.github.com/repos/{Repository}/releases/latest"));
+    }
+
+    /// <summary>One API call for the "what's new" text of a newer release; without it the update still works.</summary>
+    private async Task<ReleaseInfo> WithNotesAsync(ReleaseInfo release)
+    {
+        try
+        {
+            using var http = CreateClient(TimeSpan.FromSeconds(15));
+            var detailed = ReleaseInfo.Parse(await http.GetStringAsync($"https://api.github.com/repos/{Repository}/releases/tags/{Uri.EscapeDataString(release.Tag)}"));
+            return detailed is not null && detailed.Version == release.Version ? release with { Notes = detailed.Notes } : release;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _log.Information("Release notes not available: {Reason}", ex.Message);
+            return release;
+        }
     }
 
     private static string Describe(Exception ex) => ex switch

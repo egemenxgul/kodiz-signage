@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using KodizSignage.Core.Services;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -21,11 +22,17 @@ public partial class SettingsWindow : Window
     private Point? _dragStart;
     private MediaItemViewModel? _dragItem;
 
-    public SettingsWindow(SettingsViewModel viewModel, IPlaybackManager playback)
+    private readonly ISettingsService _settings;
+    private readonly IPinGate _pin;
+    private DateTime _lastInput = DateTime.UtcNow;
+
+    public SettingsWindow(SettingsViewModel viewModel, IPlaybackManager playback, ISettingsService settings, IPinGate pin)
     {
         InitializeComponent();
         _vm = viewModel;
         _playback = playback;
+        _settings = settings;
+        _pin = pin;
         DataContext = viewModel;
         FitToWorkArea();
 
@@ -35,6 +42,23 @@ public partial class SettingsWindow : Window
             _vm.Media.Tick();
             _vm.Display.Editor.Tick();
             UpdateTopmost();
+            LockWhenIdle();
+        };
+
+        // Any input keeps the unlocked session alive.
+        PreviewMouseMove += (_, _) => _lastInput = DateTime.UtcNow;
+        PreviewMouseDown += (_, _) => _lastInput = DateTime.UtcNow;
+        PreviewKeyDown += (_, _) => _lastInput = DateTime.UtcNow;
+        PreviewTouchDown += (_, _) => _lastInput = DateTime.UtcNow;
+        PreviewMouseWheel += (_, _) => _lastInput = DateTime.UtcNow;
+        StateChanged += (_, _) =>
+        {
+            // A minimized window could be restored from the taskbar without the PIN: lock instead.
+            if (WindowState == WindowState.Minimized && _pin.HasPin && !AllowClose)
+            {
+                WindowState = WindowState.Normal;
+                LockNow();
+            }
         };
 
         _vm.Media.PropertyChanged += OnMediaPropertyChanged;
@@ -45,13 +69,42 @@ public partial class SettingsWindow : Window
             _vm.Media.RefreshTexts();
             _vm.Display.Editor.RefreshTexts();
             _vm.General.RefreshSystemInfo();
+            _vm.General.RefreshStats();
         };
         Deactivated += (_, _) => CommitFocusedTextBox();
         LocationChanged += (_, _) => UpdateTopmost();
         SizeChanged += (_, _) => _vm.IsCompact = ActualWidth < CompactBelowWidth;
         Drop += Window_Drop;
         DragOver += Window_DragOver;
+        EnableTouchReorder(MediaList, _ => _vm.Media.CanReorder, item => ((MediaItemViewModel)item).Position,
+            (item, index) => _vm.Media.Move((MediaItemViewModel)item, index));
+        EnableTouchReorder(EntryList, _ => _vm.Display.Editor.CanEditEntries, item => ((EntryViewModel)item).Position,
+            (item, index) => _vm.Display.Editor.Move((EntryViewModel)item, index));
     }
+
+    /// <summary>Hides the window; the next protected action asks for the PIN again.</summary>
+    public void LockNow()
+    {
+        CommitFocusedTextBox();
+        Close(); // Hides (see OnClosing) and raises HiddenByUser, which locks the PIN gate.
+    }
+
+    private void LockWhenIdle()
+    {
+        var minutes = _settings.Current.PinAutoLockMinutes;
+        if (!_pin.HasPin || minutes <= 0 || !IsVisible || ComponentDispatcher.IsThreadModal)
+        {
+            _lastInput = DateTime.UtcNow; // Count from now once it becomes relevant.
+            return;
+        }
+
+        if (DateTime.UtcNow - _lastInput >= TimeSpan.FromMinutes(minutes))
+        {
+            LockNow();
+        }
+    }
+
+    private void Lock_Click(object sender, RoutedEventArgs e) => LockNow();
 
     /// <summary>Set on application exit; otherwise closing only hides the window.</summary>
     public bool AllowClose { get; set; }
@@ -208,7 +261,7 @@ public partial class SettingsWindow : Window
     {
         _dragStart = null;
         _dragItem = null;
-        if (_vm.Media.CanReorder && e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: MediaItemViewModel item })
+        if (e.StylusDevice is null && _vm.Media.CanReorder && e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: MediaItemViewModel item })
         {
             _dragStart = e.GetPosition(MediaList);
             _dragItem = item;
@@ -290,81 +343,6 @@ public partial class SettingsWindow : Window
         _vm.Media.SelectedItems = MediaList.SelectedItems.Cast<MediaItemViewModel>().ToList();
     }
 
-    // ---- Shortcut recording -------------------------------------------------------------------
-
-    private void ShortcutBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: ShortcutItemViewModel item })
-        {
-            _vm.Shortcuts.BeginRecording(item);
-        }
-    }
-
-    private void ShortcutBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: ShortcutItemViewModel item })
-        {
-            _vm.Shortcuts.EndRecording(item);
-        }
-    }
-
-    private void ShortcutBox_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (sender is not FrameworkElement { DataContext: ShortcutItemViewModel item })
-        {
-            return;
-        }
-
-        var key = HotkeyDisplay.RealKey(e);
-        var modifiers = HotkeyDisplay.CurrentModifiers();
-
-        if (key == Key.Tab && modifiers == HotkeyModifiers.None)
-        {
-            return; // Keep keyboard navigation working.
-        }
-
-        e.Handled = true;
-
-        if (HotkeyDisplay.IsModifierKey(key))
-        {
-            _vm.Shortcuts.ShowPending(item, modifiers);
-            return;
-        }
-
-        if (modifiers == HotkeyModifiers.None && key == Key.Escape)
-        {
-            Keyboard.ClearFocus(); // Cancel: ends recording, keeps the old shortcut.
-            return;
-        }
-
-        if (modifiers == HotkeyModifiers.None && key is Key.Back or Key.Delete)
-        {
-            _vm.Shortcuts.Assign(item, string.Empty);
-            Keyboard.ClearFocus();
-            return;
-        }
-
-        var gesture = new HotkeyGesture(modifiers, key.ToString()).ToString();
-        if (_vm.Shortcuts.Assign(item, gesture))
-        {
-            Keyboard.ClearFocus();
-        }
-        else
-        {
-            _vm.Shortcuts.ShowPending(item, HotkeyModifiers.None); // Stay in recording mode; error is shown.
-        }
-    }
-
-    private void ShortcutBox_PreviewKeyUp(object sender, KeyEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: ShortcutItemViewModel { IsRecording: true } item } &&
-            HotkeyDisplay.IsModifierKey(HotkeyDisplay.RealKey(e)))
-        {
-            _vm.Shortcuts.ShowPending(item, HotkeyDisplay.CurrentModifiers());
-            e.Handled = true;
-        }
-    }
-
     // ---- Screen playlist (entries) -------------------------------------------------------------
 
     private Point? _entryDragStart;
@@ -377,7 +355,7 @@ public partial class SettingsWindow : Window
     {
         _entryDragStart = null;
         _entryDragItem = null;
-        if (e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: EntryViewModel entry })
+        if (e.StylusDevice is null && e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: EntryViewModel entry })
         {
             _entryDragStart = e.GetPosition(EntryList);
             _entryDragItem = entry;
@@ -433,6 +411,84 @@ public partial class SettingsWindow : Window
             _vm.Display.Editor.RemoveEntries(_vm.Display.Editor.SelectedEntries.ToList());
             e.Handled = true;
         }
+    }
+
+    // ---- Touch: hold the handle and move the finger; the row follows live --------------------------
+
+    private (ListBox List, object Item, TouchDevice Device, FrameworkElement Handle)? _touchDrag;
+
+    /// <summary>Touch reordering for a list (mouse uses drag &amp; drop; touch would only scroll).</summary>
+    private void EnableTouchReorder(ListBox list, Func<object, bool> canStart, Func<object, int> position, Action<object, int> move)
+    {
+        list.PreviewTouchDown += (_, e) =>
+        {
+            if (_touchDrag is null && e.OriginalSource is FrameworkElement { Tag: "DragHandle", DataContext: { } item } handle && canStart(item))
+            {
+                handle.CaptureTouch(e.TouchDevice);
+                _touchDrag = (list, item, e.TouchDevice, handle);
+                list.SelectedItem = item;
+                e.Handled = true; // No panning while a row is being moved.
+            }
+        };
+        list.PreviewTouchMove += (_, e) =>
+        {
+            if (_touchDrag is not { } drag || drag.List != list || drag.Device != e.TouchDevice)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            var point = e.GetTouchPoint(list).Position;
+            AutoScroll(list, point.Y);
+            if (FindAncestor<ListBoxItem>(list.InputHitTest(point) as DependencyObject)?.DataContext is { } target && !ReferenceEquals(target, drag.Item))
+            {
+                move(drag.Item, position(target));
+            }
+        };
+        list.PreviewTouchUp += (_, e) => EndTouchDrag(list, e.TouchDevice);
+        list.LostTouchCapture += (_, e) => EndTouchDrag(list, e.TouchDevice);
+    }
+
+    private void EndTouchDrag(ListBox list, TouchDevice device)
+    {
+        if (_touchDrag is { } drag && drag.List == list && drag.Device == device)
+        {
+            _touchDrag = null;
+            drag.Handle.ReleaseTouchCapture(device);
+        }
+    }
+
+    /// <summary>Scrolls when the finger is near the top or bottom edge of the list.</summary>
+    private static void AutoScroll(ListBox list, double y)
+    {
+        if (FindDescendant<ScrollViewer>(list) is not { } scroller)
+        {
+            return;
+        }
+
+        const double edge = 48;
+        if (y < edge)
+        {
+            scroller.ScrollToVerticalOffset(scroller.VerticalOffset - 12);
+        }
+        else if (y > list.ActualHeight - edge)
+        {
+            scroller.ScrollToVerticalOffset(scroller.VerticalOffset + 12);
+        }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject node) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+        {
+            var child = VisualTreeHelper.GetChild(node, i);
+            if (child is T found || FindDescendant<T>(child) is { } deeper && (found = deeper) is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private static T? FindAncestor<T>(DependencyObject? node) where T : DependencyObject

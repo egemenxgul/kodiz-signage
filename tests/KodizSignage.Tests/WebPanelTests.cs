@@ -124,6 +124,25 @@ public sealed class WebPanelTests : IDisposable
         Assert.Equal(data, _backend.LastUploadBytes);
     }
 
+    [Fact]
+    public async Task Alert_and_ticker_endpoints_reach_the_app()
+    {
+        using var client = Client();
+        await Login(client, "4321");
+
+        var alert = new StringContent("{\"title\":\"Kapalıyız\",\"message\":\"Yarın görüşürüz\",\"urgent\":true,\"minutes\":30}", Encoding.UTF8, "application/json");
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/api/alert", alert)).StatusCode);
+        Assert.Equal(("Kapalıyız", "Yarın görüşürüz", true, 30), _backend.LastAlert);
+
+        var ticker = new StringContent("{\"text\":\"Bugün tatlılar %20 indirimli\",\"on\":true}", Encoding.UTF8, "application/json");
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/api/ticker?n=2", ticker)).StatusCode);
+        Assert.Equal((2, "Bugün tatlılar %20 indirimli", true), _backend.LastTicker);
+
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/api/alert/clear", null)).StatusCode);
+        Assert.Null(_backend.LastAlert);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsync("/api/alert", new StringContent("[1,2]"))).StatusCode);
+    }
+
     [Theory]
     [InlineData("..\\..\\x.png", "x.png")]
     [InlineData("a<b>:c.mp4", "abc.mp4")]
@@ -172,6 +191,31 @@ public sealed class WebPanelTests : IDisposable
         public Task SetActiveAsync(Guid id, bool active) => Task.CompletedTask;
         public Task SetOnScreenAsync(Guid id, int screen, bool on) => Task.CompletedTask;
         public Task DeleteAsync(Guid id) => Task.CompletedTask;
+
+        public (string Title, string Message, bool Urgent, int Minutes)? LastAlert { get; private set; }
+        public (int Screen, string Text, bool On)? LastTicker { get; private set; }
+
+        public Task ShowAlertAsync(string title, string message, bool urgent, int minutes)
+        {
+            LastAlert = (title, message, urgent, minutes);
+            return Task.CompletedTask;
+        }
+
+        public Task ClearAlertAsync()
+        {
+            LastAlert = null;
+            return Task.CompletedTask;
+        }
+
+        public Task SetTickerAsync(int screen, string text, bool on)
+        {
+            LastTicker = (screen, text, on);
+            return Task.CompletedTask;
+        }
+
+        public Task<string> CreateSlideAsync(string title, string body, int theme) => Task.FromResult(title);
+        public Task SetMusicAsync(bool enabled) => Task.CompletedTask;
+        public Task NextSongAsync() => Task.CompletedTask;
 
         public Task<WebUploadResult> ImportAsync(string path)
         {
