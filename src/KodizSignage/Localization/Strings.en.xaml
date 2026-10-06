@@ -387,5 +387,28 @@
     <sys:String x:Key="Duplicate_Replace" xml:space="preserve">Replace the old one</sys:String>
     <sys:String x:Key="Duplicate_Skip" xml:space="preserve">Skip</sys:String>
     <sys:String x:Key="Duplicate_ApplyToAll" xml:space="preserve">Do the same for similar cases in this import</sys:String>
+    <sys:String x:Key="Update_Section" xml:space="preserve">Updates</sys:String>
+    <sys:String x:Key="Update_CheckNow" xml:space="preserve">Check for updates</sys:String>
+    <sys:String x:Key="Update_InstallNow" xml:space="preserve">Update now</sys:String>
+    <sys:String x:Key="Update_ReleaseNotes" xml:space="preserve">Release notes</sys:String>
+    <sys:String x:Key="Update_AutoCheck" xml:space="preserve">Check for updates automatically (once a day)</sys:String>
+    <sys:String x:Key="Update_AutoInstall" xml:space="preserve">Install updates by itself at a quiet time</sys:String>
+    <sys:String x:Key="Update_Hint" xml:space="preserve">Quiet time: outside opening hours, while playback is stopped or at night 03:00–05:00. If a new version misbehaves, the previous one is restored automatically.</sys:String>
+    <sys:String x:Key="Update_Checking" xml:space="preserve">Checking for updates…</sys:String>
+    <sys:String x:Key="Update_Downloading" xml:space="preserve">Downloading version {0}…</sys:String>
+    <sys:String x:Key="Update_Ready" xml:space="preserve">Version {0} downloaded and verified. Click &quot;Update now&quot; to install.</sys:String>
+    <sys:String x:Key="Update_ReadyAuto" xml:space="preserve">Version {0} is downloaded and will install itself at the next quiet time (or install it now).</sys:String>
+    <sys:String x:Key="Update_ReadyAsk" xml:space="preserve">New version {0} is ready. Settings → General → Updates.</sys:String>
+    <sys:String x:Key="Update_UpToDate" xml:space="preserve">Up to date (version {0})</sys:String>
+    <sys:String x:Key="Update_Failed" xml:space="preserve">Update check failed: {0}</sys:String>
+    <sys:String x:Key="Update_NoNetwork" xml:space="preserve">no internet connection</sys:String>
+    <sys:String x:Key="Update_LastCheck" xml:space="preserve">last checked {0}</sys:String>
+    <sys:String x:Key="Update_NeverChecked" xml:space="preserve">Not checked yet</sys:String>
+    <sys:String x:Key="Update_InstallConfirm" xml:space="preserve">Install version {0}? Playback pauses for a few seconds; settings and media are kept.</sys:String>
+    <sys:String x:Key="Update_Done" xml:space="preserve">Kodiz Signage was updated to version {0}.</sys:String>
+    <sys:String x:Key="License_Line" xml:space="preserve">License: {0} – commercial use requires permission</sys:String>
+    <sys:String x:Key="License_View" xml:space="preserve">View license</sys:String>
+    <sys:String x:Key="License_Notices" xml:space="preserve">Third-party notices</sys:String>
+    <sys:String x:Key="License_Source" xml:space="preserve">Source code</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Invalid color. Use #RRGGBB.</sys:String>
 </ResourceDictionary>

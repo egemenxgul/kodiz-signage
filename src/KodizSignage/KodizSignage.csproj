@@ -31,5 +31,7 @@
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\logo.png" />
+    <Resource Include="..\..\LICENSE" Link="Assets\LICENSE.txt" />
+    <Resource Include="..\..\THIRD-PARTY-NOTICES.txt" Link="Assets\THIRD-PARTY-NOTICES.txt" />
   </ItemGroup>
 </Project>

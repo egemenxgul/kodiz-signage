@@ -17,12 +17,14 @@ kendi medyasını oynatabilir. İnternet gerektirmez.
 |---|---|
 | Oynatıcı | Kenarlıksız, en üstte duran tam ekran pencere; imleç gizli; A/B katmanlı ön yükleme ve fade ile siyah karesiz geçiş; animasyonlu GIF |
 | Formatlar | **Resim:** JPG, JPEG, PNG, BMP, GIF, WEBP, HEIC · **Video:** MP4, MOV, M4V (H.264 + AAC tam destekli; WMV, AVI, MKV, WEBM uyarıyla) · **PDF:** her sayfa bir görsel olur |
-| Liste | Sürükle-bırak sıralama, çoklu seçim ve toplu düzenleme, görünen ad, aktif/pasif, resim süresi, tarih aralığı, **gün ve saat planı**, 10 sn içinde geri alınabilir silme |
+| Kütüphane | Her dosya diskte **bir kez** saklanır, ekranlar paylaşır; arama, görünen ad, varsayılan süre/plan, 10 sn içinde geri alınabilir silme |
+| Ekran listeleri | Her ekranın **kendi oynatma listesi**: bağımsız sıra, süre, aktif/pasif, geçiş, tarih ve gün/saat planı; aynı medya bir listede birden çok kez; başka ekrandan kopyala, listeyi bağla, **senkron oynat** |
+| Kopya kontrolü | Birebir aynı dosya (SHA-256), görsel olarak aynı resim (algısal parmak izi), muhtemelen aynı video ve aynı ad/yeni sürüm tespit edilir; ne yapılacağı sorulur |
 | Planlama | Öğe başına tarih aralığı + gün + saat (gece yarısını geçebilir); genel **çalışma saatleri** (dışında siyah ekran) |
 | İçe aktarma | İlerleme göstergesi, kopya dosya tespiti, disk alanı kontrolü, codec/çözünürlük/HEIC uyarıları, **izlenen klasör** (USB / OneDrive / ağ klasörü) |
-| Çoklu ekran | Bağlı tüm ekranları algılar; her ekran açılıp kapatılabilir, isim alır ve **kendi medya listesini** oynatır. Ekrana özel ölçekleme, arka plan ve ses ayarı |
+| Çoklu ekran | Bağlı tüm ekranları algılar; her ekran açılıp kapatılabilir, isim ve renk alır. Ekrana özel döndürme (dikey TV), ölçekleme, arka plan, ses/ses seviyesi, varsayılan süre, geçiş ve çalışma saatleri; sesin tek ekrandan çıkması |
 | Ekran | "Ekranları Tanımla", ekran kaybolursa **gizle ve bekle** (veya ana ekranda göster) + 5 sn'de bir yeniden deneme |
-| Sistem | Kurulum ve güncelleme, Başlat menüsü kısayolu, Windows ile otomatik başlama, tek örnek, tray ikonu, değiştirilebilir global kısayollar, uyku engelleme, ayarlar için PIN, yedekle / geri yükle |
+| Sistem | Kurulum, **GitHub'dan otomatik güncelleme** (doğrulanmış indirme, sessiz saatte kurulum, sorunlu sürümde otomatik geri dönüş), Başlat menüsü kısayolu, Windows ile otomatik başlama, tek örnek, tray ikonu, değiştirilebilir global kısayollar, uyku engelleme, ayarlar için PIN, yedekle / geri yükle |
 | Dayanıklılık | Atomik JSON yazımı, bozuk dosyada yedekten veya varsayılandan devam, global hata yakalama, çökmede kendini yeniden başlatma, art arda çökmede **güvenli mod** |
 
 ### Kısayollar
@@ -52,62 +54,77 @@ bunu anlatan bir Windows bildirimi gösterilir.
 
 ## Kullanım
 
-### Medya ekleme
+### Kütüphane: medyayı bir kez ekleyin
 
-- **Dosya Ekle** butonu veya dosya/klasörleri pencereye sürükleyip bırakma.
-- Dosyalar uygulamanın kendi klasörüne kopyalanır. Orijinal dosyaya dokunulmaz.
-- Kopyalanan her dosya hemen listeye eklenir. İçe aktarmayı iptal ederseniz o ana kadar kopyalananlar listede kalır.
-- **Kopya dosya:** Aynı içerik (adı farklı olsa bile) ikinci kez eklenmez.
-- **Disk alanı:** Disk dolmak üzereyse dosya eklenmez. Medya sekmesinin sağ üstünde medya klasörünün kapladığı alan ve diskteki boş alan görünür.
-- **PDF:** Her sayfa ayrı bir görsel öğe olur (örneğin "Menü · 1/3").
-- **Uyarılar:**
-  - HEVC videolar ve 4K videolar için uyarı verilir. iPhone'da **Ayarlar → Kamera → Formatlar → "En Uyumlu"** seçilirse videolar H.264 kaydedilir.
-  - Bilgisayarda gerekli codec yoksa HEIC ve WEBP resimler için uyarı verilir. Çözüm: Microsoft Store'dan "HEIF Görüntü Uzantıları" ve "Webp Görüntü Uzantıları".
+- **Dosya Ekle** butonu veya dosya/klasörleri pencereye sürükleyip bırakma. Dosyalar uygulamanın kendi
+  klasörüne **bir kez** kopyalanır; orijinal dosyaya dokunulmaz.
+- Aynı medyayı 5 ekranda göstermek 5 kopya değil, 5 küçük kayıt demektir; disk şişmez.
+- **"Yeni medya otomatik eklensin: [1] [2] [3]"**: Birden çok ekran varken kütüphanenin üstünde çıkar.
+  İşaretli ekranlar, kütüphaneye eklenen her yeni medyayı listelerinin sonuna otomatik alır.
+- Satırlardaki renkli ekran düğmeleri mevcut bir medyayı tek tıkla bir ekranın listesine ekler veya
+  çıkarır. Kopya oluşturulmaz.
+- Kütüphanedeki süre, aktif/pasif, tarih ve plan değerleri **varsayılandır**. Bir ekran kendi değerini
+  belirlemediyse bu değerler kullanılır.
+- Kütüphaneden silinen medya tüm ekranlardan da kalkar. 10 saniye boyunca **Geri al** butonu görünür;
+  ardından dosya diskten silinir.
+- **PDF:** Her sayfa ayrı bir görsel olur. **Video:** H.264 MP4/MOV önerilir. HEVC, 4K ve eksik
+  HEIC/WEBP codec'i için uyarı verilir.
 
-### Liste ve planlama
+### Kopya kontrolü
 
-- Bir öğe seçilince sağdaki panelde önizlemesi ve tüm ayarları açılır: görünen ad, aktif/pasif, süre, tarih aralığı, gün ve saat planı.
-- **Tarih aralığı:** Öğe yalnızca bu günler arasında gösterilir; iki gün de dahildir. Örneğin bir kampanya görseli 1–31 Ekim arasında kendiliğinden yayına girer ve yayından kalkar.
-- **Gün ve saat planı:** Örneğin "Hafta içi 07:00–11:00" (kahvaltı menüsü). Bitiş saati başlangıçtan önceyse gece yarısını geçer (22:00–02:00).
-- **Toplu düzenleme:** `Ctrl` veya `Shift` ile birden fazla öğe seçilince sağ panel toplu düzenlemeye geçer: aktif/pasif yap, süre, tarih aralığı, plan, sil.
-- **Silme:** Öğe ve medya klasöründeki kopyası silinir. 10 saniye boyunca **Geri al** butonu görünür. Bu süre dolduktan veya pencere kapatıldıktan sonra dosya diskten kalıcı olarak silinir.
-- **Yayın göstergesi:** O an TV'de oynayan öğe listede **YAYINDA** etiketiyle işaretlenir. Üst çubukta da adı ve kalan süresi yazar.
-- **Önizle:** Gösterimi bu bilgisayarda küçük ve sessiz bir pencerede oynatır. TV'deki gösterimi etkilemez.
+Eklenen her dosya kütüphaneyle karşılaştırılır:
 
-### Birden çok ekran (Ekranlar sekmesi)
+| Durum | Nasıl anlaşılır | Önerilen |
+|---|---|---|
+| Birebir aynı dosya | İçerik özeti (SHA-256), dosya adı farklı olsa bile | Mevcut olanı kullan |
+| Görsel olarak aynı resim | Algısal parmak izi: yeniden kaydedilmiş, küçültülmüş veya farklı formatta kopyalar | Mevcut olanı kullan |
+| Muhtemelen aynı video | Aynı süre, aynı çözünürlük, benzer boyut | Mevcut olanı kullan |
+| Aynı ad, farklı içerik | Muhtemelen güncellenmiş sürüm | Eskisinin yerine koy |
 
-Bilgisayara bağlı her ekran ayrı bir kart olarak listelenir ("5 ekran algılandı"):
+İki dosya küçük resimleriyle yan yana gösterilir. Seçenekler:
 
-- **Bu ekranda gösterim** anahtarıyla ekran açılır veya kapatılır. Kapalı ekranda hiçbir şey gösterilmez;
-  ayarları ve medya atamaları saklanır.
-- Her ekrana bir isim verilebilir (örneğin "Bar üstü", "Kasa", "Vitrin").
-- Kartta ekranın durumu ("Oynuyor: menu.jpg", "Ekran bekleniyor") ve kaç medya atandığı görünür.
-- **Görünüm** bölümünden ekrana özel ölçekleme, arka plan rengi ve video sesi seçilebilir.
-  Varsayılan olarak genel ayarlar kullanılır.
-- **Medyayı düzenle**, Medya sekmesini yalnızca o ekranın medyasını gösterecek şekilde açar.
-  **Önizle**, o ekranın gösterimini küçük bir pencerede oynatır.
-- Bağlı olmayan ama kayıtlı ekranlar "Bağlı değil" olarak listelenir. **Unut** ile kaldırılabilir.
+- **Mevcut olanı kullan:** Diske bir şey kopyalanmaz; gerekiyorsa medya hedef ekrana eklenir.
+- **Yine de ayrı ekle:** Ne kadar ek yer tutacağı yazar.
+- **Eskisinin yerine koy:** Ekranlardaki yeri ve ekrana özel ayarları korunur, eski dosya silinir.
+- **Atla.**
 
-**Hangi medya hangi ekranda?** Birden çok ekran varken Medya sekmesinde her satırda ekran düğmeleri
-çıkar: **[1] [2] [3] [4] [5]**. Tıklayarak o medyayı o ekrana ekler veya çıkarırsınız. Örnek:
+"Bu içe aktarmadaki benzer durumlar için de aynısını yap" seçeneği de vardır.
 
-| Medya | Ekran 1 | Ekran 2 | Ekran 3 |
-|---|---|---|---|
-| a, b, c | ✔ | ✔ | |
-| x, y, z | | ✔ | ✔ |
+### Ekranlar: her ekran için ayrı ve detaylı ayar
 
-Bu durumda ekran 1 `a b c`, ekran 2 `a b c x y z`, ekran 3 `x y z` oynatır. Sıra tüm ekranlarda ortaktır;
-her ekran kendi öğelerini bu sırayla oynatır.
+Soldaki listede bağlı tüm ekranlar ("5 ekran algılandı") renkleriyle görünür. Her ekranın kartında
+şunlar vardır: açma/kapatma anahtarı, durum, o an oynayan medyanın küçük resmi ve atanmış medya sayısı.
+Kullanılmayan monitörler "+" ile listelenir ve tek tıkla gösterime açılır.
 
-- Üstteki **Gösterilen** filtresiyle yalnızca bir ekranın medyası listelenir. Filtre açıkken eklenen
-  yeni dosyalar doğrudan o ekrana atanır.
-- Detay panelinde ekranlar isimleriyle seçilir. **"Tüm ekranlar (sonradan eklenenler dahil)"** seçili
-  medya, ileride eklenecek ekranlarda da gösterilir.
-- Toplu düzenlemede seçili medyalar ekranlara atanabilir: yalnızca işaretli ekranlar / ekle / çıkar.
-- Hiçbir açık ekrana atanmamış medya "hiçbir ekranda değil" uyarısıyla işaretlenir.
+Bir ekran seçildiğinde sağda **o ekranın renginde bir başlık** çıkar: *"Ekran 2 · Bar düzenleniyor –
+buradaki değişiklikler yalnızca bu ekranı etkiler"*.
 
-Eski sürümlerden gelen kurulumlarda daha önce seçilmiş ekran otomatik olarak **Ekran 1** olur ve tüm
-medya tüm ekranlarda gösterilmeye devam eder.
+**Oynatma listesi** (her ekranın kendisine ait):
+
+- **Ekleme:** **Kütüphaneden ekle** (küçük resimli, aramalı, çoklu seçim), **Bu ekrana dosya ekle**
+  ya da **Başka ekrandan kopyala**.
+- **Bağımsız sıra:** Sürükle-bırak veya yukarı/aşağı ile sıralanır; diğer ekranlar etkilenmez. Aynı
+  medya listede birden fazla kez yer alabilir (örneğin logo baş ve ortada).
+- **Ekrana özel değerler:** Her öğe için bu ekrandaki aktif/pasif durum, süre, geçiş efekti, tarih
+  aralığı ve gün/saat planı ayarlanabilir. Değişen öğeler **"bu ekrana özel"** etiketi alır. Her
+  alanın altında kütüphanedeki varsayılan değer yazar ve tek tıkla varsayılana dönülür.
+- **Toplu düzenleme:** Birden çok öğe seçilerek yalnızca bu ekranda aktif/pasif, süre, tarih, plan
+  ayarı veya listeden çıkarma yapılabilir. Çıkarılan öğe kütüphanede kalır ve geri alınabilir.
+- **Liste bağlama:** "Ekran 1'in listesini oynatır" seçeneği seçilirse iki ekran aynı listeyi paylaşır.
+  **Senkron oynat** işaretlenirse aynı öğeye aynı anda geçerler (yan yana TV'ler için).
+
+**Ekran ayarları:** İsim; döndürme (0° / 90° / 180° / 270°, dikey TV'ler için); ölçekleme; arka plan
+rengi; video sesi ve ses seviyesi; varsayılan resim süresi; geçiş efekti ve süresi; çalışma saatleri.
+İşaretlenmeyen ayarlar Genel sekmesindeki değerleri kullanır.
+
+**Tüm ekranlar için** (sol alt):
+
+- Ekran bağlantısı kesilince ne yapılacağı.
+- Sesin hangi ekrandan çıkacağı. Örneğin "yalnızca Ekran 2"; böylece beş ekran aynı anda ses çıkarmaz.
+- Videoyu önceden yükleme (performans). Çok sayıda ekran aynı anda video oynatıyorsa uyarı çıkar.
+
+Eski sürümlerden gelen kurulumlarda ortak liste ve ekran atamaları otomatik olarak ekran listelerine
+dönüştürülür.
 
 ### İzlenen klasör (Genel sekmesi)
 
@@ -135,6 +152,18 @@ göster"** seçilebilir; ana ekran başka bir ekrana atanmamışsa kullanılır.
 - **Yedekle / geri yükle:** Ayarlar, liste ve tüm medya tek bir `.zip` dosyasına yazılır. Yeni PC'ye geçişte geri yüklenir; uygulama ardından kendini yeniden başlatır.
 
 ---
+
+### Güncellemeler (Genel sekmesi)
+
+- Uygulama günde bir kez GitHub'daki son sürümü kontrol eder. **Güncellemeleri kontrol et** butonu
+  bunu hemen yapar.
+- Yeni sürüm arka planda indirilir ve SHA-256 ile doğrulanır. Doğrulanamayan dosya kurulmaz.
+- "Sessiz bir anda kendiliğinden kur" açıksa güncelleme şu anlardan birinde kurulur: çalışma saatleri
+  dışında, gösterim kapalıyken veya gece 03:00–05:00. Kapalıysa **Şimdi güncelle** butonu ve bir
+  bildirim çıkar.
+- Kurulumdan önce mevcut sürüm, ayarlar ve liste yedeklenir. Yeni sürüm ilk 30 dakikada art arda
+  çökerse önceki sürüm ve veriler kendiliğinden geri yüklenir; o sürüm bir daha önerilmez.
+- İnternet yoksa kontrol sessizce atlanır; gösterim etkilenmez.
 
 ## Sistem gereksinimleri
 
@@ -201,6 +230,25 @@ Exe ve loglar artifact olarak indirilebilir. Duman testi Windows'ta elle de çal
 `KodizSignage.exe --smoke-test`. Gerçek verilere dokunmaz; geçici bir veri klasörü kullanır.
 
 ---
+
+## Yeni sürüm yayınlama
+
+1. `Directory.Build.props` içindeki `<Version>` değerini artırın (örneğin `1.3.0` → `1.4.0`) ve commit'leyin.
+2. Etiket gönderin:
+
+   ```bash
+   git tag v1.4.0
+   git push origin main --tags
+   ```
+
+3. [.github/workflows/release.yml](.github/workflows/release.yml) şu adımları kendisi yapar:
+   - Windows'ta testleri çalıştırır ve exe'yi derler. Exe'nin sürüm numarası etiketten alınır.
+   - Duman testini çalıştırır.
+   - `KodizSignage.exe`, `KodizSignage.exe.sha256`, lisans ve bildirim dosyalarıyla bir GitHub
+     Release yayınlar.
+4. Kurulu uygulamalar yeni sürümü bir sonraki günlük kontrolde bulur ve sessiz bir anda kendini
+   günceller. Elle kurulum için Release sayfasındaki exe'yi çalıştırmak yeterlidir; kurulu sürümü
+   güncellemeyi teklif eder.
 
 ## Kurulum (kafe PC'si)
 
@@ -315,7 +363,8 @@ gidecekse Windows ses çıkışını TV veya splitter olarak seçin.
 | Belirti | Çözüm |
 |---|---|
 | Gösterim yanlış ekranda | Ayarlar → Ekranlar → "Ekranları Tanımla" ile numaraları görün; istenmeyen ekranı kapatın, doğru ekranı açın |
-| Bir ekranda içerik yok | Medya sekmesinde filtreyi o ekrana alın; medyaların o ekranın düğmesi işaretli mi bakın |
+| Bir ekranda içerik yok | Ekranlar sekmesinde o ekranı seçin: listesi boş mu, öğeler bu ekranda pasif mi ya da planlarının dışında mı (soluk satırlar) bakın |
+| Güncelleme gelmiyor | Genel → Güncellemeler → "Güncellemeleri kontrol et"; durum satırında hata yazar (örneğin internet yok) |
 | Durum "Seçili ekran bekleniyor" | TV kapalı veya HDMI bağlantısı yok. TV açılınca gösterim kendiliğinden başlar |
 | Bir video oynamıyor | Log'a bakın (Genel → Log klasörünü aç). H.264 MP4'e dönüştürün |
 | HEIC/WEBP resim görünmüyor | Microsoft Store'dan "HEIF Görüntü Uzantıları" veya "Webp Görüntü Uzantıları" yükleyin |
@@ -335,20 +384,22 @@ Loglar: `%LocalAppData%\kodiz-signage\logs\kodiz-signage-YYYYMMDD.log`
 ```
 KodizSignage.sln
 ├── src/KodizSignage.Core/          net8.0 – platformdan bağımsız iş mantığı
-│   ├── Models/                     PlaylistItem, AppSettings, OperatingHours, HotkeySettings, enum'lar
+│   ├── Models/                     PlaylistItem (kütüphane), ScreenPlaylist/ScreenEntry (ekran listeleri), ScreenConfig, AppSettings
 │   ├── Storage/                    AtomicJsonFile (tmp → File.Replace + .bak), JsonStore (birleştirilmiş arka plan yazımı)
 │   ├── Playback/                   PlaylistScheduler (filtre, sıra, sonraki öğe, süre), ScheduleRules (gün/saat penceresi)
-│   ├── Media/                      MediaFormats, Mp4Probe (codec, süre, çözünürlük için MP4/MOV okuyucu)
+│   ├── Media/                      MediaFormats, Mp4Probe (MP4/MOV codec/süre/çözünürlük), PerceptualHash (dHash)
 │   ├── Hotkeys/                    kısayol ayrıştırma, doğrulama ve çakışma kuralları
 │   ├── Displays/DisplayMatcher     kayıtlı ekranı bulma kuralları
-│   └── Services/                   Settings, Playlist, MediaImport, FolderSync, Backup, CrashGuard, PinHasher
+│   └── Services/                   Settings, Playlist (kütüphane + ekran listeleri), MediaImport (kopya kontrolü),
+│                                   FolderSync, Backup, CrashGuard, PinHasher, ReleaseInfo
 ├── src/KodizSignage/               net8.0-windows WPF uygulaması
 │   ├── Services/                   PlaybackManager, DisplayService, StartupService, InstallService, PowerService,
 │   │                               HotkeyService, ShortcutService, SingleInstanceService, TrayService, PinGate,
-│   │                               LocalizationService, ThumbnailService, WpfMediaInspector (PDF, codec), SmokeTest
+│   │                               LocalizationService, ThumbnailService, WpfMediaInspector (PDF, codec, parmak izi),
+│   │                               UpdateService, DuplicateResolver, ScreenColors, SmokeTest
 │   ├── Views/Player/               PlaybackEngine (döngü), MediaLayer (A/B katmanı), GifAnimation
-│   ├── Views/                      PlayerWindow, SettingsWindow, PinWindow, IdentifyWindow
-│   ├── ViewModels/                 Settings, Media (+ toplu düzenleme), Display, General, Shortcuts, ScheduleEditor
+│   ├── Views/                      PlayerWindow, SettingsWindow, LibraryPickerWindow, DuplicateWindow, PinWindow, IdentifyWindow
+│   ├── ViewModels/                 Settings, Media (kütüphane), Display + ScreenEditor + Entry (ekranlar), General, Shortcuts
 │   ├── Localization/               strings.py → Strings.tr.xaml / Strings.en.xaml
 │   └── Themes/Dark.xaml
 └── tests/KodizSignage.Tests/       xUnit

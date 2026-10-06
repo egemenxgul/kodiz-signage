@@ -387,5 +387,28 @@
     <sys:String x:Key="Duplicate_Replace" xml:space="preserve">Eskisinin yerine koy</sys:String>
     <sys:String x:Key="Duplicate_Skip" xml:space="preserve">Atla</sys:String>
     <sys:String x:Key="Duplicate_ApplyToAll" xml:space="preserve">Bu içe aktarmadaki benzer durumlar için de aynısını yap</sys:String>
+    <sys:String x:Key="Update_Section" xml:space="preserve">Güncellemeler</sys:String>
+    <sys:String x:Key="Update_CheckNow" xml:space="preserve">Güncellemeleri kontrol et</sys:String>
+    <sys:String x:Key="Update_InstallNow" xml:space="preserve">Şimdi güncelle</sys:String>
+    <sys:String x:Key="Update_ReleaseNotes" xml:space="preserve">Sürüm notları</sys:String>
+    <sys:String x:Key="Update_AutoCheck" xml:space="preserve">Güncellemeleri otomatik kontrol et (günde bir kez)</sys:String>
+    <sys:String x:Key="Update_AutoInstall" xml:space="preserve">Güncellemeyi sessiz bir anda kendiliğinden kur</sys:String>
+    <sys:String x:Key="Update_Hint" xml:space="preserve">Sessiz an: çalışma saatleri dışı, gösterim kapalıyken veya gece 03:00–05:00. Yeni sürüm sorun çıkarırsa önceki sürüme kendiliğinden geri dönülür.</sys:String>
+    <sys:String x:Key="Update_Checking" xml:space="preserve">Güncellemeler kontrol ediliyor…</sys:String>
+    <sys:String x:Key="Update_Downloading" xml:space="preserve">Sürüm {0} indiriliyor…</sys:String>
+    <sys:String x:Key="Update_Ready" xml:space="preserve">Sürüm {0} indirildi ve doğrulandı. Kurmak için &quot;Şimdi güncelle&quot;.</sys:String>
+    <sys:String x:Key="Update_ReadyAuto" xml:space="preserve">Sürüm {0} indirildi; ilk sessiz anda kendiliğinden kurulacak (isterseniz şimdi kurabilirsiniz).</sys:String>
+    <sys:String x:Key="Update_ReadyAsk" xml:space="preserve">Yeni sürüm {0} hazır. Ayarlar → Genel → Güncellemeler.</sys:String>
+    <sys:String x:Key="Update_UpToDate" xml:space="preserve">Güncel (sürüm {0})</sys:String>
+    <sys:String x:Key="Update_Failed" xml:space="preserve">Güncelleme kontrolü başarısız: {0}</sys:String>
+    <sys:String x:Key="Update_NoNetwork" xml:space="preserve">internet bağlantısı yok</sys:String>
+    <sys:String x:Key="Update_LastCheck" xml:space="preserve">son kontrol {0}</sys:String>
+    <sys:String x:Key="Update_NeverChecked" xml:space="preserve">Henüz kontrol edilmedi</sys:String>
+    <sys:String x:Key="Update_InstallConfirm" xml:space="preserve">Sürüm {0} kurulsun mu? Gösterim birkaç saniye duracak, ayarlar ve medya korunur.</sys:String>
+    <sys:String x:Key="Update_Done" xml:space="preserve">Kodiz Signage {0} sürümüne güncellendi.</sys:String>
+    <sys:String x:Key="License_Line" xml:space="preserve">Lisans: {0} – ticari kullanım izne tabidir</sys:String>
+    <sys:String x:Key="License_View" xml:space="preserve">Lisansı görüntüle</sys:String>
+    <sys:String x:Key="License_Notices" xml:space="preserve">Üçüncü taraf bildirimleri</sys:String>
+    <sys:String x:Key="License_Source" xml:space="preserve">Kaynak kodu</sys:String>
     <sys:String x:Key="General_InvalidColor" xml:space="preserve">Geçersiz renk. #RRGGBB biçiminde girin.</sys:String>
 </ResourceDictionary>

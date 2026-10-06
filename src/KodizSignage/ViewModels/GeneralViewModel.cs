@@ -24,6 +24,7 @@ public sealed partial class GeneralViewModel : ObservableObject
     private readonly IFolderSyncService _folderSync;
     private readonly IDialogService _dialogs;
     private readonly IAppLifetime _lifetime;
+    private readonly IUpdateService _updates;
     private readonly ILogger _log;
     private bool _syncing;
 
@@ -39,8 +40,11 @@ public sealed partial class GeneralViewModel : ObservableObject
         IFolderSyncService folderSync,
         IDialogService dialogs,
         IAppLifetime lifetime,
+        IUpdateService updates,
         ILogger log)
     {
+        _updates = updates;
+        _updates.StateChanged += (_, _) => Application.Current.Dispatcher.BeginInvoke(SyncUpdateState);
         _settings = settings;
         _startup = startup;
         _loc = loc;
@@ -89,6 +93,8 @@ public sealed partial class GeneralViewModel : ObservableObject
             foreach (var o in Transitions) o.Refresh(_loc);
             foreach (var o in ScalingModes) o.Refresh(_loc);
             OnPropertyChanged(nameof(VersionText));
+            OnPropertyChanged(nameof(LicenseText));
+            SyncUpdateState();
             RefreshSystemInfo();
         };
         _settings.Changed += (_, _) => Application.Current.Dispatcher.BeginInvoke(SyncFromSettings);
@@ -117,6 +123,18 @@ public sealed partial class GeneralViewModel : ObservableObject
     public bool IsInstalled => _install.IsRunningInstalled;
 
     public bool HasPin => _pin.HasPin;
+
+    [ObservableProperty] private bool _checkForUpdates;
+    [ObservableProperty] private bool _autoInstallUpdates;
+    [ObservableProperty] private string _updateStatusText = string.Empty;
+    [ObservableProperty] private bool _isUpdateReady;
+    [ObservableProperty] private bool _isUpdateBusy;
+    [ObservableProperty] private double _updateProgress;
+    [ObservableProperty] private bool _hasReleasePage;
+
+    public string LicenseText => _loc.Format("License_Line", "PolyForm Noncommercial 1.0.0");
+
+    public string CopyrightText => "© 2026 egemenxgul · github.com/" + UpdateService.Repository;
 
     [ObservableProperty] private bool _operatingHoursEnabled;
     [ObservableProperty] private bool _allowDisplaySleep;
@@ -167,7 +185,10 @@ public sealed partial class GeneralViewModel : ObservableObject
             WatchFolderEnabled = s.WatchFolderEnabled;
             WatchFolderPath = s.WatchFolderPath;
             OnPropertyChanged(nameof(HasPin));
+            CheckForUpdates = s.CheckForUpdates;
+            AutoInstallUpdates = s.AutoInstallUpdates;
             RefreshSystemInfo();
+            SyncUpdateState();
         }
         finally
         {
@@ -257,6 +278,92 @@ public sealed partial class GeneralViewModel : ObservableObject
 
     [RelayCommand]
     private Task SyncFolderNow() => _folderSync.SyncNowAsync();
+
+    // ---- Updates ------------------------------------------------------------------------------
+
+    partial void OnCheckForUpdatesChanged(bool value) => Save(s => s with { CheckForUpdates = value });
+
+    partial void OnAutoInstallUpdatesChanged(bool value) => Save(s => s with { AutoInstallUpdates = value });
+
+    [RelayCommand]
+    private Task CheckUpdatesNow() => _updates.CheckAsync(manual: true);
+
+    [RelayCommand]
+    private void InstallUpdate()
+    {
+        if (_dialogs.Confirm(_loc.Format("Update_InstallConfirm", _updates.Release?.Version.ToString(3) ?? string.Empty)))
+        {
+            _updates.InstallNow();
+        }
+    }
+
+    [RelayCommand]
+    private void OpenReleasePage() => OpenUrl(_updates.Release?.PageUrl ?? $"https://github.com/{UpdateService.Repository}/releases");
+
+    [RelayCommand]
+    private void OpenSourceCode() => OpenUrl($"https://github.com/{UpdateService.Repository}");
+
+    [RelayCommand]
+    private void ViewLicense() => OpenResourceText("LICENSE.txt");
+
+    [RelayCommand]
+    private void ViewNotices() => OpenResourceText("THIRD-PARTY-NOTICES.txt");
+
+    private void SyncUpdateState()
+    {
+        var version = _updates.Release?.Version.ToString(3) ?? string.Empty;
+        var last = _updates.LastCheck is { } at ? _loc.Format("Update_LastCheck", at.ToString("g")) : _loc.Get("Update_NeverChecked");
+        IsUpdateReady = _updates.State == UpdateState.Ready;
+        IsUpdateBusy = _updates.State is UpdateState.Checking or UpdateState.Downloading;
+        UpdateProgress = _updates.Progress * 100;
+        HasReleasePage = _updates.Release is not null;
+        UpdateStatusText = _updates.State switch
+        {
+            UpdateState.Checking => _loc.Get("Update_Checking"),
+            UpdateState.Downloading => _loc.Format("Update_Downloading", version),
+            UpdateState.Ready => _loc.Format(AutoInstallUpdates ? "Update_ReadyAuto" : "Update_Ready", version),
+            UpdateState.UpToDate => _loc.Format("Update_UpToDate", Version) + " · " + last,
+            UpdateState.Failed => _loc.Format("Update_Failed", _updates.Error == "network" ? _loc.Get("Update_NoNetwork") : _updates.Error ?? string.Empty),
+            _ => last,
+        };
+    }
+
+    private void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "Could not open {Url}", url);
+        }
+    }
+
+    private void OpenResourceText(string name)
+    {
+        try
+        {
+            var stream = Application.GetResourceStream(new Uri($"pack://application:,,,/Assets/{name}"))?.Stream;
+            if (stream is null)
+            {
+                return;
+            }
+
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "KodizSignage-" + name);
+            using (stream)
+            using (var file = System.IO.File.Create(path))
+            {
+                stream.CopyTo(file);
+            }
+
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "Could not show {Name}", name);
+        }
+    }
 
     // ---- PIN ----------------------------------------------------------------------------------
 

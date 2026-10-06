@@ -1357,11 +1357,53 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Updates -->
+                        <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Update_Section}" Style="{StaticResource H2}" />
+                                <TextBlock Text="{Binding VersionText}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding UpdateStatusText}" Style="{StaticResource Secondary}" Margin="0,4,0,8" />
+                                <ProgressBar Value="{Binding UpdateProgress}" Maximum="100" Margin="0,0,0,10"
+                                             Visibility="{Binding IsUpdateBusy, Converter={StaticResource BoolToVis}}" />
+                                <WrapPanel Margin="0,0,0,12">
+                                    <Button Command="{Binding CheckUpdatesNowCommand}" IsEnabled="{Binding IsUpdateBusy, Converter={StaticResource InvBool}}" Margin="0,0,8,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE895;" Margin="0,0,8,0" />
+                                            <TextBlock Text="{DynamicResource Update_CheckNow}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource AccentButton}" Command="{Binding InstallUpdateCommand}" Margin="0,0,8,6"
+                                            Visibility="{Binding IsUpdateReady, Converter={StaticResource BoolToVis}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE896;" Margin="0,0,8,0" />
+                                            <TextBlock Text="{DynamicResource Update_InstallNow}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding OpenReleasePageCommand}" Margin="0,0,8,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icon}" Text="&#xE8A7;" Margin="0,0,8,0" />
+                                            <TextBlock Text="{DynamicResource Update_ReleaseNotes}" />
+                                        </StackPanel>
+                                    </Button>
+                                </WrapPanel>
+                                <CheckBox Content="{DynamicResource Update_AutoCheck}" IsChecked="{Binding CheckForUpdates}" Margin="0,0,0,10" />
+                                <CheckBox Content="{DynamicResource Update_AutoInstall}" IsChecked="{Binding AutoInstallUpdates}" IsEnabled="{Binding CheckForUpdates}" />
+                                <TextBlock Text="{DynamicResource Update_Hint}" FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="52,4,0,0" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- About / installation -->
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <TextBlock Text="{DynamicResource General_SectionAbout}" Style="{StaticResource H2}" />
                                 <TextBlock Text="{Binding VersionText}" />
+                                <TextBlock Text="{Binding LicenseText}" Style="{StaticResource Secondary}" Margin="0,6,0,0" />
+                                <TextBlock Text="{Binding CopyrightText}" Style="{StaticResource Secondary}" Margin="0,2,0,0" />
+                                <WrapPanel Margin="0,8,0,0">
+                                    <Button Style="{StaticResource SmallButton}" Content="{DynamicResource License_View}" Command="{Binding ViewLicenseCommand}" Margin="0,0,6,6" />
+                                    <Button Style="{StaticResource SmallButton}" Content="{DynamicResource License_Notices}" Command="{Binding ViewNoticesCommand}" Margin="0,0,6,6" />
+                                    <Button Style="{StaticResource SmallButton}" Content="{DynamicResource License_Source}" Command="{Binding OpenSourceCodeCommand}" Margin="0,0,6,6" />
+                                </WrapPanel>
                                 <TextBlock Style="{StaticResource Secondary}" Margin="0,6,0,0">
                                     <Run Text="{DynamicResource About_DataFolder}" /><Run Text=": " /><Run Text="{Binding DataFolder, Mode=OneWay}" />
                                 </TextBlock>

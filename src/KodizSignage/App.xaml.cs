@@ -47,6 +47,7 @@ public partial class App : Application
         var isSmokeTest = args.Contains(SmokeTestArgument);
         var launchedByWindows = args.Contains(StartupService.AutostartArgument);
         var isHandOver = args.Contains(RestartArgument) || args.Contains(InstallService.InstalledArgument);
+        var isSilentUpdate = args.Contains(InstallService.SilentUpdateArgument);
 
         var paths = ResolvePaths(isSmokeTest);
         paths.EnsureCreated();
@@ -73,7 +74,7 @@ public partial class App : Application
         _singleInstance = new SingleInstanceService(Log);
         if (!isSmokeTest)
         {
-            if (!launchedByWindows && !HandleInstallation())
+            if (!launchedByWindows && !HandleInstallation(isSilentUpdate))
             {
                 Shutdown();
                 return;
@@ -137,6 +138,11 @@ public partial class App : Application
         }));
 
         _services.GetRequiredService<IFolderSyncService>().Start();
+        if (!isSmokeTest)
+        {
+            StartUpdates(args.Contains(InstallService.AfterUpdateArgument));
+        }
+
         SessionEnding += (_, _) => FlushData();
         StartMemoryLogging();
         StartStabilityTimer();
@@ -182,7 +188,7 @@ public partial class App : Application
     /// Offers to install (or update) the app into its stable folder. Returns false when this
     /// process handed over to the installed copy and must exit.
     /// </summary>
-    private bool HandleInstallation()
+    private bool HandleInstallation(bool silent)
     {
         var services = _services!;
         var install = services.GetRequiredService<InstallService>();
@@ -194,6 +200,10 @@ public partial class App : Application
         {
             case InstallState.RunningInstalled:
                 return true;
+
+            case InstallState.NotInstalled when silent:
+            case InstallState.InstalledOlder when silent:
+                return !InstallAndHandOver(install, dialogs, loc, keepPrevious: true);
 
             case InstallState.NotInstalled:
                 if (settings.Current.InstallDeclined)
@@ -225,7 +235,7 @@ public partial class App : Application
         }
     }
 
-    private bool InstallAndHandOver(InstallService install, IDialogService dialogs, ILocalizationService loc)
+    private bool InstallAndHandOver(InstallService install, IDialogService dialogs, ILocalizationService loc, bool keepPrevious = false)
     {
         // A running (older) instance holds the exe open: ask it to exit first.
         if (!_singleInstance!.TryClaim())
@@ -242,13 +252,15 @@ public partial class App : Application
         _singleInstance.Dispose();
         _singleInstance = new SingleInstanceService(Log);
 
-        if (!install.Install())
+        if (!install.Install(keepPrevious))
         {
             dialogs.Warning(loc.Get("Install_Failed"));
             return false;
         }
 
-        install.LaunchInstalled(InstallService.InstalledArgument);
+        install.LaunchInstalled(keepPrevious
+            ? $"{InstallService.InstalledArgument} {InstallService.AfterUpdateArgument}"
+            : InstallService.InstalledArgument);
         return true;
     }
 
@@ -305,6 +317,7 @@ public partial class App : Application
         services.AddSingleton<IPlaybackManager, PlaybackManager>();
         services.AddSingleton<TrayService>();
         services.AddSingleton<IDuplicateResolver, DuplicateResolver>();
+        services.AddSingleton<IUpdateService, UpdateService>();
 
         // UI
         services.AddSingleton<UndoBar>();
@@ -461,8 +474,32 @@ public partial class App : Application
         {
             timer.Stop();
             _crashGuard?.Reset();
+            _services?.GetService<InstallService>()?.ConfirmUpdate(); // A fresh update proved stable.
         };
         timer.Start();
+    }
+
+    private void StartUpdates(bool justUpdated)
+    {
+        var services = _services!;
+        var loc = services.GetRequiredService<ILocalizationService>();
+        var tray = services.GetRequiredService<TrayService>();
+        var updates = services.GetRequiredService<IUpdateService>();
+
+        if (justUpdated)
+        {
+            services.GetRequiredService<InstallService>().MarkUpdated();
+            tray.ShowNotification(loc.Get("App_Name"), loc.Format("Update_Done", GeneralViewModel.Version));
+        }
+
+        updates.StateChanged += (_, _) =>
+        {
+            if (updates.State == UpdateState.Ready && !services.GetRequiredService<ISettingsService>().Current.AutoInstallUpdates)
+            {
+                tray.ShowNotification(loc.Get("App_Name"), loc.Format("Update_ReadyAsk", updates.Release?.Version.ToString(3) ?? string.Empty));
+            }
+        };
+        updates.Start();
     }
 
     private void StartMemoryLogging()
@@ -621,8 +658,26 @@ public partial class App : Application
             return;
         }
 
-        // Too many crashes in a short time: come back in safe mode instead of looping.
+        // Too many crashes in a short time: come back in safe mode instead of looping –
+        // or, right after an update, go back to the version that worked.
         var safeMode = _crashGuard?.RegisterRestart(DateTime.Now) ?? false;
+        if (safeMode && _services?.GetService<InstallService>() is { IsRecentlyUpdated: true } install)
+        {
+            _exiting = true;
+            try
+            {
+                install.RollBackAndExit(_services.GetRequiredService<AppPaths>().Root);
+                _crashGuard?.Reset();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Rollback failed");
+            }
+
+            Serilog.Log.CloseAndFlush();
+            Environment.Exit(1);
+        }
+
         RestartProcess(safeMode ? $"{RestartArgument} {SafeModeArgument}" : RestartArgument);
     }
 }
