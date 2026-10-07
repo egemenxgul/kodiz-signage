@@ -508,7 +508,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
             return;
         }
 
-        if (_dialogs.Confirm(_loc.Format("Daypart_RemoveConfirm", list.Name ?? string.Empty)))
+        if (_dialogs.Confirm(_loc.Format("Daypart_RemoveConfirm", list.Name ?? string.Empty), null, _loc.Get("Daypart_Remove"), _loc.Get("Common_Cancel")))
         {
             var key = _listKey;
             SelectList(0);
@@ -519,7 +519,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
     [RelayCommand]
     private void CopyMainToDaypart()
     {
-        if (_listKey != 0 && (Entries.Count == 0 || _dialogs.Confirm(_loc.Get("Daypart_CopyConfirm"))))
+        if (_listKey != 0 && (Entries.Count == 0 || _dialogs.Confirm(_loc.Get("Daypart_CopyConfirm"), null, _loc.Get("Action_Replace"), _loc.Get("Common_Cancel"))))
         {
             _playlist.CopyEntries(_playlist.ResolveSource(Number), _listKey, replace: true);
         }
@@ -587,7 +587,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
             return;
         }
 
-        if (Entries.Count == 0 || _dialogs.Confirm(_loc.Format("Editor_CopyConfirm", ScreenLabel(source), Title)))
+        if (Entries.Count == 0 || _dialogs.Confirm(_loc.Format("Editor_CopyConfirm", ScreenLabel(source), Title), null, _loc.Get("Action_Replace"), _loc.Get("Common_Cancel")))
         {
             _playlist.CopyEntries(_playlist.ResolveSource(source), TargetScreen, replace: true);
         }
@@ -749,7 +749,7 @@ public sealed partial class ScreenEditorViewModel : ObservableObject
         }
 
         if (value != 0 && playlist.LinkedTo is null && playlist.Entries.Count > 0 &&
-            !_dialogs.Confirm(_loc.Format("Editor_LinkConfirm", ScreenLabel(value.Value))))
+            !_dialogs.Confirm(_loc.Format("Editor_LinkConfirm", ScreenLabel(value.Value)), null, _loc.Get("Action_Link"), _loc.Get("Common_Cancel")))
         {
             Application.Current.Dispatcher.BeginInvoke(SyncSettings);
             return;

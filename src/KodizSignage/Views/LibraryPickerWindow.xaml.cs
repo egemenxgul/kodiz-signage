@@ -36,6 +36,7 @@ public partial class LibraryPickerWindow : Window
     private LibraryPickerWindow(IReadOnlyList<PickerItem> items, ILocalizationService loc, string screenTitle)
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
         WindowSizing.FitToWorkArea(this);
         _loc = loc;
         _all = items.ToList();

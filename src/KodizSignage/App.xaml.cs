@@ -224,7 +224,7 @@ public partial class App : Application
                     return true;
                 }
 
-                if (!dialogs.Confirm(loc.Get("Install_Prompt")))
+                if (!dialogs.Confirm(loc.Get("Install_Prompt"), null, loc.Get("Action_Install"), loc.Get("Action_NotNow")))
                 {
                     settings.Update(s => s with { InstallDeclined = true });
                     return true;
@@ -233,7 +233,7 @@ public partial class App : Application
                 return !InstallAndHandOver(install, dialogs, loc);
 
             case InstallState.InstalledOlder:
-                if (!dialogs.Confirm(loc.Format("Update_Prompt", install.InstalledVersion?.ToString(3) ?? "?", InstallService.CurrentVersion.ToString(3))))
+                if (!dialogs.Confirm(loc.Format("Update_Prompt", install.InstalledVersion?.ToString(3) ?? "?", InstallService.CurrentVersion.ToString(3)), null, loc.Get("Action_Update"), loc.Get("Common_Cancel")))
                 {
                     return true;
                 }
@@ -438,7 +438,7 @@ public partial class App : Application
 
         var loc = _services.GetRequiredService<ILocalizationService>();
         if (confirm && (!_services.GetRequiredService<IPinGate>().Unlock() ||
-                        !_services.GetRequiredService<IDialogService>().Confirm(loc.Get("Confirm_Exit"))))
+                        !_services.GetRequiredService<IDialogService>().Confirm(loc.Get("Confirm_Exit"), null, loc.Get("Action_Exit"), loc.Get("Common_Cancel"))))
         {
             return;
         }

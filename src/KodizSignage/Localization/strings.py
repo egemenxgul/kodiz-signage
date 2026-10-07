@@ -780,8 +780,17 @@ S = [
  ("WhatsNew_Banner", "Kodiz Signage {0} sürümüne güncellendi.", "Kodiz Signage was updated to {0}."),
  ("WhatsNew_Show", "Yenilikler", "What's new"),
  ("WhatsNew_Title", "{0} sürümünde neler yeni", "What's new in {0}"),
- ("WhatsNew_Text", "• Saate göre listeler: Ekranlar › Liste › \"Saat listesi\" (ör. Kahvaltı 08–12).\n• Arka plan müziği: Genel › Arka plan müziği.\n• Fotoğraflı slaytlar ve yeni şablonlar: fotoğraflı tanıtım, çalışma saatleri, geri sayım.\n• Acil duyuru: sağ üstteki \"Duyuru\" butonu (telefondan da).\n• Telefon paneli: duyuru, kayan yazı, hızlı slayt, müzik.\n• İstatistik grafiği, otomatik yedek ve tanı paketi (Genel sekmesi).\n• PIN: pencere küçültülünce veya kullanılmayınca kilitlenir; sağ üstte \"Şimdi kilitle\".\n• Dokunmatikte tutamaktan sürükleyerek sıralama.",
-                     "• Time-of-day lists: Screens › List › \"Time-of-day list\" (e.g. Breakfast 08–12).\n• Background music: General › Background music.\n• Photo slides and new templates: photo promo, opening hours, countdown.\n• Emergency notice: the \"Notice\" button at the top right (also from the phone).\n• Phone panel: notices, ticker, quick slides, music.\n• Statistics chart, automatic backups and a diagnostics package (General tab).\n• PIN: locks when minimized or idle; \"Lock now\" at the top right.\n• Touch: drag rows by their handle to reorder."),
+ ("WhatsNew_Text", "• 1.6.1: Pencerelerde içeriğin bir kısmının beyaz kalması düzeltildi; onay butonları artık yapılacak işi söylüyor (ör. \"Şimdi kur / Sonra\").\n• Saate göre listeler: Ekranlar › Liste › \"Saat listesi\" (ör. Kahvaltı 08–12).\n• Arka plan müziği: Genel › Arka plan müziği.\n• Fotoğraflı slaytlar ve yeni şablonlar: fotoğraflı tanıtım, çalışma saatleri, geri sayım.\n• Acil duyuru: sağ üstteki \"Duyuru\" butonu (telefondan da).\n• Telefon paneli: duyuru, kayan yazı, hızlı slayt, müzik.\n• İstatistik grafiği, otomatik yedek ve tanı paketi (Genel sekmesi).\n• PIN: pencere küçültülünce veya kullanılmayınca kilitlenir; sağ üstte \"Şimdi kilitle\".\n• Dokunmatikte tutamaktan sürükleyerek sıralama.",
+                     "• 1.6.1: Fixed dialogs being partly white; confirmation buttons now name the action (e.g. \"Install now / Later\").\n• Time-of-day lists: Screens › List › \"Time-of-day list\" (e.g. Breakfast 08–12).\n• Background music: General › Background music.\n• Photo slides and new templates: photo promo, opening hours, countdown.\n• Emergency notice: the \"Notice\" button at the top right (also from the phone).\n• Phone panel: notices, ticker, quick slides, music.\n• Statistics chart, automatic backups and a diagnostics package (General tab).\n• PIN: locks when minimized or idle; \"Lock now\" at the top right.\n• Touch: drag rows by their handle to reorder."),
+ ("Action_Install", "Kur", "Install"),
+ ("Action_NotNow", "Şimdi değil", "Not now"),
+ ("Action_Update", "Güncelle", "Update"),
+ ("Action_Exit", "Çık", "Exit"),
+ ("Action_InstallNow", "Şimdi kur", "Install now"),
+ ("Action_Later", "Sonra", "Later"),
+ ("Action_Reset", "Sıfırla", "Reset"),
+ ("Action_Replace", "Değiştir", "Replace"),
+ ("Action_Link", "Bağla", "Link"),
 ]
 def write(path, idx, lang):
     keys=set()

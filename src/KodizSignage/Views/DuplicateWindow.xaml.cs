@@ -15,6 +15,7 @@ public partial class DuplicateWindow : Window
     private DuplicateWindow()
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
     }
 
     public static async Task<(DuplicateAnswer Answer, bool ApplyToAll)> Ask(

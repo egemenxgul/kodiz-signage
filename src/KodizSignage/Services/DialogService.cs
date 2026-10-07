@@ -7,7 +7,8 @@ namespace KodizSignage.Services;
 
 public interface IDialogService
 {
-    bool Confirm(string message, string? title = null);
+    /// <summary>Asks a question; <paramref name="yes"/>/<paramref name="no"/> name the actions (e.g. "Install now" / "Later").</summary>
+    bool Confirm(string message, string? title = null, string? yes = null, string? no = null);
 
     void Info(string message, string? title = null);
 
@@ -38,8 +39,9 @@ public sealed class DialogService : IDialogService
         _loc = loc;
     }
 
-    public bool Confirm(string message, string? title = null) =>
-        WithOwner(owner => MessageWindow.Show(owner, title ?? _loc.Get("App_Name"), message, MessageKind.Question, _loc.Get("Common_Yes"), _loc.Get("Common_No")));
+    public bool Confirm(string message, string? title = null, string? yes = null, string? no = null) =>
+        WithOwner(owner => MessageWindow.Show(owner, title ?? _loc.Get("App_Name"), message, MessageKind.Question,
+            yes ?? _loc.Get("Common_Yes"), no ?? _loc.Get("Common_No")));
 
     public void Info(string message, string? title = null) =>
         WithOwner(owner => MessageWindow.Show(owner, title ?? _loc.Get("App_Name"), message, MessageKind.Info, _loc.Get("Common_Ok")));

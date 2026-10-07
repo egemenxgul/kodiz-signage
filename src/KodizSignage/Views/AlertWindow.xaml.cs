@@ -15,6 +15,7 @@ public partial class AlertWindow : Window
     private AlertWindow(IAlertService alerts, ILocalizationService loc)
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
         _alerts = alerts;
         _loc = loc;
         OptionItem<int> O(int value, string key) => new(value, key, loc);

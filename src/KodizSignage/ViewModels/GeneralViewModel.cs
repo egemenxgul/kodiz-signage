@@ -403,7 +403,7 @@ public sealed partial class GeneralViewModel : ObservableObject
     [RelayCommand]
     private void InstallUpdate()
     {
-        if (_dialogs.Confirm(_loc.Format("Update_InstallConfirm", _updates.Release?.Version.ToString(3) ?? string.Empty)))
+        if (_dialogs.Confirm(_loc.Format("Update_InstallConfirm", _updates.Release?.Version.ToString(3) ?? string.Empty), null, _loc.Get("Action_InstallNow"), _loc.Get("Action_Later")))
         {
             _updates.InstallNow();
         }
@@ -510,7 +510,7 @@ public sealed partial class GeneralViewModel : ObservableObject
     [RelayCommand]
     private void RemovePin()
     {
-        if (_dialogs.Confirm(_loc.Get("Pin_RemoveConfirm")) && _pin.RemovePin())
+        if (_dialogs.Confirm(_loc.Get("Pin_RemoveConfirm"), null, _loc.Get("Pin_Remove"), _loc.Get("Common_Cancel")) && _pin.RemovePin())
         {
             OnPropertyChanged(nameof(HasPin));
         }
@@ -803,7 +803,7 @@ public sealed partial class GeneralViewModel : ObservableObject
     [RelayCommand]
     private void ResetStats()
     {
-        if (_pin.Unlock() && _dialogs.Confirm(_loc.Get("Stats_ResetConfirm")))
+        if (_pin.Unlock() && _dialogs.Confirm(_loc.Get("Stats_ResetConfirm"), null, _loc.Get("Action_Reset"), _loc.Get("Common_Cancel")))
         {
             _stats.Reset();
             RefreshStats();
@@ -814,7 +814,7 @@ public sealed partial class GeneralViewModel : ObservableObject
     private async Task RestoreBackupAsync()
     {
         var path = _dialogs.PickBackupToRestore();
-        if (path is null || !_dialogs.Confirm(_loc.Get("Backup_RestoreConfirm")))
+        if (path is null || !_dialogs.Confirm(_loc.Get("Backup_RestoreConfirm"), null, _loc.Get("Backup_Restore"), _loc.Get("Common_Cancel")))
         {
             return;
         }

@@ -13,6 +13,7 @@ public partial class PinWindow : Window
     private PinWindow(string prompt, Func<string, bool>? verify, Func<string, string> text)
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
         _verify = verify;
         _text = text;
         PromptText.Text = prompt;

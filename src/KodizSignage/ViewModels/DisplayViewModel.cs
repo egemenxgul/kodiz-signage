@@ -381,7 +381,7 @@ public sealed partial class DisplayViewModel : ObservableObject
     [RelayCommand]
     private void Forget()
     {
-        if (SelectedCard?.Config is not { } config || !_dialogs.Confirm(_loc.Format("Screen_ForgetConfirm", ScreenTitle(config))))
+        if (SelectedCard?.Config is not { } config || !_dialogs.Confirm(_loc.Format("Screen_ForgetConfirm", ScreenTitle(config)), null, _loc.Get("Screen_Forget"), _loc.Get("Common_Cancel")))
         {
             return;
         }

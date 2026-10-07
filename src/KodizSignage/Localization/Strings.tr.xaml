@@ -704,5 +704,14 @@
     <sys:String x:Key="WhatsNew_Banner" xml:space="preserve">Kodiz Signage {0} sürümüne güncellendi.</sys:String>
     <sys:String x:Key="WhatsNew_Show" xml:space="preserve">Yenilikler</sys:String>
     <sys:String x:Key="WhatsNew_Title" xml:space="preserve">{0} sürümünde neler yeni</sys:String>
-    <sys:String x:Key="WhatsNew_Text" xml:space="preserve">• Saate göre listeler: Ekranlar › Liste › &quot;Saat listesi&quot; (ör. Kahvaltı 08–12).&#10;• Arka plan müziği: Genel › Arka plan müziği.&#10;• Fotoğraflı slaytlar ve yeni şablonlar: fotoğraflı tanıtım, çalışma saatleri, geri sayım.&#10;• Acil duyuru: sağ üstteki &quot;Duyuru&quot; butonu (telefondan da).&#10;• Telefon paneli: duyuru, kayan yazı, hızlı slayt, müzik.&#10;• İstatistik grafiği, otomatik yedek ve tanı paketi (Genel sekmesi).&#10;• PIN: pencere küçültülünce veya kullanılmayınca kilitlenir; sağ üstte &quot;Şimdi kilitle&quot;.&#10;• Dokunmatikte tutamaktan sürükleyerek sıralama.</sys:String>
+    <sys:String x:Key="WhatsNew_Text" xml:space="preserve">• 1.6.1: Pencerelerde içeriğin bir kısmının beyaz kalması düzeltildi; onay butonları artık yapılacak işi söylüyor (ör. &quot;Şimdi kur / Sonra&quot;).&#10;• Saate göre listeler: Ekranlar › Liste › &quot;Saat listesi&quot; (ör. Kahvaltı 08–12).&#10;• Arka plan müziği: Genel › Arka plan müziği.&#10;• Fotoğraflı slaytlar ve yeni şablonlar: fotoğraflı tanıtım, çalışma saatleri, geri sayım.&#10;• Acil duyuru: sağ üstteki &quot;Duyuru&quot; butonu (telefondan da).&#10;• Telefon paneli: duyuru, kayan yazı, hızlı slayt, müzik.&#10;• İstatistik grafiği, otomatik yedek ve tanı paketi (Genel sekmesi).&#10;• PIN: pencere küçültülünce veya kullanılmayınca kilitlenir; sağ üstte &quot;Şimdi kilitle&quot;.&#10;• Dokunmatikte tutamaktan sürükleyerek sıralama.</sys:String>
+    <sys:String x:Key="Action_Install" xml:space="preserve">Kur</sys:String>
+    <sys:String x:Key="Action_NotNow" xml:space="preserve">Şimdi değil</sys:String>
+    <sys:String x:Key="Action_Update" xml:space="preserve">Güncelle</sys:String>
+    <sys:String x:Key="Action_Exit" xml:space="preserve">Çık</sys:String>
+    <sys:String x:Key="Action_InstallNow" xml:space="preserve">Şimdi kur</sys:String>
+    <sys:String x:Key="Action_Later" xml:space="preserve">Sonra</sys:String>
+    <sys:String x:Key="Action_Reset" xml:space="preserve">Sıfırla</sys:String>
+    <sys:String x:Key="Action_Replace" xml:space="preserve">Değiştir</sys:String>
+    <sys:String x:Key="Action_Link" xml:space="preserve">Bağla</sys:String>
 </ResourceDictionary>

@@ -704,5 +704,14 @@
     <sys:String x:Key="WhatsNew_Banner" xml:space="preserve">Kodiz Signage was updated to {0}.</sys:String>
     <sys:String x:Key="WhatsNew_Show" xml:space="preserve">What's new</sys:String>
     <sys:String x:Key="WhatsNew_Title" xml:space="preserve">What's new in {0}</sys:String>
-    <sys:String x:Key="WhatsNew_Text" xml:space="preserve">• Time-of-day lists: Screens › List › &quot;Time-of-day list&quot; (e.g. Breakfast 08–12).&#10;• Background music: General › Background music.&#10;• Photo slides and new templates: photo promo, opening hours, countdown.&#10;• Emergency notice: the &quot;Notice&quot; button at the top right (also from the phone).&#10;• Phone panel: notices, ticker, quick slides, music.&#10;• Statistics chart, automatic backups and a diagnostics package (General tab).&#10;• PIN: locks when minimized or idle; &quot;Lock now&quot; at the top right.&#10;• Touch: drag rows by their handle to reorder.</sys:String>
+    <sys:String x:Key="WhatsNew_Text" xml:space="preserve">• 1.6.1: Fixed dialogs being partly white; confirmation buttons now name the action (e.g. &quot;Install now / Later&quot;).&#10;• Time-of-day lists: Screens › List › &quot;Time-of-day list&quot; (e.g. Breakfast 08–12).&#10;• Background music: General › Background music.&#10;• Photo slides and new templates: photo promo, opening hours, countdown.&#10;• Emergency notice: the &quot;Notice&quot; button at the top right (also from the phone).&#10;• Phone panel: notices, ticker, quick slides, music.&#10;• Statistics chart, automatic backups and a diagnostics package (General tab).&#10;• PIN: locks when minimized or idle; &quot;Lock now&quot; at the top right.&#10;• Touch: drag rows by their handle to reorder.</sys:String>
+    <sys:String x:Key="Action_Install" xml:space="preserve">Install</sys:String>
+    <sys:String x:Key="Action_NotNow" xml:space="preserve">Not now</sys:String>
+    <sys:String x:Key="Action_Update" xml:space="preserve">Update</sys:String>
+    <sys:String x:Key="Action_Exit" xml:space="preserve">Exit</sys:String>
+    <sys:String x:Key="Action_InstallNow" xml:space="preserve">Install now</sys:String>
+    <sys:String x:Key="Action_Later" xml:space="preserve">Later</sys:String>
+    <sys:String x:Key="Action_Reset" xml:space="preserve">Reset</sys:String>
+    <sys:String x:Key="Action_Replace" xml:space="preserve">Replace</sys:String>
+    <sys:String x:Key="Action_Link" xml:space="preserve">Link</sys:String>
 </ResourceDictionary>

@@ -16,6 +16,7 @@ public partial class MessageWindow : Window
     private MessageWindow(string title, string message, MessageKind kind, string primary, string? secondary)
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
         Title = title;
         MessageText.Text = message;
         PrimaryButton.Content = primary;

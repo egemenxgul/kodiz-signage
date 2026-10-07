@@ -38,6 +38,7 @@ public partial class WizardWindow : Window
     public WizardWindow(IServiceProvider services)
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
         _settings = services.GetRequiredService<ISettingsService>();
         _loc = services.GetRequiredService<ILocalizationService>();
         _playlist = services.GetRequiredService<IPlaylistService>();

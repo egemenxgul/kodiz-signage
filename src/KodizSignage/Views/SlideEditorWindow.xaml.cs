@@ -14,6 +14,7 @@ public partial class SlideEditorWindow : Window
     private SlideEditorWindow(SlideDefinition? existing, ILocalizationService loc, IPlaylistService playlist, ISlideService slides)
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
         WindowSizing.FitToWorkArea(this);
         _vm = new SlideEditorViewModel(existing, loc, playlist.Items.Where(i => i.Type == MediaType.Image && i.Slide is null).ToList(), slides.ImagePath);
         DataContext = _vm;

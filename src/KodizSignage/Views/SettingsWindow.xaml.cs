@@ -29,6 +29,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(SettingsViewModel viewModel, IPlaybackManager playback, ISettingsService settings, IPinGate pin)
     {
         InitializeComponent();
+        Services.ThemeService.Attach(this);
         _vm = viewModel;
         _playback = playback;
         _settings = settings;
